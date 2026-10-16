@@ -10,7 +10,10 @@ export function Component() {
   const { teacher, teacherId } = useFreelanceWorkspace()
   return (
     <div className="flex flex-col gap-4">
-      <SectionHeader title="Lessons" description={`Every lesson of ${teacher.name}, with its payment state.`} />
+      <SectionHeader
+        title="Lessons"
+        description={`Every lesson of ${teacher.name}, with its payment state.`}
+      />
       <LessonLedger fixed={{ teacherId }} />
     </div>
   )

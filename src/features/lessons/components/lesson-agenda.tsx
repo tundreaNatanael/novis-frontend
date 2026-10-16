@@ -41,9 +41,9 @@ export function LessonAgenda({ lessons, names, isLoading }: LessonAgendaProps) {
           <h3 id={`day-${key}`} className="mb-2 text-sm font-semibold text-foreground">
             {key === 'unscheduled' ? 'Not scheduled' : format(parseISO(key), 'EEEE d MMMM yyyy')}
           </h3>
-          <ol className="flex gap-3">
+          <div className="flex gap-3">
             <div className="stave-rail shrink-0 rounded-sm" aria-hidden />
-            <div className="flex min-w-0 flex-1 flex-col gap-2">
+            <ol className="flex min-w-0 flex-1 flex-col gap-2">
               {groups.get(key)!.map((lesson) => {
                 const student = names.student(lesson.studentId)
                 const teacher = names.teacher(lesson.teacherId)
@@ -76,8 +76,8 @@ export function LessonAgenda({ lessons, names, isLoading }: LessonAgendaProps) {
                   </li>
                 )
               })}
-            </div>
-          </ol>
+            </ol>
+          </div>
         </section>
       ))}
     </div>

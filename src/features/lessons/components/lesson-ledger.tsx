@@ -65,6 +65,7 @@ function columns(names: LessonNames, fixed: FixedScope) {
         ]),
     col.display({
       id: 'course',
+      meta: { className: 'hidden lg:table-cell', headerClassName: 'hidden lg:table-cell' },
       header: 'Course',
       cell: (info) => {
         const id = info.row.original.courseId
@@ -80,6 +81,7 @@ function columns(names: LessonNames, fixed: FixedScope) {
       : [
           col.display({
             id: 'organization',
+            meta: { className: 'hidden lg:table-cell', headerClassName: 'hidden lg:table-cell' },
             header: 'Organization',
             cell: (info) => {
               const id = info.row.original.organizationId

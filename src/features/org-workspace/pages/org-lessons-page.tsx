@@ -10,7 +10,10 @@ export function Component() {
   const { orgId, org } = useOrgWorkspace()
   return (
     <div className="flex flex-col gap-4">
-      <SectionHeader title="Lessons" description={`Every lesson held in ${org.name}, with its payment state.`} />
+      <SectionHeader
+        title="Lessons"
+        description={`Every lesson held in ${org.name}, with its payment state.`}
+      />
       <LessonLedger fixed={{ organizationId: orgId }} />
     </div>
   )

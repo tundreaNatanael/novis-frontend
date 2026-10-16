@@ -14,6 +14,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { useLocalStorage } from '@/lib/use-local-storage'
+import { useMediaQuery } from '@/lib/use-media-query'
 import { Breadcrumbs } from './breadcrumbs'
 import { CommandPalette } from './command-palette'
 import { navigationFor } from './navigation'
@@ -32,7 +33,14 @@ export function Component() {
   const activeOrgId = orgMatch?.params.orgId ?? platformOrgMatch?.params.orgId ?? null
   const sections = navigationFor(me, activeOrgId)
   const hasSwitcher = adminOrganizations(me).length > 1
-  const [collapsed, setCollapsed] = useLocalStorage<boolean>('novis-admin.sidebar-collapsed', false)
+  // Tablets (md–lg) start with the icon rail so tables keep their columns; a toggle is remembered.
+  const narrow = useMediaQuery('(max-width: 1023px)')
+  const [storedCollapsed, setStoredCollapsed] = useLocalStorage<string>(
+    'novis-admin.sidebar-collapsed',
+    '',
+  )
+  const collapsed = storedCollapsed === '' ? narrow : storedCollapsed === 'true'
+  const setCollapsed = (value: boolean) => setStoredCollapsed(String(value))
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [paletteOpen, setPaletteOpen] = useState(false)
 

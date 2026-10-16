@@ -68,7 +68,7 @@ export function Component() {
   ].filter((c): c is NonNullable<typeof c> => c !== null)
 
   return (
-    <div className="grid gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
       <div className="flex flex-col gap-5">
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5" aria-label="Counts">
           {counts.map((count) => (

@@ -240,3 +240,30 @@ payment records after the fact. Deleting stays limited to pending + unpaid, as t
 of one organization never sees it (`homeFor` → `/org/:orgId`), and the top-bar switcher appears
 only with two or more. TEACHER memberships are not offered: the console is for administrators.
 **Context.** Most admins run one school; a picker in their way would be a click for nothing.
+
+## D-033 · 2026-10-16 · Playwright signs in through the API, once per worker
+
+**Decision.** `e2e/fixtures.ts` calls `POST /auth/login` once per worker and seeds the console's
+token stores (`sessionStorage` access token, `localStorage` refresh token) with an init script
+before each page load, keeping the newest refresh token between tests. Specs that need the
+anonymous state import Playwright's own `test`.
+**Context.** Login is throttled 5/min per email and a page load without an access token would
+refresh and rotate the token on every test; a leaked rotation is a reuse, which revokes every
+session (gap G17).
+
+## D-034 · 2026-10-16 · Tables drop their date column between md and lg
+
+**Decision.** Between 768 and 1024 px the tables keep name, email / slug, status and the row
+menu; Created / Joined / Sent / Enrolled (and the ledger's Course / Organization) are hidden with
+`hidden lg:table-cell` on both the header and the cells. Below `md` the stacked list shows what
+matters per row anyway; the detail page always has every field.
+**Context.** At 768 px a fourth column pushed the table into a horizontal scroller inside its
+card, which the design reserves for tab strips only.
+
+## D-035 · 2026-10-16 · Icon rail by default on tablets
+
+**Decision.** Between 768 and 1023 px the sidebar starts collapsed to its icon rail
+(`useMediaQuery('(max-width: 1023px)')`); the user's toggle is stored and wins afterwards.
+Phones keep the drawer, desktops the full sidebar.
+**Context.** A 240 px sidebar left 496 px for a table at 768 px, which clipped the row menu even
+after hiding the date column. The rail leaves 680 px, enough for every list at that width.

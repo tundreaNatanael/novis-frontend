@@ -1,9 +1,11 @@
-import { X } from 'lucide-react'
+import { SlidersHorizontal, X } from 'lucide-react'
+import { useState } from 'react'
 import { SelectField, type SelectOption } from '@/components/form/select-field'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { ListParams } from '@/lib/use-list-params'
+import { cn } from '@/lib/utils'
 import { useLessonFilterOptions } from '../hooks/use-lesson-filter-options'
 
 export interface FixedScope {
@@ -32,10 +34,35 @@ export function LessonFilters({ params, fixed }: { params: ListParams; fixed: Fi
     'to',
     'unscheduled',
   ].filter((key) => params.filter(key))
+  // Nine filters are a screenful on a phone: collapsed there unless some are active.
+  const [expanded, setExpanded] = useState(active.length > 0)
 
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-3">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="justify-between md:hidden"
+        aria-expanded={expanded}
+        aria-controls="lesson-filter-fields"
+        onClick={() => setExpanded((value) => !value)}
+      >
+        <span className="flex items-center gap-2">
+          <SlidersHorizontal aria-hidden />
+          Filters
+          {active.length > 0 ? (
+            <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground">
+              {active.length} active
+            </span>
+          ) : null}
+        </span>
+        <span className="text-xs text-muted-foreground">{expanded ? 'Hide' : 'Show'}</span>
+      </Button>
+      <div
+        id="lesson-filter-fields"
+        className={cn('grid gap-3 sm:grid-cols-2 lg:grid-cols-4', !expanded && 'hidden md:grid')}
+      >
         {!fixed.organizationId && !fixed.teacherId ? (
           <Filter label="Organization">
             {(id) => (

@@ -137,7 +137,7 @@ export function Component() {
       cell: (info) => (
         <span className="text-muted-foreground tabular-nums">{formatDate(info.getValue())}</span>
       ),
-      meta: { className: 'w-36' },
+      meta: { className: 'hidden w-36 lg:table-cell', headerClassName: 'hidden lg:table-cell' },
     }),
   ]
 
@@ -185,7 +185,7 @@ export function Component() {
           </>
         }
       />
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
         <DetailPanel title="Details" description="Every field the API returns for this course.">
           <DetailField label="Id">
             <IdValue value={course.id} />

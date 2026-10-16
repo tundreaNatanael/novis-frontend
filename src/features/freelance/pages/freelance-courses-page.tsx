@@ -36,7 +36,7 @@ const columns = [
     cell: (info) => (
       <span className="text-muted-foreground tabular-nums">{formatDate(info.getValue())}</span>
     ),
-    meta: { className: 'w-36' },
+    meta: { className: 'hidden w-36 lg:table-cell', headerClassName: 'hidden lg:table-cell' },
   }),
 ]
 

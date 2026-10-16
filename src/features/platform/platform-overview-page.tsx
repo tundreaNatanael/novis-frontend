@@ -89,8 +89,11 @@ export function Component() {
           </li>
         ))}
       </ul>
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-        <section className="rounded-lg border border-border bg-card" aria-labelledby="recent-orgs">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        <section
+          className="min-w-0 rounded-lg border border-border bg-card"
+          aria-labelledby="recent-orgs"
+        >
           <header className="flex items-center justify-between border-b border-border px-4 py-3">
             <h2 id="recent-orgs" className="text-sm font-semibold text-card-foreground">
               Recently created organizations
@@ -140,7 +143,10 @@ export function Component() {
             </ul>
           )}
         </section>
-        <section className="rounded-lg border border-border bg-card" aria-labelledby="shortcuts">
+        <section
+          className="min-w-0 rounded-lg border border-border bg-card"
+          aria-labelledby="shortcuts"
+        >
           <header className="border-b border-border px-4 py-3">
             <h2 id="shortcuts" className="text-sm font-semibold text-card-foreground">
               Shortcuts

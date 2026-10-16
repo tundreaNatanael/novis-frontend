@@ -94,7 +94,7 @@
   --radius: 8px;
 
   /* Semantic */
-  --success: #2f7d5b;
+  --success: #26664a; /* ≥ 4.5:1 on --success-soft over the paper background */
   --success-soft: color-mix(in oklab, var(--success) 12%, transparent);
   --warning: #92400e;
   --warning-soft: color-mix(in oklab, #b45309 14%, transparent);
