@@ -125,11 +125,12 @@ from the files alone.
 
 ## Current state
 
-Phases 0, 0b (backend changes, committed in `../novis-backend`), 1 (foundation) and 2 (organizations
-and the organization workspace: overview, admins, teachers, students, courses, invites, detail pages)
-are done. The workspace is already mounted at `/org/:orgId/*` for admins. Phases 3–7 (freelance
-teachers, lessons, organization picker, polish, docs) follow `docs/PLAN.md` §10; their routes are
-placeholder pages. The test harness (`src/test/render.tsx`) mounts the real route tree with MSW.
+Phases 0–3 are done: discovery, approved backend changes (committed in `../novis-backend`),
+foundation, the organization workspace (also mounted at `/org/:orgId/*`) and the freelance-teacher
+workspace. Phases 4–7 (lessons, organization picker, polish, docs) follow `docs/PLAN.md` §10; the
+lessons routes are placeholder pages. Shared detail pages read their scope with `useWorkspaceScope()`
+(`kind: 'org' | 'freelance'`). The test harness (`src/test/render.tsx`) mounts the real route tree
+with MSW.
 
 ## Don'ts
 

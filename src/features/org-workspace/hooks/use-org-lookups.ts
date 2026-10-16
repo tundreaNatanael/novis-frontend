@@ -47,3 +47,15 @@ export function courseLabel(course: Course, teachers: Member[] | undefined): str
   const teacher = memberName(teachers, course.teacherId)
   return teacher ? `${course.title} — ${teacher}` : course.title
 }
+
+/** Courses owned by one teacher (any scope), for selects (first 100). */
+export function useTeacherCourses(teacherId: string, enabled = true) {
+  return useQuery({
+    queryKey: courseKeys.list({ teacherId }, { ...LOOKUP, sort: 'title,asc' }),
+    queryFn: ({ signal }) =>
+      coursesApi.list({ teacherId }, { ...LOOKUP, sort: 'title,asc' }, signal),
+    enabled: enabled && !!teacherId,
+    staleTime: 60_000,
+    select: (page) => page.content,
+  })
+}

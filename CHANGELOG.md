@@ -7,7 +7,16 @@ All notable changes to the Novis admin console. The format follows
 
 ### Planned
 
-- Phase 3: freelance teachers. Phase 4: lessons. Phase 5: organization picker and switcher polish for admins. Phase 6: polish. Phase 7: docs.
+- Phase 4: lessons. Phase 5: organization picker and switcher polish for admins. Phase 6: polish. Phase 7: docs.
+
+## Phase 3 — Freelance teachers — 2026-10-16
+
+### Added
+
+- `/platform/freelance`: freelance teachers table (`GET /users?freelance=true`), add with a password (`POST /freelance-teachers`), invite by email (`POST /invites`), open invitations from `GET /invites` with resend and revoke (`DELETE /invites/{id}`), delete account.
+- Freelance teacher workspace `/platform/freelance/:teacherId/*`: profile (every field, memberships, edit, reset link, delete), students (`GET /students?teacherId=`, add with `POST /students { teacherId }` and optional enrollment, delete), courses (`GET /courses?teacherId=`, create / edit / archive / delete), lessons tab placeholder for phase 4.
+- The student and course detail pages, the add-student sheet and the course sheet work in both scopes (organization and freelance) through `useWorkspaceScope()`.
+- Tests: freelance list + create, freelance student create without an organization.
 
 ## Phase 2 — Organizations and the organization workspace — 2026-10-16
 

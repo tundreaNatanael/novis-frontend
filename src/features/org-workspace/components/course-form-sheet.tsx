@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { longTextSchema, optionalHttpsUrl, titleSchema, uuidSchema } from '@/lib/schemas'
 import { memberName, useOrgTeachers } from '../hooks/use-org-lookups'
-import { useOrgWorkspace } from '../use-org-workspace'
+import { useWorkspaceScope } from '../use-org-workspace'
 
 const schema = z.object({
   title: titleSchema,
@@ -45,14 +45,17 @@ export function CourseFormSheet({
   teacherId,
   onSaved,
 }: CourseFormSheetProps) {
-  const { orgId, org, capabilities } = useOrgWorkspace()
+  const scope = useWorkspaceScope()
+  const { capabilities } = scope
+  const orgId = scope.kind === 'org' ? scope.orgId : null
+  const fixedTeacherId = scope.kind === 'freelance' ? scope.teacherId : undefined
   const queryClient = useQueryClient()
   const [formError, setFormError] = useState<string | null>(null)
-  const teachers = useOrgTeachers(orgId, open)
+  const teachers = useOrgTeachers(orgId ?? '', open && scope.kind === 'org')
   const defaults = (): FormValues => ({
     title: course?.title ?? '',
     description: course?.description ?? '',
-    teacherId: course?.teacherId ?? teacherId ?? '',
+    teacherId: course?.teacherId ?? teacherId ?? fixedTeacherId ?? '',
     status: course?.status ?? 'ACTIVE',
     defaultMeetingUrl: course?.defaultMeetingUrl ?? '',
   })
@@ -74,7 +77,11 @@ export function CourseFormSheet({
         ...(values.defaultMeetingUrl ? { defaultMeetingUrl: values.defaultMeetingUrl } : {}),
       }
       if (!course)
-        return coursesApi.create({ ...body, teacherId: values.teacherId, organizationId: orgId })
+        return coursesApi.create({
+          ...body,
+          teacherId: values.teacherId,
+          ...(orgId ? { organizationId: orgId } : {}),
+        })
       return coursesApi.update(course.id, {
         ...body,
         status: values.status,
@@ -116,7 +123,9 @@ export function CourseFormSheet({
       onOpenChange={onOpenChange}
       title={course ? 'Edit course' : 'New course'}
       description={
-        course ? undefined : `A course in ${org.name}. A course belongs to exactly one teacher.`
+        course
+          ? undefined
+          : `A course of ${scope.kind === 'org' ? scope.org.name : scope.teacher.name}. A course belongs to exactly one teacher.`
       }
       submitLabel={course ? 'Save changes' : 'Create course'}
       isSubmitting={mutation.isPending}
@@ -136,32 +145,38 @@ export function CourseFormSheet({
           />
         )}
       </Field>
-      <Field
-        label="Teacher"
-        required
-        hint={course ? undefined : 'The owner. Only admins can change it later.'}
-        error={form.formState.errors.teacherId?.message}
-      >
-        {(a11y) => (
-          <Controller
-            control={form.control}
-            name="teacherId"
-            render={({ field }) => (
-              <SelectField
-                id={a11y.id}
-                aria-describedby={a11y['aria-describedby']}
-                aria-invalid={a11y['aria-invalid']}
-                value={field.value}
-                onChange={field.onChange}
-                options={teacherOptions}
-                disabled={!!course && !capabilities.canReassignCourse}
-                placeholder={teachers.isPending ? 'Loading teachers…' : 'Choose a teacher'}
-                emptyText="No teachers yet. Add one in the Teachers tab."
-              />
-            )}
-          />
-        )}
-      </Field>
+      {scope.kind === 'freelance' ? (
+        <Field label="Teacher" hint="A freelance course belongs to this teacher.">
+          {(a11y) => <Input {...a11y} value={scope.teacher.name} readOnly />}
+        </Field>
+      ) : (
+        <Field
+          label="Teacher"
+          required
+          hint={course ? undefined : 'The owner. Only admins can change it later.'}
+          error={form.formState.errors.teacherId?.message}
+        >
+          {(a11y) => (
+            <Controller
+              control={form.control}
+              name="teacherId"
+              render={({ field }) => (
+                <SelectField
+                  id={a11y.id}
+                  aria-describedby={a11y['aria-describedby']}
+                  aria-invalid={a11y['aria-invalid']}
+                  value={field.value}
+                  onChange={field.onChange}
+                  options={teacherOptions}
+                  disabled={!!course && !capabilities.canReassignCourse}
+                  placeholder={teachers.isPending ? 'Loading teachers…' : 'Choose a teacher'}
+                  emptyText="No teachers yet. Add one in the Teachers tab."
+                />
+              )}
+            />
+          )}
+        </Field>
+      )}
       {reassigning ? (
         <Alert>
           <AlertDescription>

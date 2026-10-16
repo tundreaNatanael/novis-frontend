@@ -18,8 +18,13 @@ import { StepStatus, type Step } from '@/components/form/step-status'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { emailSchema, nameSchema } from '@/lib/schemas'
-import { courseLabel, useOrgCourses, useOrgTeachers } from '../hooks/use-org-lookups'
-import { useOrgWorkspace } from '../use-org-workspace'
+import {
+  courseLabel,
+  useOrgCourses,
+  useOrgTeachers,
+  useTeacherCourses,
+} from '../hooks/use-org-lookups'
+import { useWorkspaceScope } from '../use-org-workspace'
 
 const schema = z.object({ name: nameSchema, email: emailSchema, courseId: z.string() })
 type FormValues = z.infer<typeof schema>
@@ -36,14 +41,21 @@ interface AddStudentSheetProps {
  * (gap G3). A failed enrollment is reported and can be retried or skipped.
  */
 export function AddStudentSheet({ open, onOpenChange, onCreated }: AddStudentSheetProps) {
-  const { orgId, org } = useOrgWorkspace()
+  const scope = useWorkspaceScope()
+  const orgId = scope.kind === 'org' ? scope.orgId : null
+  const scopeName = scope.kind === 'org' ? scope.org.name : scope.teacher.name
   const queryClient = useQueryClient()
   const [formError, setFormError] = useState<string | null>(null)
   const [student, setStudent] = useState<Student | null>(null)
   const [enrollError, setEnrollError] = useState<string | null>(null)
   const [running, setRunning] = useState(false)
-  const courses = useOrgCourses(orgId, open)
-  const teachers = useOrgTeachers(orgId, open)
+  const orgCourses = useOrgCourses(orgId ?? '', open && scope.kind === 'org')
+  const teacherCourses = useTeacherCourses(
+    scope.kind === 'freelance' ? scope.teacherId : '',
+    open && scope.kind === 'freelance',
+  )
+  const courses = scope.kind === 'org' ? orgCourses : teacherCourses
+  const teachers = useOrgTeachers(orgId ?? '', open && scope.kind === 'org')
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -92,20 +104,25 @@ export function AddStudentSheet({ open, onOpenChange, onCreated }: AddStudentShe
       if (!created) {
         const course = courses.data?.find((c) => c.id === values.courseId)
         try {
-          created = await studentsApi.create({
-            name: values.name,
-            email: values.email,
-            organizationId: orgId,
-            // Roster the student under the course's teacher so the teacher sees them at once (D-011).
-            ...(course ? { teacherId: course.teacherId } : {}),
-          })
+          created = await studentsApi.create(
+            scope.kind === 'org'
+              ? {
+                  name: values.name,
+                  email: values.email,
+                  organizationId: scope.orgId,
+                  // Roster the student under the course's teacher so the teacher sees them at once (D-011).
+                  ...(course ? { teacherId: course.teacherId } : {}),
+                }
+              : // Freelance: the super-admin names the teacher and no organization (gap G5-B).
+                { name: values.name, email: values.email, teacherId: scope.teacherId },
+          )
         } catch (error) {
           setFormError(applyServerErrors(error, form.setError, ['name', 'email']))
           return
         }
         setStudent(created)
         await Promise.all([
-          queryClient.invalidateQueries({ queryKey: memberKeys.org(orgId) }),
+          ...(orgId ? [queryClient.invalidateQueries({ queryKey: memberKeys.org(orgId) })] : []),
           queryClient.invalidateQueries({ queryKey: studentKeys.all }),
         ])
         toast.success('Student created')
@@ -135,14 +152,17 @@ export function AddStudentSheet({ open, onOpenChange, onCreated }: AddStudentShe
 
   const options = (courses.data ?? [])
     .filter((c) => c.status === 'ACTIVE')
-    .map((c) => ({ value: c.id, label: courseLabel(c, teachers.data) }))
+    .map((c) => ({
+      value: c.id,
+      label: scope.kind === 'org' ? courseLabel(c, teachers.data) : c.title,
+    }))
 
   return (
     <FormSheet
       open={open}
       onOpenChange={onOpenChange}
       title="Add student"
-      description={`A student of ${org.name}. Students sign in with their email only, so no password is needed.`}
+      description={`A student of ${scopeName}. Students sign in with their email only, so no password is needed.`}
       submitLabel={student ? 'Retry enrollment' : 'Create student'}
       isSubmitting={running}
       onSubmit={onSubmit}

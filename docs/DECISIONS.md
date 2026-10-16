@@ -188,3 +188,17 @@ student and offer a retry.
 instead of mounting components in isolation, so guards, breadcrumbs, lazy loading and navigation
 after a create are tested too. Async timeouts are raised (8 s queries, 20 s tests) because lazy
 route modules are transformed on first import.
+
+## D-026 · 2026-10-16 · One scope type for shared detail pages
+
+**Decision.** The organization and freelance workspaces provide a discriminated
+`WorkspaceScope` (`kind: 'org' | 'freelance'`) through the router outlet; the student and course
+detail pages, the add-student sheet and the course sheet branch on it instead of being duplicated.
+**Consequences.** New scope-dependent behavior goes into those branches; a third scope would be one
+more union member.
+
+## D-027 · 2026-10-16 · No "remove from roster" for freelance students
+
+**Decision.** The freelance students tab offers "Delete student account" only.
+**Context.** The API has no endpoint for the super-admin to remove a single roster row;
+`DELETE /students/{id}` as super-admin always deletes the account (gap G8). The dialog says so.
