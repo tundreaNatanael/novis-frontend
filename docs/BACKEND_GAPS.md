@@ -6,29 +6,30 @@ discrepancies found are listed in [G16](#g16-documentation--code-discrepancies).
 
 Paths below are relative to `novis-backend/api/src/main/java/com/novis/api/`.
 
-Status legend: **open** = awaiting the Phase 0 checkpoint decision · **adapted in UI** (option A)
-· **fixed in backend** (option B) · **deferred**.
+Status legend: **open** · **adapted in UI** (option A, with the phase that builds it) ·
+**fixed in backend** (option B, with the backend commit) · **deferred**. Decisions taken at the
+Phase 0 checkpoint on 2026-10-16 (`docs/DECISIONS.md` D-015).
 
 ## Summary
 
-| Gap | Requirement | Recommended default | Effort | Status |
-|---|---|---|---|---|
-| [G1](#g1-staff-accounts-created-with-a-password) | Create admins / teachers with email + password | **B** — `POST /orgs/{orgId}/staff` + `POST /freelance-teachers` | ½ day | open |
-| [G2](#g2-selecting-a-course-for-a-teacher) | Teacher create form takes a course | **A** — create a new course for the teacher (or move an existing one, with a warning); needs G1-B to work at creation time | UI only | open |
-| [G3](#g3-student-form-fields) | Student create form: email + course | **A** — name + email + course, two calls with partial-success handling | UI only | open |
-| [G4](#g4-missing-list-filters) | Org panel lists its own courses / lessons / students | **B** — `organizationId` / `teacherId` filters on `GET /courses`, `GET /students`, `GET /lessons` | ½ day | open |
-| [G5](#g5-freelance-teachers) | Freelance teachers and their students | **B** — `GET /users?freelance=true`, `GET /invites`, `GET /students?teacherId=`, super-admin fix in `POST /students` | 1 day | open |
-| [G6](#g6-a-students-courses) | Student detail shows enrolled courses | **B** (small) — `GET /students/{id}/enrollments`; A fallback via the Courses tab | ½ day | open |
-| [G7](#g7-editing-and-deleting-staff) | Edit / delete admins and teachers | **A** — name / email / status per the server rules, two delete actions, reset-link action | UI only | open |
-| [G8](#g8-deleting-students) | Delete students | **A** — "Remove from this organization" = membership delete; "Delete student account" = `DELETE /students/{id}` with exact copy | UI only | open |
-| [G9](#g9-change-any-information-on-lessons) | Change any information on lessons | **A** — expose exactly the supported transitions; no override | UI only | open |
-| [G10](#g10-organization-info) | Organization info | **A** — name / slug / status only (B = migration for contact fields, if wanted) | ½ day for B | open |
-| [G11](#g11-deep-links) | `/invite/:token`, `/reset-password/:token` | **A** — keep `APP_BASE_URL` on the Expo app; the console implements both routes too | UI only | open |
-| [G12](#g12-web-session-storage-and-cors) | Token storage, CORS | **A** — access token in memory + refresh token in `localStorage` behind `tokenStore`; **`.env` must add the console origin to `CORS_ALLOWED_ORIGINS`** | config | open |
-| [G13](#g13-no-user-list-or-search) | Find a user by email / list users | **B** with G5 — `GET /users` (super-admin) | with G5 | open |
-| [G14](#g14-member-rows-carry-no-status-and-sort-only-by-membership-columns) | Member lists | **A** — status on detail only; sort by "joined" | UI only | open |
-| [G15](#g15-rate-limits-in-development) | e2e against the live API | **A** — one login per run | tests | open |
-| [G16](#g16-documentation--code-discrepancies) | Docs ≠ code | record; no action in the console | — | recorded |
+| Gap                                                                         | Requirement                                          | Recommended default                                                                                                                                    | Effort      | Status                                                                                  |
+| --------------------------------------------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------- | --------------------------------------------------------------------------------------- |
+| [G1](#g1-staff-accounts-created-with-a-password)                            | Create admins / teachers with email + password       | **B** — `POST /orgs/{orgId}/staff` + `POST /freelance-teachers`                                                                                        | ½ day       | fixed in backend (`9366a80`)                                                            |
+| [G2](#g2-selecting-a-course-for-a-teacher)                                  | Teacher create form takes a course                   | **A** — create a new course for the teacher (or move an existing one, with a warning); needs G1-B to work at creation time                             | UI only     | adapted in UI (phase 2)                                                                 |
+| [G3](#g3-student-form-fields)                                               | Student create form: email + course                  | **A** — name + email + course, two calls with partial-success handling                                                                                 | UI only     | adapted in UI (phase 2)                                                                 |
+| [G4](#g4-missing-list-filters)                                              | Org panel lists its own courses / lessons / students | **B** — `organizationId` / `teacherId` filters on `GET /courses`, `GET /students`, `GET /lessons`                                                      | ½ day       | fixed in backend (`9366a80`)                                                            |
+| [G5](#g5-freelance-teachers)                                                | Freelance teachers and their students                | **B** — `GET /users?freelance=true`, `GET /invites`, `GET /students?teacherId=`, super-admin fix in `POST /students`                                   | 1 day       | fixed in backend (`9366a80`)                                                            |
+| [G6](#g6-a-students-courses)                                                | Student detail shows enrolled courses                | **B** (small) — `GET /students/{id}/enrollments`; A fallback via the Courses tab                                                                       | ½ day       | fixed in backend (`9366a80`)                                                            |
+| [G7](#g7-editing-and-deleting-staff)                                        | Edit / delete admins and teachers                    | **A** — name / email / status per the server rules, two delete actions, reset-link action                                                              | UI only     | adapted in UI (phase 2)                                                                 |
+| [G8](#g8-deleting-students)                                                 | Delete students                                      | **A** — "Remove from this organization" = membership delete; "Delete student account" = `DELETE /students/{id}` with exact copy                        | UI only     | adapted in UI (phase 2)                                                                 |
+| [G9](#g9-change-any-information-on-lessons)                                 | Change any information on lessons                    | **A** — expose exactly the supported transitions; no override                                                                                          | UI only     | adapted in UI (phase 4)                                                                 |
+| [G10](#g10-organization-info)                                               | Organization info                                    | **A** — name / slug / status only (B = migration for contact fields, if wanted)                                                                        | ½ day for B | adapted in UI (phase 2)                                                                 |
+| [G11](#g11-deep-links)                                                      | `/invite/:token`, `/reset-password/:token`           | **A** — keep `APP_BASE_URL` on the Expo app; the console implements both routes too                                                                    | UI only     | adapted in UI (phase 1: both routes built)                                              |
+| [G12](#g12-web-session-storage-and-cors)                                    | Token storage, CORS                                  | **A** — access token in memory + refresh token in `localStorage` behind `tokenStore`; **`.env` must add the console origin to `CORS_ALLOWED_ORIGINS`** | config      | adapted (phase 1: `tokenStore`); CORS origin added to backend `.env` and `.env.example` |
+| [G13](#g13-no-user-list-or-search)                                          | Find a user by email / list users                    | **B** with G5 — `GET /users` (super-admin)                                                                                                             | with G5     | fixed in backend (`9366a80`)                                                            |
+| [G14](#g14-member-rows-carry-no-status-and-sort-only-by-membership-columns) | Member lists                                         | **A** — status on detail only; sort by "joined"                                                                                                        | UI only     | adapted in UI (phase 2)                                                                 |
+| [G15](#g15-rate-limits-in-development)                                      | e2e against the live API                             | **A** — one login per run                                                                                                                              | tests       | adapted (e2e signs in once)                                                             |
+| [G16](#g16-documentation--code-discrepancies)                               | Docs ≠ code                                          | record; no action in the console                                                                                                                       | —           | recorded                                                                                |
 
 Everything marked **B** keeps the backend's rules: authorization in the service, roles and
 organization derived server-side, cross-tenant ids → 404, tenant isolation and RLS untouched.
@@ -41,6 +42,7 @@ organization derived server-side, cross-tenant ids → 404, tenant isolation and
 create teachers. The teacher form takes **email, password and a course**.
 
 **What the API offers today.**
+
 - Staff are **invited**, never created: `POST /orgs/{orgId}/invites { email, role: ADMIN | TEACHER }`
   (`invite/InviteController.createOrganizationInvite`, `invite/InviteServiceImpl.createOrganizationInvite`).
   Rules: caller must administer the org (super-admin or `ADMIN`), archived org → `409`, `role: STUDENT`
@@ -60,13 +62,14 @@ create teachers. The teacher form takes **email, password and a course**.
 - `GET /orgs/{orgId}/invites` returns used invites too (`usedAt` set); "pending" must be derived
   client-side as `usedAt == null && expiresAt > now`. There is no resend; "resend" = create a new invite.
 
-**Option A — adapt the UI.** The create form becomes *Invite admin* / *Invite teacher*: email (+ role).
+**Option A — adapt the UI.** The create form becomes _Invite admin_ / _Invite teacher_: email (+ role).
 No password field, no name field; copy says "They will receive an email to choose a name and
 password". A pending-invites list offers revoke (`DELETE /invites/{id}`) and resend (new invite).
 Consequence: the teacher has no account until they accept, so no course can be assigned at
 creation time (G2) and the stated requirement (email + password) is not met.
 
 **Option B — extend the backend.** New endpoints, same authorization as invites:
+
 - `POST /orgs/{orgId}/staff { email, name, password, role: ADMIN | TEACHER }` → `201 Member`
 - `POST /freelance-teachers { email, name, password }` → `201 User` (super-admin only)
 
@@ -96,6 +99,7 @@ does today, and the organization comes from the path.
 **Requirement.** The teacher create form includes "a course of that organization".
 
 **What the API offers today.**
+
 - A course has exactly one owner: `CourseEntity.teacherId` is required
   (`course/CourseEntity`, migration `V1` `courses.teacher_id not null`).
 - Create for a teacher: `POST /courses { title, description?, organizationId?, teacherId?, defaultMeetingUrl? }`
@@ -106,19 +110,20 @@ does today, and the organization comes from the path.
   or super-admin; freelance course → super-admin only; **the course leaves its current teacher**.
 - There is no "shared course": two teachers teaching "Piano" are two course rows.
 
-**Domain answer.** A course is *one teacher's class*. Two teachers in one organization cannot teach
+**Domain answer.** A course is _one teacher's class_. Two teachers in one organization cannot teach
 the same course row; each owns their own. The console models it that way (course lists are grouped
 or filterable by teacher; the detail shows the owner as a link).
 
 **Option A — adapt the UI.** The "Course" field of the teacher form offers:
+
 1. **Create a new course for this teacher** (default): title → `POST /courses { title, teacherId, organizationId }`
    right after the account exists.
 2. **Move an existing course** (secondary): pick a course of the organization →
-   `PATCH /courses/{id} { teacherId }`, with the warning "This moves *Piano — beginners* away from
-   *Ana Pop*".
-Both are the second step of a multi-step create with partial-success handling and a retry.
-With G1-A (invites) the step cannot run at creation time; the form then says "You can assign a
-course once they accept the invite" and the action lives on the teacher detail page.
+   `PATCH /courses/{id} { teacherId }`, with the warning "This moves _Piano — beginners_ away from
+   _Ana Pop_".
+   Both are the second step of a multi-step create with partial-success handling and a retry.
+   With G1-A (invites) the step cannot run at creation time; the form then says "You can assign a
+   course once they accept the invite" and the action lives on the teacher detail page.
 
 **Option B.** Not needed; the API already supports both paths.
 
@@ -135,6 +140,7 @@ course once they accept the invite" and the action lives on the teacher detail p
 **Requirement.** Student create form takes **an email and a course**.
 
 **What the API offers today.**
+
 - `POST /students { name, email, organizationId?, teacherId? }` — `name` is `@NotBlank`
   (`student/dto/CreateStudentRequest`). For the super-admin (and multi-org admins) `organizationId`
   is **required** (`student/StudentServiceImpl.resolveOrganization` → `400 "organizationId is required"`);
@@ -148,7 +154,7 @@ course once they accept the invite" and the action lives on the teacher detail p
 **Option A — adapt the UI.** Form = **name, email, course** (name is mandatory because the API
 requires it). Submit runs: (1) `POST /students { name, email, organizationId, teacherId: course.teacherId }`,
 (2) `POST /courses/{courseId}/enrollments { studentId }`. If (2) fails the sheet shows
-"Student created. Enrollment in *Piano — beginners* failed: <message>" with **Retry enrollment** and
+"Student created. Enrollment in _Piano — beginners_ failed: <message>" with **Retry enrollment** and
 **Skip**; a `409 already enrolled` on retry counts as success. Passing `teacherId` also puts the
 student on the course teacher's roster, so the teacher sees them in the mobile app immediately
 and lessons without a course resolve their organization from the roster row.
@@ -161,10 +167,11 @@ and lessons without a course resolve their organization from the roster row.
 
 ## G4 Missing list filters
 
-**Requirement.** An organization panel lists *this organization's* admins, teachers, students,
+**Requirement.** An organization panel lists _this organization's_ admins, teachers, students,
 courses and lessons; the super-admin's lists must not fetch the whole platform.
 
 **What the API offers today.**
+
 - `GET /students` takes only paging (`student/StudentController.list`); the super-admin gets **every
   student on the platform** (`UserDao.findAllStudents`), admins their orgs' students.
 - `GET /courses` takes only paging (`course/CourseController.list`); super-admin → `courseDao.findAll`.
@@ -180,13 +187,14 @@ filtering of full pages (`size=100`, loop until `last`), with a visible "Loaded 
 the pilot scale (a handful of schools), degrades linearly after.
 
 **Option B — extend the backend** (recommended):
+
 - `GET /courses?organizationId=&teacherId=` — new `CourseDao` queries applied **after** the visibility
   predicate (admins asking for a foreign org simply get an empty page).
 - `GET /students?organizationId=&teacherId=` — `teacherId` reuses `UserDao.findStudentsVisibleTo(teacherId, NONE)`
   (roster + enrolled); `organizationId` adds a membership predicate; same visibility-first rule.
 - `GET /lessons?organizationId=` — one field in `LessonFilter`, one predicate in `LessonQueriesImpl`.
-Tests: DAO slice for the new queries, service unit for "filter never widens visibility", extend
-`TenantIsolationIT`. Docs: API.md §7–§9 filter tables.
+  Tests: DAO slice for the new queries, service unit for "filter never widens visibility", extend
+  `TenantIsolationIT`. Docs: API.md §7–§9 filter tables.
 
 **Recommendation: B.** Small change, removes an O(platform) hotspot from every org page.
 
@@ -203,6 +211,7 @@ empty pages, never data. No RLS change.
 every field.
 
 **What the API offers today.**
+
 - **No endpoint lists freelance teachers** (or any users): `user/UserController` has only `GET /users/me`,
   `GET /users/{id}`, `PATCH`, `DELETE`; `UserDao` has no freelance query.
 - **No endpoint lists pending freelance invites**: `InviteDao.findByOrganizationIdIsNull(Pageable)`
@@ -212,7 +221,7 @@ every field.
   filter (G4).
 - **The super-admin cannot create a freelance student**: `POST /students { name, email, teacherId }`
   without `organizationId` → `400 "organizationId is required"` (`StudentServiceImpl.resolveOrganization`
-  only infers "no organization" for a caller who *is* a freelance teacher). Sending a freelance
+  only infers "no organization" for a caller who _is_ a freelance teacher). Sending a freelance
   teacher's id does not help because the scope is resolved before the teacher is looked at.
 - What **does** work for the super-admin: inviting (`POST /invites`), `GET /users/{id}` for a known id,
   `POST /courses { title, teacherId }` for a freelance teacher (organization inferred as none,
@@ -224,6 +233,7 @@ would be "Invite a freelance teacher" plus "paste a user id". Freelance students
 created from the console at all.
 
 **Option B — extend the backend** (recommended):
+
 1. `GET /users?freelance=true&q=` (super-admin only) → `Page<User>`; `q` matches name / email
    (case-insensitive). Also closes G13.
 2. `GET /invites` (super-admin only) → pending freelance invites via the existing
@@ -233,8 +243,8 @@ created from the console at all.
 4. `POST /students`: when the caller is the super-admin, `organizationId` is omitted and `teacherId`
    is given, derive the scope from the teacher — freelance teacher → no organization; teacher of
    exactly one organization → that organization; otherwise keep `400`.
-Tests: unit for each authorization branch (admin → 403 on `GET /users`, cross-tenant → empty),
-extend `TeacherRosterIT` / `OnboardingFlowIT`.
+   Tests: unit for each authorization branch (admin → 403 on `GET /users`, cross-tenant → empty),
+   extend `TeacherRosterIT` / `OnboardingFlowIT`.
 
 **Recommendation: B.** Without it the Freelance section cannot exist.
 
@@ -278,6 +288,7 @@ declined.
 **Requirement.** Edit and delete admins and teachers; see id and every field.
 
 **What the API offers today** (`user/UserServiceImpl`):
+
 - Visibility (`GET /users/{id}`): self, super-admin, an admin sharing an organization with the user,
   or the teacher of that student; otherwise `404`.
 - `PATCH /users/{id}`: the caller must be self, super-admin, or an admin whose organizations cover
@@ -289,13 +300,14 @@ declined.
   account (`403`). Soft-deletes and detaches everywhere (memberships, roster rows as teacher and as
   student, enrollments dropped, sessions revoked); lessons and payments stay.
 - `DELETE /memberships/{id}`: admin of that organization (`404` otherwise); an admin cannot remove
-  **their own ADMIN** membership (`403`). A user holding ADMIN *and* TEACHER has two memberships.
+  **their own ADMIN** membership (`403`). A user holding ADMIN _and_ TEACHER has two memberships.
 - Password help without a backend change: `POST /auth/forgot-password { email }` (public, throttled,
   generic response, only acts on active password accounts).
 - Listing: `GET /orgs/{orgId}/members?role=` rows have `membershipId, userId, organizationId, email, name, role, createdAt`
   (no `status`, see G14). Detail uses `GET /users/{id}` (memberships included).
 
 **Option A — adapt the UI.**
+
 - Edit sheet: **name** (everyone who may edit), **email** and **status** only when the capability says
   so (super-admin). An admin who gets `403` on a teacher with memberships elsewhere sees "This teacher
   also belongs to another organization; only the platform owner can edit their account".
@@ -317,6 +329,7 @@ reset link covers the need without an admin ever knowing a password.
 **Requirement.** Delete students from an organization panel.
 
 **What the API offers today** (`student/StudentServiceImpl.delete`):
+
 - **Super-admin:** detaches the student from **everything** (all memberships, all roster rows, all
   enrollments dropped) and therefore **always soft-deletes the account** and revokes its sessions —
   even if the student belongs to other organizations or freelance teachers.
@@ -330,14 +343,15 @@ reset link covers the need without an admin ever knowing a password.
   and lessons stay as history.
 
 **Option A — adapt the UI.**
+
 - Org panel row action **Remove from this organization** = `DELETE /memberships/{membershipId}` (from
-  the members list). Confirm text: "Removes *Ana* from *Riverside*. Enrollments in Riverside's courses
+  the members list). Confirm text: "Removes _Ana_ from _Riverside_. Enrollments in Riverside's courses
   stay on record; lessons are kept as history. Her account and other organizations are not affected."
   With G6-B the dialog can also offer "and unenrol from N Riverside courses" (one `DELETE
-  /courses/{c}/enrollments/{studentId}` each).
+/courses/{c}/enrollments/{studentId}` each).
 - Danger zone **Delete student account** = `DELETE /students/{id}`. Copy for the super-admin: "Deletes
   the account everywhere and removes every membership, roster entry and enrollment. Lessons and
-  payments are kept." Copy for an admin: "Removes *Ana* from every organization you administer; the
+  payments are kept." Copy for an admin: "Removes _Ana_ from every organization you administer; the
   account is deleted only if nothing else links to it."
 
 **Option B.** `DELETE /orgs/{orgId}/students/{id}` — detach within one organization (membership,
@@ -353,16 +367,16 @@ roster rows, enrollments of that org) in one call. Nice to have.
 
 **What the API offers today** (`lesson/LessonServiceImpl`, invariants in `lesson/LessonEntity`):
 
-| Action | Endpoint | Allowed when | Otherwise |
-|---|---|---|---|
-| Create | `POST /lessons` | parties valid (`LessonPartiesResolver`) | `400` / `404` / `403` |
-| Schedule / reschedule / unschedule, change meeting link | `PATCH /lessons/{id}/schedule` | `PENDING` | `409` |
-| Close | `POST /lessons/{id}/close` | `PENDING` **and** `scheduledAt != null`; status ∈ `PRESENT, CANCELED, CANCELED_LATE` | `409` / `400` |
-| Edit journal | `PATCH /lessons/{id}/journal` | closed (not `PENDING`) | `409` |
-| Mark paid / unpaid | `PATCH /lessons/{id}/payment` | any state | — |
-| Delete | `DELETE /lessons/{id}` | `PENDING` **and** unpaid | `409 "Only pending, unpaid lessons can be deleted"` |
-| Prepaid credits | `POST /students/{id}/lessons/prepaid` | parties valid, `count` 1–50 | `400` |
-| Balances | `GET /students/{id}/lessons/summary?teacherId=` | student visible | `404` |
+| Action                                                  | Endpoint                                        | Allowed when                                                                         | Otherwise                                           |
+| ------------------------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------ | --------------------------------------------------- |
+| Create                                                  | `POST /lessons`                                 | parties valid (`LessonPartiesResolver`)                                              | `400` / `404` / `403`                               |
+| Schedule / reschedule / unschedule, change meeting link | `PATCH /lessons/{id}/schedule`                  | `PENDING`                                                                            | `409`                                               |
+| Close                                                   | `POST /lessons/{id}/close`                      | `PENDING` **and** `scheduledAt != null`; status ∈ `PRESENT, CANCELED, CANCELED_LATE` | `409` / `400`                                       |
+| Edit journal                                            | `PATCH /lessons/{id}/journal`                   | closed (not `PENDING`)                                                               | `409`                                               |
+| Mark paid / unpaid                                      | `PATCH /lessons/{id}/payment`                   | any state                                                                            | —                                                   |
+| Delete                                                  | `DELETE /lessons/{id}`                          | `PENDING` **and** unpaid                                                             | `409 "Only pending, unpaid lessons can be deleted"` |
+| Prepaid credits                                         | `POST /students/{id}/lessons/prepaid`           | parties valid, `count` 1–50                                                          | `400`                                               |
+| Balances                                                | `GET /students/{id}/lessons/summary?teacherId=` | student visible                                                                      | `404`                                               |
 
 Not supported: changing a lesson's **teacher, student or course** (the course changes only implicitly
 when a generic credit is consumed), **reopening** or changing the status of a closed lesson,
@@ -436,6 +450,7 @@ shared base URL because the mailer cannot know which app the user prefers). ~1 h
 **Requirement.** A static SPA must store tokens somewhere; the API must accept its origin.
 
 **What the API offers today.**
+
 - Bearer tokens only; the API never sets cookies (`config/CorsConfig`: `allowCredentials(false)`;
   `API.md §1.1`). Access token ≈ 15 min, refresh token 90 days sliding and **rotating**; reuse of a
   rotated token revokes every session of the user (`401 INVALID_REFRESH_TOKEN`); disabled accounts
@@ -484,10 +499,10 @@ reuses the tokens; unit tests use MSW.
 
 Recorded for the backend maintainers; none blocks the console.
 
-| Where | Docs say | Code does |
-|---|---|---|
-| `API.md §4` `POST /auth/student-login` | `401 INVALID_CREDENTIALS` | `401 STUDENT_LOGIN_FAILED` (`AuthServiceImpl.studentLogin`) |
-| `API.md §5` `PATCH /users/{id}` `password` | "self only" | non-self → **`400 BAD_REQUEST`**, not `403` (`UserServiceImpl.update`) |
-| `API.md §7` `POST /students` | `organizationId` optional for freelance / single-org callers | correct, but the super-admin can never omit it, even with a freelance `teacherId` (G5) |
-| `architecture.md` → Authentication → Endpoints | `POST /orgs/{orgId}/invite`, `POST /teacher/students/invite`, `POST /auth/invite` | stale design table; real routes are `API.md §6` |
-| OpenAPI (`/v3/api-docs`) | — | no `ApiError` schema; nullable fields are not marked (`T?` in API.md is plain `T`); `Pageable` is Spring's object, not the `page/size/sort` query params. The generated types get a hand-written nullable overlay (see `docs/PLAN.md`). |
+| Where                                          | Docs say                                                                          | Code does                                                                                                                                                                                                                               |
+| ---------------------------------------------- | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `API.md §4` `POST /auth/student-login`         | `401 INVALID_CREDENTIALS`                                                         | `401 STUDENT_LOGIN_FAILED` (`AuthServiceImpl.studentLogin`)                                                                                                                                                                             |
+| `API.md §5` `PATCH /users/{id}` `password`     | "self only"                                                                       | non-self → **`400 BAD_REQUEST`**, not `403` (`UserServiceImpl.update`)                                                                                                                                                                  |
+| `API.md §7` `POST /students`                   | `organizationId` optional for freelance / single-org callers                      | correct, but the super-admin can never omit it, even with a freelance `teacherId` (G5)                                                                                                                                                  |
+| `architecture.md` → Authentication → Endpoints | `POST /orgs/{orgId}/invite`, `POST /teacher/students/invite`, `POST /auth/invite` | stale design table; real routes are `API.md §6`                                                                                                                                                                                         |
+| OpenAPI (`/v3/api-docs`)                       | —                                                                                 | no `ApiError` schema; nullable fields are not marked (`T?` in API.md is plain `T`); `Pageable` is Spring's object, not the `page/size/sort` query params. The generated types get a hand-written nullable overlay (see `docs/PLAN.md`). |

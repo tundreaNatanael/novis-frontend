@@ -18,24 +18,24 @@ deliverable; it is updated when a phase changes it.
 
 ## 2. Stack (pinned, checked on npm 2026-10-16)
 
-| Area | Package | Version | Notes |
-|---|---|---|---|
-| UI | `react`, `react-dom` | 19.3.1 | |
-| Build | `vite` | 8.3.4 | `@vitejs/plugin-react` 6.1.2 |
-| Language | `typescript` | 6.0.3 | **not 7.0.2**: `typescript-eslint` 8.71 peers `<6.1`; `openapi-typescript` peers `^5` (verify it runs on 6; fallback: run codegen with `npx -p typescript@5.9`) |
-| Routing | `react-router` | 8.4.0 | ESM-only; data mode (`createBrowserRouter`), `RouterProvider` from `react-router/dom`; `react-router-dom` no longer exists |
-| Server state | `@tanstack/react-query` | 5.104.3 | + devtools in dev |
-| Tables | `@tanstack/react-table` | 9.3.1 | v9 API: `useTable`, `tableFeatures({ rowSortingFeature, rowPaginationFeature, columnVisibilityFeature })`, `manualSorting`/`manualPagination`, `createColumnHelper<typeof features, Row>()`, `flexRender` |
-| Forms | `react-hook-form`, `@hookform/resolvers`, `zod` | 7.90.0, 5.9.1, 4.6.7 | |
-| Styling | `tailwindcss`, `@tailwindcss/vite` | 4.3.3 | CSS-first config, tokens as CSS variables |
-| Components | `shadcn` (CLI), `radix-ui`, `class-variance-authority`, `clsx`, `tailwind-merge`, `tw-animate-css` | 4.21.5, 1.8.1, 0.7.1, 2.1.1, 3.7.0, 1.4.0 | re-themed with our tokens |
-| Icons / toasts / dates / palette | `lucide-react`, `sonner`, `date-fns`, `cmdk` | 1.58.0, 2.0.8, 4.4.0, 1.1.1 | |
-| Fonts | `@fontsource-variable/inter`, `@fontsource-variable/jetbrains-mono` | 5.3.0, 5.3.0 | self-hosted, no FOUT from third parties |
-| API types | `openapi-typescript` | 7.13.0 | `npm run api:types` → `src/api/schema.d.ts` (committed) |
-| Unit tests | `vitest`, `jsdom`, `@testing-library/react`, `@testing-library/jest-dom`, `@testing-library/user-event`, `msw` | 5.0.5, 30.1.3, 16.3.3, 7.0.1, 14.6.8, 3.0.3 | MSW 3: `http`/`HttpResponse` from `msw/http`, `setupServer` from `msw/node`, `onUnhandledFrame: 'error'` |
-| e2e | `@playwright/test` | 1.64.1 | smoke suite + responsive screenshots |
-| Lint / format | `eslint`, `typescript-eslint`, `eslint-plugin-react-hooks`, `eslint-plugin-react-refresh`, `eslint-plugin-jsx-a11y`, `eslint-config-prettier`, `prettier` | 10.12.0, 8.71.2, 7.1.1, 0.5.7, 6.10.2, 10.1.8, 3.9.10 | |
-| Types | `@types/react`, `@types/react-dom`, `@types/node` | 19.3.0, 19.3.0, 26.6.5 | |
+| Area                             | Package                                                                                                                                                   | Version                                               | Notes                                                                                                                                                                                                     |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| UI                               | `react`, `react-dom`                                                                                                                                      | 19.3.1                                                |                                                                                                                                                                                                           |
+| Build                            | `vite`                                                                                                                                                    | 8.3.4                                                 | `@vitejs/plugin-react` 6.1.2                                                                                                                                                                              |
+| Language                         | `typescript`                                                                                                                                              | 6.0.3                                                 | **not 7.0.2**: `typescript-eslint` 8.71 peers `<6.1`; `openapi-typescript` peers `^5` (verify it runs on 6; fallback: run codegen with `npx -p typescript@5.9`)                                           |
+| Routing                          | `react-router`                                                                                                                                            | 8.4.0                                                 | ESM-only; data mode (`createBrowserRouter`), `RouterProvider` from `react-router/dom`; `react-router-dom` no longer exists                                                                                |
+| Server state                     | `@tanstack/react-query`                                                                                                                                   | 5.104.3                                               | + devtools in dev                                                                                                                                                                                         |
+| Tables                           | `@tanstack/react-table`                                                                                                                                   | 9.3.1                                                 | v9 API: `useTable`, `tableFeatures({ rowSortingFeature, rowPaginationFeature, columnVisibilityFeature })`, `manualSorting`/`manualPagination`, `createColumnHelper<typeof features, Row>()`, `flexRender` |
+| Forms                            | `react-hook-form`, `@hookform/resolvers`, `zod`                                                                                                           | 7.90.0, 5.9.1, 4.6.7                                  |                                                                                                                                                                                                           |
+| Styling                          | `tailwindcss`, `@tailwindcss/vite`                                                                                                                        | 4.3.3                                                 | CSS-first config, tokens as CSS variables                                                                                                                                                                 |
+| Components                       | `shadcn` (CLI), `radix-ui`, `class-variance-authority`, `clsx`, `tailwind-merge`, `tw-animate-css`                                                        | 4.21.5, 1.8.1, 0.7.1, 2.1.1, 3.7.0, 1.4.0             | re-themed with our tokens                                                                                                                                                                                 |
+| Icons / toasts / dates / palette | `lucide-react`, `sonner`, `date-fns`, `cmdk`                                                                                                              | 1.58.0, 2.0.8, 4.4.0, 1.1.1                           |                                                                                                                                                                                                           |
+| Fonts                            | `@fontsource-variable/inter`, `@fontsource-variable/jetbrains-mono`                                                                                       | 5.3.0, 5.3.0                                          | self-hosted, no FOUT from third parties                                                                                                                                                                   |
+| API types                        | `openapi-typescript`                                                                                                                                      | 7.13.0                                                | `npm run api:types` → `src/api/schema.d.ts` (committed)                                                                                                                                                   |
+| Unit tests                       | `vitest`, `jsdom`, `@testing-library/react`, `@testing-library/jest-dom`, `@testing-library/user-event`, `msw`                                            | 5.0.5, 30.1.3, 16.3.3, 7.0.1, 14.6.8, 3.0.3           | MSW 3: `http`/`HttpResponse` from `msw/http`, `setupServer` from `msw/node`, `onUnhandledFrame: 'error'`                                                                                                  |
+| e2e                              | `@playwright/test`                                                                                                                                        | 1.64.1                                                | smoke suite + responsive screenshots                                                                                                                                                                      |
+| Lint / format                    | `eslint`, `typescript-eslint`, `eslint-plugin-react-hooks`, `eslint-plugin-react-refresh`, `eslint-plugin-jsx-a11y`, `eslint-config-prettier`, `prettier` | 10.12.0, 8.71.2, 7.1.1, 0.5.7, 6.10.2, 10.1.8, 3.9.10 |                                                                                                                                                                                                           |
+| Types                            | `@types/react`, `@types/react-dom`, `@types/node`                                                                                                         | 19.3.0, 19.3.0, 26.6.5                                |                                                                                                                                                                                                           |
 
 Runtime: Node 24 (react-router needs ≥ 22.22, msw / vitest ≥ 22.12). Theme switching is a 40-line
 provider of our own (class on `<html>`, system + toggle, persisted), not `next-themes`.
@@ -46,38 +46,38 @@ Guards: `RequireAuth` (session + `GET /users/me`), `RequireSuperAdmin`, `Require
 List state (search, filters, sort, page, view) lives in the query string; sheet state too
 (`?new=1`, `?edit=<id>`) so forms are deep-linkable.
 
-| Path | Who | Page | Main API calls |
-|---|---|---|---|
-| `/login` | public | Sign in | `POST /auth/login` → `GET /users/me` |
-| `/forgot-password` | public | Request reset link | `POST /auth/forgot-password` |
-| `/reset-password/:token` | public | Choose new password | `POST /auth/reset-password` |
-| `/invite/:token` | public | Accept invite (name + password) | `POST /auth/accept-invite` → `GET /users/me` |
-| `/no-access` | signed in, no admin role | "This console is for administrators" + sign out | `POST /auth/logout` |
-| `/` | signed in | redirect: super-admin → `/platform`; one admin org → `/org/:orgId`; several → `/org` | `GET /users/me` |
-| `/account` | signed in | Own profile: name, email, change password, sessions note | `PATCH /users/{me}` |
-| `/platform` | super-admin | Overview: counts (`totalElements` of orgs / students / courses / lessons), shortcuts, recent orgs | `GET /orgs?size=1`, `GET /students?size=1`, … |
-| `/platform/orgs` | super-admin | Organizations list + create sheet | `GET /orgs`, `POST /orgs` |
-| `/platform/orgs/:orgId` | super-admin | Org workspace → Overview (edit name / slug / status, archive / restore) | `GET /orgs/{id}`, `PATCH /orgs/{id}`, `DELETE /orgs/{id}` |
-| `/platform/orgs/:orgId/admins` · `/admins/:userId` | super-admin | Admins list + create; admin detail | `GET /orgs/{id}/members?role=ADMIN`, `POST /orgs/{id}/staff` (G1-B) or `POST /orgs/{id}/invites`, `GET /users/{id}`, `PATCH /users/{id}`, `DELETE /memberships/{id}`, `DELETE /users/{id}` |
-| `/platform/orgs/:orgId/teachers` · `/teachers/:userId` | super-admin | Teachers list + create (email, password, course); teacher detail with courses | members `role=TEACHER`, staff/invite create, `POST /courses`, `PATCH /courses/{id}`, `GET /courses?organizationId&teacherId` (G4-B) |
-| `/platform/orgs/:orgId/students` · `/students/:studentId` | super-admin | Students list + create (name, email, course); student detail with balances and courses | members `role=STUDENT`, `POST /students`, `POST /courses/{c}/enrollments`, `GET /students/{id}`, `GET /users/{id}`, `GET /students/{id}/lessons/summary`, `GET /students/{id}/enrollments` (G6-B) |
-| `/platform/orgs/:orgId/courses` · `/courses/:courseId` | super-admin | Courses list + create (title, owner teacher); course detail with enrollments | `GET /courses?organizationId` (G4-B), `POST /courses`, `PATCH /courses/{id}`, `DELETE /courses/{id}`, `GET/POST/DELETE /courses/{id}/enrollments` |
-| `/platform/orgs/:orgId/invites` | super-admin | Pending invites: revoke, resend | `GET /orgs/{id}/invites`, `DELETE /invites/{id}`, `POST /orgs/{id}/invites` |
-| `/platform/orgs/:orgId/lessons` | super-admin | Org ledger (filters preset to the org) | `GET /lessons?organizationId` (G4-B) |
-| `/platform/freelance` | super-admin | Freelance teachers list + create / invite | `GET /users?freelance=true` (G5-B), `POST /freelance-teachers` (G1-B), `POST /invites`, `GET /invites` (G5-B) |
-| `/platform/freelance/:teacherId` | super-admin | Profile (every field, edit, delete) | `GET /users/{id}`, `PATCH /users/{id}`, `DELETE /users/{id}` |
-| `/platform/freelance/:teacherId/students` · `/students/:studentId` | super-admin | Their students + create (name, email, course) | `GET /students?teacherId` (G5-B), `POST /students { teacherId }` (G5-B fix), detail as above |
-| `/platform/freelance/:teacherId/courses` · `/courses/:courseId` | super-admin | Their courses | `GET /courses?teacherId` (G4-B), course detail as above |
-| `/platform/freelance/:teacherId/lessons` | super-admin | Their ledger | `GET /lessons?teacherId` |
-| `/platform/lessons` | super-admin | Global ledger: table and agenda (`?view=agenda`), all filters | `GET /lessons?…` |
-| `/platform/lessons/:lessonId` | super-admin | Lesson detail and actions | `GET /lessons/{id}`, `PATCH …/schedule`, `POST …/close`, `PATCH …/journal`, `PATCH …/payment`, `DELETE /lessons/{id}` |
-| `/org` | admin, several orgs | Organization picker | `GET /users/me` |
-| `/org/:orgId` | admin of that org | Org workspace → Overview (edit name / slug; status read-only) | `GET /orgs/{id}`, `PATCH /orgs/{id}` |
-| `/org/:orgId/teachers` · `/teachers/:userId` | admin | Same screens as the platform mount, admin capabilities | as above (no status / email edit, no account delete unless covering) |
-| `/org/:orgId/students` · `/students/:studentId` | admin | Same | as above |
-| `/org/:orgId/courses` · `/courses/:courseId` | admin | Same | as above |
-| `/org/:orgId/invites` | admin | Same (TEACHER invites only) | as above |
-| `*` | any | Not found | — |
+| Path                                                               | Who                      | Page                                                                                              | Main API calls                                                                                                                                                                                    |
+| ------------------------------------------------------------------ | ------------------------ | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/login`                                                           | public                   | Sign in                                                                                           | `POST /auth/login` → `GET /users/me`                                                                                                                                                              |
+| `/forgot-password`                                                 | public                   | Request reset link                                                                                | `POST /auth/forgot-password`                                                                                                                                                                      |
+| `/reset-password/:token`                                           | public                   | Choose new password                                                                               | `POST /auth/reset-password`                                                                                                                                                                       |
+| `/invite/:token`                                                   | public                   | Accept invite (name + password)                                                                   | `POST /auth/accept-invite` → `GET /users/me`                                                                                                                                                      |
+| `/no-access`                                                       | signed in, no admin role | "This console is for administrators" + sign out                                                   | `POST /auth/logout`                                                                                                                                                                               |
+| `/`                                                                | signed in                | redirect: super-admin → `/platform`; one admin org → `/org/:orgId`; several → `/org`              | `GET /users/me`                                                                                                                                                                                   |
+| `/account`                                                         | signed in                | Own profile: name, email, change password, sessions note                                          | `PATCH /users/{me}`                                                                                                                                                                               |
+| `/platform`                                                        | super-admin              | Overview: counts (`totalElements` of orgs / students / courses / lessons), shortcuts, recent orgs | `GET /orgs?size=1`, `GET /students?size=1`, …                                                                                                                                                     |
+| `/platform/orgs`                                                   | super-admin              | Organizations list + create sheet                                                                 | `GET /orgs`, `POST /orgs`                                                                                                                                                                         |
+| `/platform/orgs/:orgId`                                            | super-admin              | Org workspace → Overview (edit name / slug / status, archive / restore)                           | `GET /orgs/{id}`, `PATCH /orgs/{id}`, `DELETE /orgs/{id}`                                                                                                                                         |
+| `/platform/orgs/:orgId/admins` · `/admins/:userId`                 | super-admin              | Admins list + create; admin detail                                                                | `GET /orgs/{id}/members?role=ADMIN`, `POST /orgs/{id}/staff` (G1-B) or `POST /orgs/{id}/invites`, `GET /users/{id}`, `PATCH /users/{id}`, `DELETE /memberships/{id}`, `DELETE /users/{id}`        |
+| `/platform/orgs/:orgId/teachers` · `/teachers/:userId`             | super-admin              | Teachers list + create (email, password, course); teacher detail with courses                     | members `role=TEACHER`, staff/invite create, `POST /courses`, `PATCH /courses/{id}`, `GET /courses?organizationId&teacherId` (G4-B)                                                               |
+| `/platform/orgs/:orgId/students` · `/students/:studentId`          | super-admin              | Students list + create (name, email, course); student detail with balances and courses            | members `role=STUDENT`, `POST /students`, `POST /courses/{c}/enrollments`, `GET /students/{id}`, `GET /users/{id}`, `GET /students/{id}/lessons/summary`, `GET /students/{id}/enrollments` (G6-B) |
+| `/platform/orgs/:orgId/courses` · `/courses/:courseId`             | super-admin              | Courses list + create (title, owner teacher); course detail with enrollments                      | `GET /courses?organizationId` (G4-B), `POST /courses`, `PATCH /courses/{id}`, `DELETE /courses/{id}`, `GET/POST/DELETE /courses/{id}/enrollments`                                                 |
+| `/platform/orgs/:orgId/invites`                                    | super-admin              | Pending invites: revoke, resend                                                                   | `GET /orgs/{id}/invites`, `DELETE /invites/{id}`, `POST /orgs/{id}/invites`                                                                                                                       |
+| `/platform/orgs/:orgId/lessons`                                    | super-admin              | Org ledger (filters preset to the org)                                                            | `GET /lessons?organizationId` (G4-B)                                                                                                                                                              |
+| `/platform/freelance`                                              | super-admin              | Freelance teachers list + create / invite                                                         | `GET /users?freelance=true` (G5-B), `POST /freelance-teachers` (G1-B), `POST /invites`, `GET /invites` (G5-B)                                                                                     |
+| `/platform/freelance/:teacherId`                                   | super-admin              | Profile (every field, edit, delete)                                                               | `GET /users/{id}`, `PATCH /users/{id}`, `DELETE /users/{id}`                                                                                                                                      |
+| `/platform/freelance/:teacherId/students` · `/students/:studentId` | super-admin              | Their students + create (name, email, course)                                                     | `GET /students?teacherId` (G5-B), `POST /students { teacherId }` (G5-B fix), detail as above                                                                                                      |
+| `/platform/freelance/:teacherId/courses` · `/courses/:courseId`    | super-admin              | Their courses                                                                                     | `GET /courses?teacherId` (G4-B), course detail as above                                                                                                                                           |
+| `/platform/freelance/:teacherId/lessons`                           | super-admin              | Their ledger                                                                                      | `GET /lessons?teacherId`                                                                                                                                                                          |
+| `/platform/lessons`                                                | super-admin              | Global ledger: table and agenda (`?view=agenda`), all filters                                     | `GET /lessons?…`                                                                                                                                                                                  |
+| `/platform/lessons/:lessonId`                                      | super-admin              | Lesson detail and actions                                                                         | `GET /lessons/{id}`, `PATCH …/schedule`, `POST …/close`, `PATCH …/journal`, `PATCH …/payment`, `DELETE /lessons/{id}`                                                                             |
+| `/org`                                                             | admin, several orgs      | Organization picker                                                                               | `GET /users/me`                                                                                                                                                                                   |
+| `/org/:orgId`                                                      | admin of that org        | Org workspace → Overview (edit name / slug; status read-only)                                     | `GET /orgs/{id}`, `PATCH /orgs/{id}`                                                                                                                                                              |
+| `/org/:orgId/teachers` · `/teachers/:userId`                       | admin                    | Same screens as the platform mount, admin capabilities                                            | as above (no status / email edit, no account delete unless covering)                                                                                                                              |
+| `/org/:orgId/students` · `/students/:studentId`                    | admin                    | Same                                                                                              | as above                                                                                                                                                                                          |
+| `/org/:orgId/courses` · `/courses/:courseId`                       | admin                    | Same                                                                                              | as above                                                                                                                                                                                          |
+| `/org/:orgId/invites`                                              | admin                    | Same (TEACHER invites only)                                                                       | as above                                                                                                                                                                                          |
+| `*`                                                                | any                      | Not found                                                                                         | —                                                                                                                                                                                                 |
 
 Lesson detail has a single URL (`/platform/lessons/:lessonId`); org and freelance ledgers link to it.
 Admins do not get the Admins or Lessons tabs; the router does not even register them under `/org`.
@@ -146,9 +146,9 @@ scroll-area, avatar, sonner.
   affected keys (documented in each module's header); the only optimistic update is paid / unpaid.
 - **Capabilities** (`src/lib/permissions.ts`): `deriveCapabilities(me, orgId?)` →
   `{ isSuperAdmin, isOrgAdmin, canManageOrganizations, canChangeOrgStatus, canManageAdmins,
-  canManageTeachers, canManageStudents, canManageCourses, canReassignCourse, canManageInvites,
-  canManageLessons, canManageFreelance, canEditUser(user), canEditEmail(user), canEditStatus,
-  canDeleteAccount(user), canRemoveMembership(m), canSendResetLink(user) }` and pure lesson
+canManageTeachers, canManageStudents, canManageCourses, canReassignCourse, canManageInvites,
+canManageLessons, canManageFreelance, canEditUser(user), canEditEmail(user), canEditStatus,
+canDeleteAccount(user), canRemoveMembership(m), canSendResetLink(user) }` and pure lesson
   predicates (`canSchedule`, `canClose`, `canEditJournal`, `canDelete`, `deleteDisabledReason`).
 
 ## 7. Design plan
@@ -162,18 +162,18 @@ removed under `prefers-reduced-motion`).
 
 **Colors** (CSS variables, `oklch` in code; hex here for reference):
 
-| Token | Light | Dark | Role |
-|---|---|---|---|
-| `--ink` | `#1B2432` | `#F6F3EC` (as text) | primary text, sidebar in light |
-| `--paper` | `#F6F3EC` | `#0F151E` | page background |
-| `--surface` | `#FFFFFF` | `#161E2A` | cards, tables, sheets |
-| `--line` | `#D9D4C7` | `#2A3444` | borders, dividers, stave lines |
-| `--slate` | `#5B6573` | `#9AA4B2` | secondary text, icons |
-| `--brass` | `#8A6218` | `#D9A441` | primary actions, active nav, focus ring, note head |
-| `--success` | `#2F7D5B` | `#5BBF8F` | held, paid |
-| `--warning` | `#B45309` | `#F0A24A` | canceled late (charged) |
-| `--danger` | `#B3261E` | `#F28B82` | destructive actions, unpaid due |
-| `--info` | `#2B6CB0` | `#7FB2F0` | upcoming |
+| Token       | Light     | Dark                | Role                                               |
+| ----------- | --------- | ------------------- | -------------------------------------------------- |
+| `--ink`     | `#1B2432` | `#F6F3EC` (as text) | primary text, sidebar in light                     |
+| `--paper`   | `#F6F3EC` | `#0F151E`           | page background                                    |
+| `--surface` | `#FFFFFF` | `#161E2A`           | cards, tables, sheets                              |
+| `--line`    | `#D9D4C7` | `#2A3444`           | borders, dividers, stave lines                     |
+| `--slate`   | `#5B6573` | `#9AA4B2`           | secondary text, icons                              |
+| `--brass`   | `#8A6218` | `#D9A441`           | primary actions, active nav, focus ring, note head |
+| `--success` | `#2F7D5B` | `#5BBF8F`           | held, paid                                         |
+| `--warning` | `#B45309` | `#F0A24A`           | canceled late (charged)                            |
+| `--danger`  | `#B3261E` | `#F28B82`           | destructive actions, unpaid due                    |
+| `--info`    | `#2B6CB0` | `#7FB2F0`           | upcoming                                           |
 
 All text pairs meet WCAG AA (brass on white 5.5:1, slate on paper 5.3:1, brass-dark on ink 7:1).
 Status is never color alone: badge = icon + text; paid dot has a check glyph.
@@ -284,16 +284,16 @@ respected, contrast checked in both themes, status conveyed by icon + text.
 
 ## 10. Phases
 
-| # | Phase | Deliverables | Done when |
-|---|---|---|---|
-| 0 | Discovery | `docs/BACKEND_GAPS.md`, `docs/PLAN.md`, `docs/DECISIONS.md` | **checkpoint: you decide the gaps** |
-| 0b | Backend changes (if approved) | per `../novis-backend/CLAUDE.md` recipe, tests green, API.md / README / CHANGELOG / CLAUDE.md updated | `cd api && ./mvnw test` passes |
-| 1 | Foundation | tooling, tokens + themes, shell, API client + generated types, session + guards, public routes, `/no-access`, `/account`; README / CLAUDE.md / CHANGELOG started | gates pass, screenshots reviewed |
-| 2 | Organizations + org workspace (super-admin) | orgs list / create / overview / archive; admins, teachers, students, courses, invites tabs | flows tested with MSW |
-| 3 | Freelance | list, profile, students, courses | same |
-| 4 | Lessons | ledger, agenda, detail, create, schedule, close, journal, payment, delete, prepaid, balances | same |
-| 5 | Org admin console | `/org/:orgId/*`, picker / switcher, admin capabilities | same |
-| 6 | Polish | responsive + a11y pass with screenshots, states, dark theme | same |
-| 7 | Docs and wrap-up | README router + actions tables, CLAUDE.md, CHANGELOG, DECISIONS, BACKEND_GAPS; summary | commit |
+| #   | Phase                                       | Deliverables                                                                                                                                                     | Done when                           |
+| --- | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| 0   | Discovery                                   | `docs/BACKEND_GAPS.md`, `docs/PLAN.md`, `docs/DECISIONS.md`                                                                                                      | **checkpoint: you decide the gaps** |
+| 0b  | Backend changes (if approved)               | per `../novis-backend/CLAUDE.md` recipe, tests green, API.md / README / CHANGELOG / CLAUDE.md updated                                                            | `cd api && ./mvnw test` passes      |
+| 1   | Foundation                                  | tooling, tokens + themes, shell, API client + generated types, session + guards, public routes, `/no-access`, `/account`; README / CLAUDE.md / CHANGELOG started | gates pass, screenshots reviewed    |
+| 2   | Organizations + org workspace (super-admin) | orgs list / create / overview / archive; admins, teachers, students, courses, invites tabs                                                                       | flows tested with MSW               |
+| 3   | Freelance                                   | list, profile, students, courses                                                                                                                                 | same                                |
+| 4   | Lessons                                     | ledger, agenda, detail, create, schedule, close, journal, payment, delete, prepaid, balances                                                                     | same                                |
+| 5   | Org admin console                           | `/org/:orgId/*`, picker / switcher, admin capabilities                                                                                                           | same                                |
+| 6   | Polish                                      | responsive + a11y pass with screenshots, states, dark theme                                                                                                      | same                                |
+| 7   | Docs and wrap-up                            | README router + actions tables, CLAUDE.md, CHANGELOG, DECISIONS, BACKEND_GAPS; summary                                                                           | commit                              |
 
 Each phase ends with a commit on `main`.

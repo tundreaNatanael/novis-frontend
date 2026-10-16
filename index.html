@@ -4,7 +4,25 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>novis-frontend</title>
+    <meta name="color-scheme" content="light dark" />
+    <meta
+      name="description"
+      content="Novis admin console for super-admins and organization admins."
+    />
+    <title>Novis admin</title>
+    <script>
+      // Apply the stored or system theme before the first paint (mirrors src/app/theme.tsx).
+      ;(function () {
+        try {
+          var setting = localStorage.getItem('novis-admin.theme')
+          var dark =
+            setting === 'dark' ||
+            (setting !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)
+          document.documentElement.classList.toggle('dark', dark)
+          document.documentElement.style.colorScheme = dark ? 'dark' : 'light'
+        } catch (e) {}
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

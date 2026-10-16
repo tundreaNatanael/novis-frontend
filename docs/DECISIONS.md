@@ -106,3 +106,48 @@ from `?new=1` / `?edit=<id>`.
 G13; A for G2, G3, G7, G8, G9, G10, G11, G12, G14, G15. Each becomes its own entry here once decided.
 **Consequences.** Phase 0b (backend) runs only for approved B items, following
 `../novis-backend/CLAUDE.md` → "Adding a feature".
+
+## D-015 · 2026-10-16 · Gap decisions taken (checkpoint)
+
+**Decision.** You chose the recommended defaults: **B** (backend change) for G1, G4, G5, G6 and
+G13; **A** (adapt the UI) for G2, G3, G7, G8, G9, G10, G11, G14, G15; G12 as config (CORS origin
+added to the backend `.env`). Build in `novis-frontend` (D-001 confirmed), TypeScript 6 (D-002).
+**Consequences.** Backend commits `9366a80` and `fc41fd6` on `novis-backend/main` add the endpoints
+and tests; `docs/BACKEND_GAPS.md` statuses updated. The running IntelliJ backend needs a restart to
+pick up `CORS_ALLOWED_ORIGINS`; meanwhile development points `VITE_API_BASE_URL` at a second
+instance on port 8090 started from the same checkout.
+
+## D-016 · 2026-10-16 · shadcn/ui on Radix via the `radix-nova` style; `cn` package
+
+**Decision.** `npx shadcn init -b radix -p nova` (style `radix-nova`, imports from `radix-ui`),
+not the CLI default `base-nova` (Base UI). Class merging uses the `cn` package shadcn 4 generates
+(`src/lib/utils.ts` re-exports it) instead of `clsx` + `tailwind-merge`.
+**Context.** The brief asks for Radix primitives; shadcn 4 defaults to Base UI.
+**Consequences.** `clsx`, `tailwind-merge`, `@base-ui/react`, `next-themes` and the Geist font the
+CLI installed were removed; the toaster uses our theme provider.
+
+## D-017 · 2026-10-16 · No `eslint-plugin-jsx-a11y`; axe in Playwright instead
+
+**Decision.** Drop the a11y ESLint plugin (its peer range stops at ESLint 9) and add
+`@axe-core/playwright` for accessibility checks in the e2e suite (Phase 6).
+**Consequences.** Accessibility is verified on rendered pages (Radix semantics, labels, contrast)
+rather than by static lint rules.
+
+## D-018 · 2026-10-16 · `openapi-typescript` runs through `npx` with TypeScript 5
+
+**Decision.** The generator declares a TypeScript 5 peer and refuses to install next to TypeScript 6,
+so `npm run api:types` runs `npx -p typescript@5.9.3 -p openapi-typescript@7.13.0` in its own
+sandbox; the output `src/api/schema.d.ts` is committed.
+
+## D-019 · 2026-10-16 · Response types are made strict by hand (`src/api/types.ts`)
+
+**Decision.** springdoc emits no `required` lists, so every generated field is optional. The overlay
+makes response fields required (`Strict<T>`), re-adds `| null` where API.md marks `?`
+(`Nullable<T, K>`), and hand-writes request bodies. Resource modules import only from `types.ts`.
+**Consequences.** After `api:types`, compile errors in `types.ts` are the first thing to fix.
+
+## D-020 · 2026-10-16 · Dark sidebar in both themes
+
+**Decision.** The sidebar is ink (`#1B2432`) in the light theme too, with the brass active marker;
+content areas stay paper / white. It is the one high-contrast surface and makes the shell
+recognizable without decoration.

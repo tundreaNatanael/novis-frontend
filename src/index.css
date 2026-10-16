@@ -1,111 +1,211 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Design tokens (docs/PLAN.md §7). Everything visible derives from these variables: no hard-coded
+ * colors outside this file. Semantic colors (success / warning / danger / info) always pair with
+ * an icon or text in the UI — never color alone.
+ */
+@theme inline {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-heading: var(--font-sans);
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--destructive);
+  --color-danger-soft: var(--destructive-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Radius scale: badges 3, controls 4, panels 8, sheets and dialogs 12. */
+  --radius-xs: 3px;
+  --radius-sm: 3px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  --radius-xl: 8px;
+  --radius-2xl: 12px;
+  --radius-3xl: 16px;
+  --radius-4xl: 20px;
+}
+
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+  /* Paper, ink, brass, slate */
+  --background: #f6f3ec;
+  --foreground: #1b2432;
+  --card: #ffffff;
+  --card-foreground: #1b2432;
+  --popover: #ffffff;
+  --popover-foreground: #1b2432;
+  --primary: #8a6218;
+  --primary-foreground: #ffffff;
+  --secondary: #ece7dc;
+  --secondary-foreground: #1b2432;
+  --muted: #efebe2;
+  --muted-foreground: #5b6573;
+  --accent: #efebe2;
+  --accent-foreground: #1b2432;
+  --destructive: #b3261e;
+  --destructive-foreground: #ffffff;
+  --destructive-soft: color-mix(in oklab, var(--destructive) 12%, transparent);
+  --border: #d9d4c7;
+  --input: #d9d4c7;
+  --ring: #8a6218;
+  --radius: 8px;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+  /* Semantic */
+  --success: #2f7d5b;
+  --success-soft: color-mix(in oklab, var(--success) 12%, transparent);
+  --warning: #92400e;
+  --warning-soft: color-mix(in oklab, #b45309 14%, transparent);
+  --info: #1e5a9e;
+  --info-soft: color-mix(in oklab, var(--info) 12%, transparent);
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --chart-1: #8a6218;
+  --chart-2: #2f7d5b;
+  --chart-3: #1e5a9e;
+  --chart-4: #5b6573;
+  --chart-5: #b45309;
 
-  @media (max-width: 1024px) {
-    font-size: 16px;
+  /* Sidebar: ink in both themes, brass marker */
+  --sidebar: #1b2432;
+  --sidebar-foreground: #e8e4da;
+  --sidebar-primary: #d9a441;
+  --sidebar-primary-foreground: #1b2432;
+  --sidebar-accent: #273243;
+  --sidebar-accent-foreground: #f6f3ec;
+  --sidebar-border: #2a3444;
+  --sidebar-ring: #d9a441;
+}
+
+.dark {
+  --background: #0f151e;
+  --foreground: #f6f3ec;
+  --card: #161e2a;
+  --card-foreground: #f6f3ec;
+  --popover: #161e2a;
+  --popover-foreground: #f6f3ec;
+  --primary: #d9a441;
+  --primary-foreground: #1b2432;
+  --secondary: #222c3a;
+  --secondary-foreground: #f6f3ec;
+  --muted: #1c2532;
+  --muted-foreground: #9aa4b2;
+  --accent: #222c3a;
+  --accent-foreground: #f6f3ec;
+  --destructive: #f28b82;
+  --destructive-foreground: #1b2432;
+  --destructive-soft: color-mix(in oklab, var(--destructive) 16%, transparent);
+  --border: #2a3444;
+  --input: #2a3444;
+  --ring: #d9a441;
+
+  --success: #5bbf8f;
+  --success-soft: color-mix(in oklab, var(--success) 16%, transparent);
+  --warning: #f0a24a;
+  --warning-soft: color-mix(in oklab, var(--warning) 16%, transparent);
+  --info: #7fb2f0;
+  --info-soft: color-mix(in oklab, var(--info) 16%, transparent);
+
+  --chart-1: #d9a441;
+  --chart-2: #5bbf8f;
+  --chart-3: #7fb2f0;
+  --chart-4: #9aa4b2;
+  --chart-5: #f0a24a;
+
+  --sidebar: #0b1017;
+  --sidebar-foreground: #d8d3c8;
+  --sidebar-primary: #d9a441;
+  --sidebar-primary-foreground: #1b2432;
+  --sidebar-accent: #161e2a;
+  --sidebar-accent-foreground: #f6f3ec;
+  --sidebar-border: #1f2937;
+  --sidebar-ring: #d9a441;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  /* Phone keyboards: inputs at 16px stop iOS from zooming in. */
+  input,
+  select,
+  textarea {
+    @apply text-base md:text-sm;
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--primary) 25%, transparent);
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+@layer components {
+  /* The stave: five thin ruled lines fading out to the right (brand motif, page titles, agenda rail). */
+  .stave-rule {
+    height: 9px;
+    background: repeating-linear-gradient(to bottom, var(--border) 0 1px, transparent 1px 2px);
+    mask-image: linear-gradient(to right, black 55%, transparent 100%);
   }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
+  .stave-rail {
+    width: 9px;
+    background: repeating-linear-gradient(to right, var(--border) 0 1px, transparent 1px 2px);
   }
 }
 
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-}
-
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
-}
-
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
 }
