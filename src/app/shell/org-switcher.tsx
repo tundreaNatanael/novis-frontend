@@ -32,7 +32,7 @@ export function OrgSwitcher({ me, activeOrgId }: { me: User; activeOrgId: string
         <Button
           variant="outline"
           size="sm"
-          className="max-w-56 justify-between gap-2"
+          className="max-w-44 shrink-0 justify-between gap-2 sm:max-w-56"
           aria-label="Switch organization"
         >
           <span className="truncate">{active?.organizationName ?? 'Choose organization'}</span>

@@ -7,7 +7,18 @@ All notable changes to the Novis admin console. The format follows
 
 ### Planned
 
-- Phase 5: organization picker and switcher polish for admins. Phase 6: polish. Phase 7: docs.
+- Phase 6: polish (responsive and accessibility pass, Playwright smoke suite). Phase 7: docs and summary.
+
+## Phase 5 — Organization admin console — 2026-10-16
+
+### Added
+
+- `/org`: the organization picker for admins of several organizations — one card per ADMIN membership with teacher and student counts (`GET /orgs/{id}/members?role=…&size=1`), TEACHER-only memberships hidden; a single-organization admin is sent straight to `/org/:orgId`.
+- Tests: picker lists ADMIN organizations with counts and opens the chosen workspace; single-organization admins skip the picker.
+
+### Verified
+
+- Signed in as an organization admin against the dev backend: picker, switcher (keeps the current tab), sidebar scoped to the organization, no Admins / Lessons tabs, `/platform/*` bounced home.
 
 ## Phase 4 — Lessons — 2026-10-16
 

@@ -233,3 +233,10 @@ asking for text it will throw away would be a form that pretends.
 optimistic update rolled back with the server's message.
 **Context.** `PATCH /lessons/{id}/payment` has no status precondition in the service; admins fix
 payment records after the fact. Deleting stays limited to pending + unpaid, as the server enforces.
+
+## D-032 · 2026-10-16 · Picker only for admins of several organizations
+
+**Decision.** `/org` lists ADMIN memberships as cards with live teacher / student counts; an admin
+of one organization never sees it (`homeFor` → `/org/:orgId`), and the top-bar switcher appears
+only with two or more. TEACHER memberships are not offered: the console is for administrators.
+**Context.** Most admins run one school; a picker in their way would be a click for nothing.

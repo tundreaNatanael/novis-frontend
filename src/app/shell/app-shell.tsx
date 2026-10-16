@@ -17,6 +17,8 @@ import { useLocalStorage } from '@/lib/use-local-storage'
 import { Breadcrumbs } from './breadcrumbs'
 import { CommandPalette } from './command-palette'
 import { navigationFor } from './navigation'
+import { cn } from '@/lib/utils'
+import { adminOrganizations } from '@/lib/permissions'
 import { OrgSwitcher } from './org-switcher'
 import { MobileNav, Sidebar } from './sidebar'
 import { ThemeToggle } from './theme-toggle'
@@ -29,6 +31,7 @@ export function Component() {
   const platformOrgMatch = useMatch('/platform/orgs/:orgId/*')
   const activeOrgId = orgMatch?.params.orgId ?? platformOrgMatch?.params.orgId ?? null
   const sections = navigationFor(me, activeOrgId)
+  const hasSwitcher = adminOrganizations(me).length > 1
   const [collapsed, setCollapsed] = useLocalStorage<boolean>('novis-admin.sidebar-collapsed', false)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [paletteOpen, setPaletteOpen] = useState(false)
@@ -61,7 +64,10 @@ export function Component() {
             </Button>
             <div className="flex min-w-0 flex-1 items-center gap-3">
               <OrgSwitcher me={me} activeOrgId={activeOrgId} />
-              <Breadcrumbs />
+              {/* With a switcher there is no room for crumbs on a phone; the page title says where you are. */}
+              <div className={cn('min-w-0', hasSwitcher && 'hidden sm:block')}>
+                <Breadcrumbs />
+              </div>
             </div>
             <Button
               variant="outline"

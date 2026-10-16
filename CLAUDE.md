@@ -125,10 +125,10 @@ from the files alone.
 
 ## Current state
 
-Phases 0–4 are done: discovery, approved backend changes (committed in `../novis-backend`),
+Phases 0–5 are done: discovery, approved backend changes (committed in `../novis-backend`),
 foundation, the organization workspace (also mounted at `/org/:orgId/*`), the freelance-teacher
-workspace and lessons. Phases 5–7 (organization picker and switcher polish for admins, polish,
-docs) follow `docs/PLAN.md` §10. Shared detail pages read their scope with `useWorkspaceScope()`
+workspace, lessons and the admin console (`/org` picker + switcher). Phases 6–7 (polish, docs)
+follow `docs/PLAN.md` §10. Shared detail pages read their scope with `useWorkspaceScope()`
 (`kind: 'org' | 'freelance'`). Lessons live in `src/features/lessons`: `LessonLedger` takes a
 `FixedScope` (`organizationId` or `teacherId`) and is mounted three times (global, organization
 tab, freelance tab); every filter is a URL param (`lessonFiltersFromParams`); names for id-only

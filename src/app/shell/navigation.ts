@@ -40,7 +40,8 @@ export function navigationFor(me: User, activeOrgId: string | null): NavSection[
     ]
   }
   const orgs = adminOrganizations(me)
-  const orgId = activeOrgId ?? orgs[0]?.organizationId
+  // On the picker (`/org`) an admin of several organizations has not chosen one yet.
+  const orgId = activeOrgId ?? (orgs.length === 1 ? orgs[0]?.organizationId : undefined)
   if (!orgId) return []
   const base = `/org/${orgId}`
   return [

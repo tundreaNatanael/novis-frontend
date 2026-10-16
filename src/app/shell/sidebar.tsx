@@ -29,6 +29,11 @@ export function Sidebar({ sections, collapsed, onToggle, className }: SidebarPro
         {!collapsed ? <span className="text-base font-semibold tracking-tight">Novis</span> : null}
       </div>
       <nav className="flex-1 overflow-y-auto px-2 py-2">
+        {sections.length === 0 && !collapsed ? (
+          <p className="px-2 py-1 text-xs text-sidebar-foreground/60">
+            Choose an organization to see its menu.
+          </p>
+        ) : null}
         {sections.map((section, index) => (
           <div key={section.label ?? index} className="mb-4">
             {section.label && !collapsed ? (
