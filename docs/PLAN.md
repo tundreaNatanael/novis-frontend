@@ -297,3 +297,6 @@ respected, contrast checked in both themes, status conveyed by icon + text.
 | 7   | Docs and wrap-up                            | README router + actions tables, CLAUDE.md, CHANGELOG, DECISIONS, BACKEND_GAPS; summary                                                                           | commit                              |
 
 Each phase ends with a commit on `main`.
+
+**Status (2026-10-16):** all phases delivered; see `CHANGELOG.md` for what each one landed and
+`README.md` → Verification for how it was checked.

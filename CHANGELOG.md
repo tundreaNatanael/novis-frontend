@@ -7,7 +7,29 @@ All notable changes to the Novis admin console. The format follows
 
 ### Planned
 
-- Phase 6: polish (responsive and accessibility pass, Playwright smoke suite). Phase 7: docs and summary.
+- Nothing scheduled. Follow-ups that need the backend are the **B** items in `docs/BACKEND_GAPS.md`.
+
+## Phase 7 — Documentation — 2026-10-16
+
+### Changed
+
+- README: every router row built, a Verification section (unit tests, live smoke, phone checks, screens + axe, manual passes) and two more known limitations; CLAUDE.md "Current state" describes the finished console and the open follow-ups; `docs/PLAN.md` §10 marks the phases delivered.
+
+## Phase 6 — Polish — 2026-10-16
+
+### Added
+
+- Playwright suite against the live API: `e2e/fixtures.ts` signs in once per worker through `POST /auth/login` and seeds the token stores (no login throttling, no refresh rotation per test); `e2e/console.spec.ts` runs organization → admin → teacher with course → student → lesson created, closed and paid → organization archived; `e2e/mobile.spec.ts` checks the phone layout (no horizontal scroll, stacked lists, collapsible filters, navigation drawer); `e2e/screens.spec.ts` captures every key screen at 1440 / 1280 / 1024 / 768 / 375 in both themes under `e2e/screenshots/` and fails on serious or critical axe violations (WCAG 2.0/2.1/2.2 A + AA tags). The mobile project runs the iPhone 13 descriptor in Chromium, so one `npx playwright install chromium` covers both projects.
+- The lesson filters collapse behind a "Filters" toggle on phones (expanded when any filter is active).
+- On tablets (768–1023 px) the sidebar starts as the icon rail, so lists keep their columns; expanding it is remembered (`novis-admin.sidebar-collapsed`).
+
+### Fixed
+
+- The platform overview and every two-column detail page could overflow the viewport on phones (grid children with `min-width: auto`); the base column is now `minmax(0, 1fr)` and the sections `min-w-0`.
+- Page titles no longer truncate at tablet widths: actions wrap under a long title instead of squeezing it.
+- Date columns (Created / Joined / Sent / Enrolled) and the ledger's Course / Organization columns are hidden between `md` and `lg`, so tables fit at 768 px without a horizontal scroll.
+- Light theme: `--success` darkened to `#26664a` and the avatar / filter-count badges switched to solid brass with white text, so every badge meets WCAG AA contrast (axe reported `color-contrast` on the success badges and the avatar fallback).
+- The agenda's day lists are valid `<ol>` markup again (the stave rail sits beside the list, not inside it).
 
 ## Phase 5 — Organization admin console — 2026-10-16
 

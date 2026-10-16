@@ -24,7 +24,7 @@ ESLint 10 + Prettier 3. Node ≥ 22.22.
 ```bash
 npm run dev            # http://localhost:5173 (backend CORS must allow this origin)
 npm run typecheck && npm run lint && npm test && npm run build   # the gate for every task
-npm run e2e            # Playwright against the dev server + a live API (VITE_API_BASE_URL)
+npm run e2e            # Playwright against the dev server + a live API (VITE_API_BASE_URL / .env); needs `npx playwright install chromium` once
 npm run api:types      # regenerate src/api/schema.d.ts from the running backend's OpenAPI
 ```
 
@@ -125,16 +125,19 @@ from the files alone.
 
 ## Current state
 
-Phases 0–5 are done: discovery, approved backend changes (committed in `../novis-backend`),
-foundation, the organization workspace (also mounted at `/org/:orgId/*`), the freelance-teacher
-workspace, lessons and the admin console (`/org` picker + switcher). Phases 6–7 (polish, docs)
-follow `docs/PLAN.md` §10. Shared detail pages read their scope with `useWorkspaceScope()`
-(`kind: 'org' | 'freelance'`). Lessons live in `src/features/lessons`: `LessonLedger` takes a
-`FixedScope` (`organizationId` or `teacherId`) and is mounted three times (global, organization
-tab, freelance tab); every filter is a URL param (`lessonFiltersFromParams`); names for id-only
-rows come from `useLessonNames`; the allowed transitions and their disabled reasons are
-`lessonRules` in `src/lib/permissions.ts`; the paid toggle is the only optimistic update. The
-test harness (`src/test/render.tsx`) mounts the real route tree with MSW.
+All seven phases of `docs/PLAN.md` §10 are delivered: discovery and the approved backend changes
+(committed in `../novis-backend`), foundation, the organization workspace (mounted at
+`/platform/orgs/:orgId/*` and `/org/:orgId/*`), the freelance-teacher workspace, lessons, the
+admin console (`/org` picker + switcher), the polish pass and the docs. Shared detail pages read
+their scope with `useWorkspaceScope()` (`kind: 'org' | 'freelance'`). Lessons live in
+`src/features/lessons`: `LessonLedger` takes a `FixedScope` and is mounted three times; every
+filter is a URL param (`lessonFiltersFromParams`); names for id-only rows come from
+`useLessonNames`; transitions and their disabled reasons are `lessonRules` in
+`src/lib/permissions.ts`; the paid toggle is the only optimistic update. Tests: Vitest + MSW over
+the real route tree (`src/test/render.tsx`), Playwright in `e2e/` (API sign-in fixture, live
+smoke flow, phone checks, screenshots + axe). Open follow-ups are the **B** items in
+`docs/BACKEND_GAPS.md` (G17 refresh grace window, G18 membership ids / nullable PATCH fields,
+G19 names on lesson rows) and the README's Known limitations.
 
 ## Don'ts
 
