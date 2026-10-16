@@ -1,4 +1,4 @@
-import { createBrowserRouter, type RouteObject } from 'react-router'
+import { createBrowserRouter, Outlet, type RouteObject } from 'react-router'
 import {
   HomeRedirect,
   RedirectIfAuthenticated,
@@ -8,11 +8,14 @@ import {
 } from '@/auth/guards'
 import { FullPageSpinner } from '@/components/full-page-spinner'
 import { RootErrorBoundary } from './root-error-boundary'
+import type { RouteHandle } from './route-handle'
+
+const crumb = (label: string): RouteHandle => ({ crumb: () => label })
 
 /**
  * Every route of the console (README → Router). Pages are lazy route modules exporting
- * `Component`; the organization workspace is defined once and mounted twice
- * (`/platform/orgs/:orgId/*` for super-admins, `/org/:orgId/*` for admins).
+ * `Component` (and `handle` for breadcrumbs); the organization workspace is defined once and
+ * mounted twice (`/platform/orgs/:orgId/*` for super-admins, `/org/:orgId/*` for admins).
  */
 function orgWorkspaceRoutes(mount: 'platform' | 'org'): RouteObject[] {
   const routes: RouteObject[] = [
@@ -47,7 +50,8 @@ function orgWorkspaceRoutes(mount: 'platform' | 'org'): RouteObject[] {
   return routes
 }
 
-export const router = createBrowserRouter([
+/** The route tree, also mounted in tests through `createMemoryRouter`. */
+export const routes: RouteObject[] = [
   {
     path: '/',
     ErrorBoundary: RootErrorBoundary,
@@ -80,54 +84,71 @@ export const router = createBrowserRouter([
                   },
                   {
                     path: 'platform/orgs',
-                    lazy: () => import('@/features/platform/organizations-page'),
-                  },
-                  {
-                    path: 'platform/orgs/:orgId',
-                    lazy: () => import('@/features/org-workspace/org-workspace-layout'),
-                    children: orgWorkspaceRoutes('platform'),
+                    element: <Outlet />,
+                    handle: crumb('Organizations'),
+                    children: [
+                      { index: true, lazy: () => import('@/features/platform/organizations-page') },
+                      {
+                        path: ':orgId',
+                        lazy: () => import('@/features/org-workspace/org-workspace-layout'),
+                        children: orgWorkspaceRoutes('platform'),
+                      },
+                    ],
                   },
                   {
                     path: 'platform/freelance',
-                    lazy: () => import('@/features/freelance/freelance-teachers-page'),
-                  },
-                  {
-                    path: 'platform/freelance/:teacherId',
-                    lazy: () => import('@/features/freelance/freelance-teacher-layout'),
+                    element: <Outlet />,
+                    handle: crumb('Freelance teachers'),
                     children: [
                       {
                         index: true,
-                        lazy: () => import('@/features/freelance/pages/freelance-profile-page'),
+                        lazy: () => import('@/features/freelance/freelance-teachers-page'),
                       },
                       {
-                        path: 'students',
-                        lazy: () => import('@/features/freelance/pages/freelance-students-page'),
-                      },
-                      {
-                        path: 'students/:studentId',
-                        lazy: () => import('@/features/org-workspace/pages/student-detail-page'),
-                      },
-                      {
-                        path: 'courses',
-                        lazy: () => import('@/features/freelance/pages/freelance-courses-page'),
-                      },
-                      {
-                        path: 'courses/:courseId',
-                        lazy: () => import('@/features/org-workspace/pages/course-detail-page'),
-                      },
-                      {
-                        path: 'lessons',
-                        lazy: () => import('@/features/freelance/pages/freelance-lessons-page'),
+                        path: ':teacherId',
+                        lazy: () => import('@/features/freelance/freelance-teacher-layout'),
+                        children: [
+                          {
+                            index: true,
+                            lazy: () => import('@/features/freelance/pages/freelance-profile-page'),
+                          },
+                          {
+                            path: 'students',
+                            lazy: () =>
+                              import('@/features/freelance/pages/freelance-students-page'),
+                          },
+                          {
+                            path: 'students/:studentId',
+                            lazy: () =>
+                              import('@/features/org-workspace/pages/student-detail-page'),
+                          },
+                          {
+                            path: 'courses',
+                            lazy: () => import('@/features/freelance/pages/freelance-courses-page'),
+                          },
+                          {
+                            path: 'courses/:courseId',
+                            lazy: () => import('@/features/org-workspace/pages/course-detail-page'),
+                          },
+                          {
+                            path: 'lessons',
+                            lazy: () => import('@/features/freelance/pages/freelance-lessons-page'),
+                          },
+                        ],
                       },
                     ],
                   },
                   {
                     path: 'platform/lessons',
-                    lazy: () => import('@/features/lessons/lessons-page'),
-                  },
-                  {
-                    path: 'platform/lessons/:lessonId',
-                    lazy: () => import('@/features/lessons/lesson-detail-page'),
+                    element: <Outlet />,
+                    handle: crumb('Lessons'),
+                    children: [
+                      { index: true, lazy: () => import('@/features/lessons/lessons-page') },
+                      {
+                        path: ':lessonId',
+                        lazy: () => import('@/features/lessons/lesson-detail-page'),
+                      },
+                    ],
                   },
                 ],
               },
@@ -149,4 +170,6 @@ export const router = createBrowserRouter([
       { path: '*', lazy: () => import('./not-found-page') },
     ],
   },
-])
+]
+
+export const router = createBrowserRouter(routes)

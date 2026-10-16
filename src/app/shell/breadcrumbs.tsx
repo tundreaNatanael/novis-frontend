@@ -25,7 +25,9 @@ export function Breadcrumbs() {
           const last = index === crumbs.length - 1
           return (
             <Fragment key={crumb.id}>
-              {index > 0 ? <ChevronRight className="size-3.5 shrink-0" aria-hidden /> : null}
+              {index > 0 ? (
+                <ChevronRight className="hidden size-3.5 shrink-0 sm:block" aria-hidden />
+              ) : null}
               <li
                 className={
                   last

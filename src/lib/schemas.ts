@@ -42,9 +42,14 @@ export const httpsUrlSchema = z
     message: 'Enter an absolute https:// link',
   })
 
-/** Empty string → undefined, otherwise validated; for optional text inputs. */
-export const optional = <T extends z.ZodTypeAny>(schema: T) =>
-  z.preprocess((value) => (value === '' || value === null ? undefined : value), schema.optional())
+/** An optional https link: empty means "not set"; anything else must be an absolute https:// URL. */
+export const optionalHttpsUrl = z
+  .string()
+  .trim()
+  .max(2048, 'Links are at most 2048 characters')
+  .refine((value) => value === '' || (/^https:\/\/\S+$/.test(value) && URL.canParse(value)), {
+    message: 'Enter an absolute https:// link',
+  })
 
 export const prepaidCountSchema = z.coerce
   .number()

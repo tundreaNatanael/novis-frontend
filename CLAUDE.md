@@ -125,11 +125,11 @@ from the files alone.
 
 ## Current state
 
-Phase 0 (discovery) and Phase 0b (approved backend changes, committed in `../novis-backend`) are
-done. Phase 1 (foundation) is done: tooling, tokens and themes, responsive shell, API client and
-generated types, session and guards, `/login`, `/forgot-password`, `/reset-password/:token`,
-`/invite/:token`, `/no-access`, `/account`. Phases 2–7 (org workspace, freelance, lessons, org
-admin mount, polish, docs) follow `docs/PLAN.md` §10; their routes exist as placeholder pages.
+Phases 0, 0b (backend changes, committed in `../novis-backend`), 1 (foundation) and 2 (organizations
+and the organization workspace: overview, admins, teachers, students, courses, invites, detail pages)
+are done. The workspace is already mounted at `/org/:orgId/*` for admins. Phases 3–7 (freelance
+teachers, lessons, organization picker, polish, docs) follow `docs/PLAN.md` §10; their routes are
+placeholder pages. The test harness (`src/test/render.tsx`) mounts the real route tree with MSW.
 
 ## Don'ts
 

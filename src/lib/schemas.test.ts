@@ -3,7 +3,7 @@ import { z } from 'zod'
 import {
   emailSchema,
   httpsUrlSchema,
-  optional,
+  optionalHttpsUrl,
   passwordConfirmation,
   passwordSchema,
   prepaidCountSchema,
@@ -43,10 +43,10 @@ describe('schemas mirror API.md §1.7', () => {
     expect(prepaidCountSchema.safeParse(2.5).success).toBe(false)
   })
 
-  it('optional() turns empty strings into undefined', () => {
-    const schema = z.object({ url: optional(httpsUrlSchema) })
-    expect(schema.parse({ url: '' })).toEqual({ url: undefined })
-    expect(schema.safeParse({ url: 'ftp://x' }).success).toBe(false)
+  it('optionalHttpsUrl accepts empty and valid https links only', () => {
+    expect(optionalHttpsUrl.parse('')).toBe('')
+    expect(optionalHttpsUrl.parse(' https://meet.example.com ')).toBe('https://meet.example.com')
+    expect(optionalHttpsUrl.safeParse('ftp://x').success).toBe(false)
   })
 
   it('password confirmation points the error at the repeated field', () => {

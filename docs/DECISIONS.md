@@ -146,8 +146,45 @@ makes response fields required (`Strict<T>`), re-adds `| null` where API.md mark
 (`Nullable<T, K>`), and hand-writes request bodies. Resource modules import only from `types.ts`.
 **Consequences.** After `api:types`, compile errors in `types.ts` are the first thing to fix.
 
+## D-021 · 2026-10-16 · Access token mirrored in `sessionStorage` (amends D-006)
+
+**Decision.** The access token is kept in memory **and** per tab in `sessionStorage`; the refresh
+token stays in `localStorage`.
+**Context.** With the access token in memory only, every page load refreshed. A reload that
+interrupted an in-flight refresh made the next load reuse the already-rotated token; the backend
+treats reuse as theft and revoked every session (observed during the Phase 1 visual review; gap G17).
+**Alternatives.** Keep memory-only and accept the race; a backend grace window for reuse (G17-B).
+**Consequences.** Reloads and navigations no longer touch `/auth/refresh`; a short-lived token sits
+in `sessionStorage` (same XSS exposure class as the refresh token, far shorter lifetime).
+
 ## D-020 · 2026-10-16 · Dark sidebar in both themes
 
 **Decision.** The sidebar is ink (`#1B2432`) in the light theme too, with the brass active marker;
 content areas stay paper / white. It is the one high-contrast surface and makes the shell
 recognizable without decoration.
+
+## D-022 · 2026-10-16 · Student create: course optional, roster under the course's teacher
+
+**Decision.** The "Add student" form takes name, email and an optional course. With a course, the
+student is created with `teacherId` = the course's teacher (roster row) and then enrolled.
+**Context.** The brief says "email and a course"; the API requires a name, and an organization with
+no course yet must still be able to add students.
+**Consequences.** `409 already enrolled` counts as success; other enrollment failures keep the created
+student and offer a retry.
+
+## D-023 · 2026-10-16 · Detail layouts stack below 1280 px
+
+**Decision.** Two-column detail pages (`xl:` grid) stack into one column below 1280 px.
+**Context.** At 1024 px the side panels wrapped every value.
+
+## D-024 · 2026-10-16 · Query devtools behind a local flag
+
+**Decision.** The React Query devtools render in development only when
+`localStorage['novis-admin.devtools'] === '1'`; the floating button otherwise covered sheet footers.
+
+## D-025 · 2026-10-16 · Test harness over the real route tree
+
+**Decision.** Flow tests render `createMemoryRouter(routes)` with the real providers and MSW handlers
+instead of mounting components in isolation, so guards, breadcrumbs, lazy loading and navigation
+after a create are tested too. Async timeouts are raised (8 s queries, 20 s tests) because lazy
+route modules are transformed on first import.

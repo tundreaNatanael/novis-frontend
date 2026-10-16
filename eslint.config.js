@@ -29,12 +29,17 @@ export default defineConfig([
       ],
       // shadcn/ui files export helpers next to components.
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      // React Compiler is not used; these compiler-oriented rules flag the deliberate
+      // "reset the form when the sheet opens" effect and react-hook-form's watch().
+      'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/incompatible-library': 'off',
     },
   },
   {
     // shadcn/ui files export variants next to components; route modules export `handle` next to `Component`.
     files: [
       'src/components/ui/**/*.{ts,tsx}',
+      'src/components/data/*.tsx',
       'src/**/*-page.tsx',
       'src/**/*-layout.tsx',
       'src/app/**/*.tsx',

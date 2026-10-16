@@ -7,8 +7,35 @@ All notable changes to the Novis admin console. The format follows
 
 ### Planned
 
-- Phase 2: organizations and the organization workspace (admins, teachers, students, courses, invites).
-- Phase 3: freelance teachers. Phase 4: lessons. Phase 5: the `/org/:orgId` admin mount. Phase 6: polish. Phase 7: docs.
+- Phase 3: freelance teachers. Phase 4: lessons. Phase 5: organization picker and switcher polish for admins. Phase 6: polish. Phase 7: docs.
+
+## Phase 2 — Organizations and the organization workspace — 2026-10-16
+
+### Added
+
+- `/platform` overview with platform counts (`totalElements` of `GET /orgs`, `/students`, `/courses`, `/lessons`), recent organizations and shortcuts.
+- `/platform/orgs`: organizations table (server paging and sorting, client filter on the loaded page), create sheet with slug suggestion (`POST /orgs`), row actions edit / archive / restore.
+- Organization workspace (`/platform/orgs/:orgId/*`, also mounted at `/org/:orgId/*` for admins): header with status, slug and id, tabs by capability, archived banner.
+  - Overview: counts per tab, every field, edit (`PATCH /orgs/{id}`), archive with slug confirmation (`DELETE /orgs/{id}`), restore (`PATCH … status: ACTIVE`).
+  - Admins / Teachers / Students: member tables (`GET /orgs/{orgId}/members?role=`), "Remove from this organization" (`DELETE /memberships/{id}`) and "Delete account" (`DELETE /users/{id}` / `DELETE /students/{id}`) with the backend's real consequences in the confirmation.
+  - Add admin / teacher with a password (`POST /orgs/{orgId}/staff`), teacher course step (`POST /courses` or `PATCH /courses/{id} { teacherId }`) with per-step status, retry and skip; password generator.
+  - Add student (`POST /students` + `POST /courses/{courseId}/enrollments`), `409` already-enrolled treated as success, retry / skip on failure.
+  - Courses: table (`GET /courses?organizationId`), create / edit sheet with teacher reassignment warning, archive / reactivate, soft delete.
+  - Invites: pending / accepted / expired states, invite sheet (`POST /orgs/{orgId}/invites`), revoke (`DELETE /invites/{id}`), resend.
+  - Detail pages: staff (`GET /users/{id}`, memberships, courses here, edit, reset link, remove, delete), student (`GET /students/{id}`, `GET /users/{id}`, balances from `GET /students/{id}/lessons/summary`, enrollments from `GET /students/{id}/enrollments`, unenrol, edit, remove, delete), course (`GET /courses/{id}`, teacher and organization links, enrollments table, enrol / unenrol, edit, archive, delete).
+- Shared components: `DataTable` (TanStack Table v9, manual sorting, stacked list on phones), `Pagination`, `ListToolbar`, `EmptyState`, `ErrorState`, `DetailPanel` family (id copy, enum badge with raw value, local time with UTC tooltip), `FormSheet`, `ConfirmDialog` (type-to-confirm), `RowActions` (disabled actions show their reason), `StatusBadge`, `NavTabs`, `PasswordField`, `StepStatus`, `SelectField`.
+- URL list state hook (`useListParams`: `page`, `size`, `sort`, `q`, sheet flags).
+- Tests: organizations create and duplicate slug, workspace tabs by role and redirect, teacher create with failed / retried course step, student create with `409` and failed enrollment, membership removal; test harness over the real route tree with MSW.
+
+### Changed
+
+- Access token mirrored per tab in `sessionStorage` so reloads no longer refresh (decision D-021, gap G17).
+- Platform routes nested so breadcrumbs read "Organizations › School".
+- React Query devtools shown only with `localStorage['novis-admin.devtools'] = '1'`.
+
+### Fixed
+
+- Session storm: a reload during an in-flight refresh reused a rotated token and the backend revoked every session.
 
 ## Phase 1 — Foundation — 2026-10-16
 

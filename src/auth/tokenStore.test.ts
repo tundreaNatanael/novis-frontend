@@ -4,9 +4,10 @@ import { tokenStore } from './tokenStore'
 afterEach(() => tokenStore.clear())
 
 describe('tokenStore', () => {
-  it('keeps the access token in memory and the refresh token in localStorage', () => {
+  it('keeps the access token per tab and the refresh token in localStorage', () => {
     tokenStore.set({ accessToken: 'a', refreshToken: 'r' })
     expect(tokenStore.getAccessToken()).toBe('a')
+    expect(window.sessionStorage.getItem('novis-admin.accessToken')).toBe('a')
     expect(window.localStorage.getItem('novis-admin.refreshToken')).toBe('r')
     expect(tokenStore.hasSession()).toBe(true)
   })

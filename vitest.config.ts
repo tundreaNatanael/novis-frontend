@@ -10,6 +10,7 @@ export default mergeConfig(
       include: ['src/**/*.test.{ts,tsx}'],
       css: false,
       clearMocks: true,
+      testTimeout: 20_000,
       coverage: {
         provider: 'v8',
         include: ['src/**/*.{ts,tsx}'],

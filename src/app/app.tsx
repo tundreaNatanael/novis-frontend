@@ -8,6 +8,15 @@ import { createQueryClient } from './queryClient'
 import { router } from './router'
 import { ThemeProvider } from './theme'
 
+/** Opt in with `localStorage.setItem('novis-admin.devtools', '1')`; the floating button otherwise covers controls. */
+function devtoolsEnabled(): boolean {
+  try {
+    return window.localStorage.getItem('novis-admin.devtools') === '1'
+  } catch {
+    return false
+  }
+}
+
 export function App() {
   const [queryClient] = useState(createQueryClient)
   return (
@@ -18,8 +27,8 @@ export function App() {
           <Toaster />
         </SessionProvider>
       </ThemeProvider>
-      {import.meta.env.DEV ? (
-        <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-right" />
+      {import.meta.env.DEV && devtoolsEnabled() ? (
+        <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-left" />
       ) : null}
     </QueryClientProvider>
   )
