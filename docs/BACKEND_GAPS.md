@@ -31,6 +31,7 @@ Phase 0 checkpoint on 2026-10-16 (`docs/DECISIONS.md` D-015).
 | [G15](#g15-rate-limits-in-development)                                      | e2e against the live API                              | **A** — one login per run                                                                                                                              | tests       | adapted (e2e signs in once)                                                             |
 | [G17](#g17-refresh-token-rotation-has-no-reuse-grace-window)                | Reload during a refresh signs the user out everywhere | **B** (small) — accept the previous token for a few seconds after rotation; UI mitigates with a per-tab access token (D-021)                           | ½ day       | open (mitigated in UI)                                                                  |
 | [G18](#g18-small-shape-gaps-found-while-building-phase-2)                   | Membership ids, clearing optional fields              | **B** (tiny) — add `id` to `MembershipSummary`; accept `null` for `description` / `defaultMeetingUrl` in `PATCH /courses/{id}`                         | hours       | open (worked around)                                                                    |
+| [G19](#g19-lesson-rows-carry-ids-only)                                      | Ledger rows need N name lookups                       | **B** (small) — add `teacherName`, `studentName`, `courseTitle`, `organizationName` to `LessonResponse`                                                | hours       | open (worked around)                                                                    |
 | [G16](#g16-documentation--code-discrepancies)                               | Docs ≠ code                                           | record; no action in the console                                                                                                                       | —           | recorded                                                                                |
 
 Everything marked **B** keeps the backend's rules: authorization in the service, roles and
@@ -538,3 +539,15 @@ cache; tests for both branches.
 - `Member` rows carry no `status` (see G14).
 
 **Status: open (worked around in the UI).**
+
+## G19 Lesson rows carry ids only
+
+**Found during Phase 4.** `LessonResponse` has `teacherId`, `studentId`, `courseId` and
+`organizationId` but no names, so a ledger page of 20 rows needs one `GET /users/{id}`,
+`GET /students/{id}`, `GET /courses/{id}` and `GET /orgs/{id}` per distinct id before it reads as
+"Ana with Maria · Piano". The console does this client-side (`useLessonNames`, one cached query
+per distinct id, D-028) and shows short ids while loading.
+
+**Option A (done).** Resolve names in the console. **Option B.** Add `teacherName`,
+`studentName`, `courseTitle` and `organizationName` to `LessonResponse` (a join in
+`LessonQueriesImpl`, mapper change, no migration). **Status: open (worked around in the UI).**

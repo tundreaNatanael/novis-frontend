@@ -1,6 +1,8 @@
 import type {
   Course,
   Enrollment,
+  Lesson,
+  LessonDetail,
   Member,
   Organization,
   Page,
@@ -153,3 +155,37 @@ export function studentEnrollment(overrides: Partial<StudentEnrollment> = {}): S
 }
 
 export const summary = { prepaidRemaining: 2, unpaidDue: 1, upcomingUnpaid: 0, nextLesson: null }
+
+export function lesson(overrides: Partial<Lesson> = {}): Lesson {
+  return {
+    id: 'l-1',
+    teacherId: 'u-1',
+    studentId: 's-1',
+    courseId: 'c-1',
+    organizationId: 'org-1',
+    status: 'PENDING',
+    scheduledAt: '2026-10-20T15:00:00Z',
+    paid: false,
+    paidAt: null,
+    journal: null,
+    meetingUrl: null,
+    closedAt: null,
+    rolledOverFromLessonId: null,
+    createdAt: '2026-10-14T10:00:00Z',
+    updatedAt: '2026-10-14T10:00:00Z',
+    ...overrides,
+  }
+}
+
+export function lessonDetail(
+  overrides: Partial<Lesson> = {},
+  extra: Partial<Omit<LessonDetail, 'lesson'>> = {},
+): LessonDetail {
+  return {
+    lesson: lesson(overrides),
+    homework: [],
+    materials: [],
+    rolledOverToLessonId: null,
+    ...extra,
+  }
+}

@@ -6,6 +6,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router'
 import { z } from 'zod'
 import { authApi } from '@/api/auth'
 import { isApiError } from '@/api/errors'
+import { safeNext } from '@/auth/guards'
 import { useSession } from '@/auth/session'
 import { Field } from '@/components/form/field'
 import { FormError } from '@/components/form/form-error'
@@ -46,9 +47,7 @@ export function Component() {
         navigate('/no-access', { replace: true })
         return
       }
-      navigate(next && next.startsWith('/') && !next.startsWith('//') ? next : homeFor(me), {
-        replace: true,
-      })
+      navigate(safeNext(next) ?? homeFor(me), { replace: true })
     } catch (error) {
       if (isApiError(error) && error.code === 'INVALID_CREDENTIALS') {
         setFormError('The email or password is incorrect.')

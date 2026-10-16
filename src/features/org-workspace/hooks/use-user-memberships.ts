@@ -23,5 +23,7 @@ export function useUserMemberships(orgId: string, userId: string) {
       }
       return found
     },
+    // A freelance teacher's student has no organization: nothing to scan.
+    enabled: !!orgId && !!userId,
   })
 }

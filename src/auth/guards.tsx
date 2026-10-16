@@ -1,4 +1,4 @@
-import { Navigate, Outlet, useLocation, useParams } from 'react-router'
+import { Navigate, Outlet, useLocation, useParams, useSearchParams } from 'react-router'
 import { deriveCapabilities, hasConsoleAccess, homeFor } from '@/lib/permissions'
 import { FullPageSpinner } from '@/components/full-page-spinner'
 import { useSession } from './session'
@@ -35,11 +35,19 @@ export function RequireOrgAdmin() {
   return <Outlet />
 }
 
-/** Public auth pages bounce signed-in users home. */
+/** A same-origin path from `?next=`; anything else (absolute URLs, `//host`) is ignored. */
+export function safeNext(value: string | null): string | null {
+  return value && value.startsWith('/') && !value.startsWith('//') ? value : null
+}
+
+/** Public auth pages bounce signed-in users to `?next=` (when safe) or home. */
 export function RedirectIfAuthenticated() {
   const { status, me } = useSession()
+  const [searchParams] = useSearchParams()
   if (status === 'loading') return <FullPageSpinner label="Loading" />
-  if (status === 'authenticated') return <Navigate to={homeFor(me)} replace />
+  if (status === 'authenticated') {
+    return <Navigate to={safeNext(searchParams.get('next')) ?? homeFor(me)} replace />
+  }
   return <Outlet />
 }
 

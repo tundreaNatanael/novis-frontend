@@ -43,7 +43,10 @@ export function FormSheet({
 }: FormSheetProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="flex h-full w-full flex-col gap-0 p-0 sm:max-w-lg">
+      <SheetContent
+        side="right"
+        className="flex h-full w-full flex-col gap-0 p-0 data-[side=right]:w-full sm:max-w-lg data-[side=right]:sm:max-w-lg"
+      >
         <form onSubmit={onSubmit} noValidate className="flex h-full min-h-0 flex-col">
           <SheetHeader className="border-b border-border px-5 py-4 text-left">
             <SheetTitle>{title}</SheetTitle>

@@ -7,7 +7,27 @@ All notable changes to the Novis admin console. The format follows
 
 ### Planned
 
-- Phase 4: lessons. Phase 5: organization picker and switcher polish for admins. Phase 6: polish. Phase 7: docs.
+- Phase 5: organization picker and switcher polish for admins. Phase 6: polish. Phase 7: docs.
+
+## Phase 4 — Lessons — 2026-10-16
+
+### Added
+
+- `/platform/lessons`: the ledger (`GET /lessons`) with every filter kept in the URL (organization or freelance scope, teacher, student, course, status, payment, scheduled, date range), a table and a day-grouped agenda view, server paging and sorting. The same `LessonLedger` powers the organization Lessons tab (`organizationId` fixed) and the freelance Lessons tab (`teacherId` fixed).
+- New lesson sheet (`POST /lessons`): scope → teacher → student → course cascade, optional date and meeting link, "use prepaid" toggle; the toast says when a prepaid lesson was spent, a `404` is explained as "not on the roster / not enrolled".
+- `/platform/lessons/:lessonId`: every field, homework and materials, the student's balances with this teacher (`GET /students/{id}/lessons/summary?teacherId=`) and the actions: schedule / reschedule / unschedule (`PATCH …/schedule`), close as held / canceled / canceled late with journal and homework (`POST …/close`, rollover toast and link), edit journal (`PATCH …/journal`), mark paid / unpaid (`PATCH …/payment`, optimistic with rollback), delete (`DELETE /lessons/{id}`), add prepaid lessons. Disabled actions show their reason (`lessonRules`).
+- Add prepaid lessons sheet (`POST /students/{id}/lessons/prepaid`, 1–50, optional course) on the lesson detail and on the student detail (teacher picker in an organization, fixed teacher in the freelance workspace); the student detail links to the student's lessons.
+- Tests: ledger + create (prepaid toast), agenda, close with rollover, close with journal + homework, optimistic payment toggle with rollback, delete rules, prepaid pack.
+
+### Changed
+
+- Form sheets span the full width on phones (the base sheet's `w-3/4` was winning).
+- Ids chosen from server-fed selects are no longer validated as UUIDs client-side; the server is the authority.
+
+### Fixed
+
+- A freelance student's detail page no longer requests `/orgs//members` (the membership scan is disabled without an organization).
+- Signing in after a redirect to `/login?next=…` lands on that page again: the signed-in bounce honours a safe `next` instead of always going home.
 
 ## Phase 3 — Freelance teachers — 2026-10-16
 

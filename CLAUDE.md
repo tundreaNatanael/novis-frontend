@@ -125,12 +125,16 @@ from the files alone.
 
 ## Current state
 
-Phases 0–3 are done: discovery, approved backend changes (committed in `../novis-backend`),
-foundation, the organization workspace (also mounted at `/org/:orgId/*`) and the freelance-teacher
-workspace. Phases 4–7 (lessons, organization picker, polish, docs) follow `docs/PLAN.md` §10; the
-lessons routes are placeholder pages. Shared detail pages read their scope with `useWorkspaceScope()`
-(`kind: 'org' | 'freelance'`). The test harness (`src/test/render.tsx`) mounts the real route tree
-with MSW.
+Phases 0–4 are done: discovery, approved backend changes (committed in `../novis-backend`),
+foundation, the organization workspace (also mounted at `/org/:orgId/*`), the freelance-teacher
+workspace and lessons. Phases 5–7 (organization picker and switcher polish for admins, polish,
+docs) follow `docs/PLAN.md` §10. Shared detail pages read their scope with `useWorkspaceScope()`
+(`kind: 'org' | 'freelance'`). Lessons live in `src/features/lessons`: `LessonLedger` takes a
+`FixedScope` (`organizationId` or `teacherId`) and is mounted three times (global, organization
+tab, freelance tab); every filter is a URL param (`lessonFiltersFromParams`); names for id-only
+rows come from `useLessonNames`; the allowed transitions and their disabled reasons are
+`lessonRules` in `src/lib/permissions.ts`; the paid toggle is the only optimistic update. The
+test harness (`src/test/render.tsx`) mounts the real route tree with MSW.
 
 ## Don'ts
 

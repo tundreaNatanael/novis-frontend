@@ -202,3 +202,34 @@ more union member.
 **Decision.** The freelance students tab offers "Delete student account" only.
 **Context.** The API has no endpoint for the super-admin to remove a single roster row;
 `DELETE /students/{id}` as super-admin always deletes the account (gap G8). The dialog says so.
+
+## D-028 · 2026-10-16 · Lesson names resolved per distinct id
+
+**Decision.** `GET /lessons` rows carry ids only, so the ledger and the detail resolve teacher,
+student, course and organization names with `useLessonNames`: one `useQueries` entry per distinct
+id, cached five minutes, falling back to a short id while loading.
+**Context.** Denormalizing the names into the row is a backend change (gap G19). One request per
+entity (not per row) keeps a 20-row page at a handful of lookups that the detail pages reuse.
+
+## D-029 · 2026-10-16 · One ledger component, scope fixed by the mount
+
+**Decision.** `LessonLedger({ fixed })` renders the global ledger, the organization Lessons tab
+(`organizationId` fixed, scope filter hidden) and the freelance Lessons tab (`teacherId` fixed,
+scope and teacher filters hidden). Every filter, the view (`?view=agenda`) and the create sheet
+(`?new=1`) live in the URL so a filtered view can be shared and the back button works.
+**Context.** API.md §9 has one list endpoint with filters; three copies of the filters would drift.
+
+## D-030 · 2026-10-16 · Close sheet sends journal and homework only for charged outcomes
+
+**Decision.** For `CANCELED` the sheet hides the journal and homework fields and posts
+`{ status }` alone; for `PRESENT` / `CANCELED_LATE` it posts the trimmed journal and, when
+anything was typed, `homework { notes, items }`.
+**Context.** The server discards journal and homework on an on-time cancellation (API.md §9.4);
+asking for text it will throw away would be a form that pretends.
+
+## D-031 · 2026-10-16 · Paid toggle allowed on every status
+
+**Decision.** "Mark paid / unpaid" is offered on pending and closed lessons alike, as an
+optimistic update rolled back with the server's message.
+**Context.** `PATCH /lessons/{id}/payment` has no status precondition in the service; admins fix
+payment records after the fact. Deleting stays limited to pending + unpaid, as the server enforces.

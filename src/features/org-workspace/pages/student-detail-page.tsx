@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { BookOpen, Pencil, Trash2, UserMinus } from 'lucide-react'
+import { BookOpen, CalendarDays, Pencil, Ticket, Trash2, UserMinus } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { toast } from 'sonner'
@@ -27,6 +27,7 @@ import { Button } from '@/components/ui/button'
 import { enumLabel, formatDate, formatDateTime } from '@/lib/format'
 import { usePageTitle } from '@/lib/use-page-title'
 import { StudentCrumb } from '../components/crumbs'
+import { AddPrepaidSheet } from '@/features/lessons/components/add-prepaid-sheet'
 import { EditStudentSheet } from '../components/edit-student-sheet'
 import { useUserMemberships } from '../hooks/use-user-memberships'
 import { useWorkspaceScope } from '../use-org-workspace'
@@ -53,6 +54,7 @@ export function Component() {
   const [removing, setRemoving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [unenrolling, setUnenrolling] = useState<StudentEnrollment | null>(null)
+  const [addingPrepaid, setAddingPrepaid] = useState(false)
 
   const studentQuery = useQuery({
     queryKey: studentKeys.detail(studentId),
@@ -237,6 +239,14 @@ export function Component() {
           <DetailPanel
             title="Lesson balances"
             description={teacherFilter ? 'With this teacher.' : 'Across every teacher you can see.'}
+            actions={
+              capabilities.canManageLessons ? (
+                <Button variant="outline" size="sm" onClick={() => setAddingPrepaid(true)}>
+                  <Ticket aria-hidden />
+                  Add prepaid
+                </Button>
+              ) : null
+            }
           >
             {summary.isPending ? (
               <DetailField label="Loading">…</DetailField>
@@ -262,6 +272,17 @@ export function Component() {
                     {summary.data.upcomingUnpaid}
                   </span>
                 </DetailField>
+                {capabilities.canManageLessons ? (
+                  <DetailField label="Lessons">
+                    <Link
+                      to={`${basePath}/lessons?studentId=${studentId}`}
+                      className="inline-flex items-center gap-1 font-medium text-primary underline-offset-4 hover:underline"
+                    >
+                      <CalendarDays className="size-3.5" aria-hidden />
+                      Open this student’s lessons
+                    </Link>
+                  </DetailField>
+                ) : null}
                 <DetailField label="Next lesson">
                   {summary.data.nextLesson ? (
                     capabilities.canManageLessons ? (
@@ -322,6 +343,20 @@ export function Component() {
         open={editing}
         onOpenChange={setEditing}
       />
+      {capabilities.canManageLessons ? (
+        <AddPrepaidSheet
+          studentId={studentId}
+          studentName={student.name}
+          teacher={
+            scope.kind === 'freelance'
+              ? { id: scope.teacherId, name: scope.teacher.name }
+              : undefined
+          }
+          organizationId={orgId ?? undefined}
+          open={addingPrepaid}
+          onOpenChange={setAddingPrepaid}
+        />
+      ) : null}
       {studentMembership ? (
         <ConfirmDialog
           open={removing}
