@@ -1,0 +1,108 @@
+# Decisions — novis-admin
+
+One entry per decision: date, decision, context, alternatives, consequences. Gap decisions
+reference `BACKEND_GAPS.md`. Newest at the bottom.
+
+## D-001 · 2026-10-16 · Build in `novis-frontend`, package name `novis-admin`
+
+**Decision.** The console lives in the existing `novis-frontend/` repository (already a Vite + React +
+TypeScript scaffold with one commit, opened as this session's working directory) instead of a new
+`novis-admin/` sibling. The npm package is named `novis-admin`.
+**Context.** The brief says "create the frontend in a new sibling folder `./novis-admin/`", but the
+repository had already been created and scaffolded under `novis-frontend`.
+**Alternatives.** Create `novis-admin/` and leave the scaffold unused; rename the folder.
+**Consequences.** Docs refer to `novis-frontend/`; nothing is placed inside the backend. **Confirm or
+override at the checkpoint** (renaming the folder later is a one-line change in the docs).
+
+## D-002 · 2026-10-16 · TypeScript 6.0.x, not 7.0
+
+**Decision.** Pin `typescript` 6.0.3.
+**Context.** npm `latest` is 7.0.2 (2026-07), but `typescript-eslint` 8.71 declares `typescript <6.1.0`
+and `openapi-typescript` 7.13 declares `^5.x`.
+**Consequences.** Revisit when the toolchain supports 7. If `openapi-typescript` refuses 6, the
+`api:types` script runs it with `npx -p typescript@5.9`.
+
+## D-003 · 2026-10-16 · React Router 8 data mode with lazy route modules
+
+**Decision.** `createBrowserRouter` + `RouterProvider` (from `react-router/dom`), route modules
+loaded with `lazy`, loaders not used for data (TanStack Query owns server state), guards as layout
+routes.
+**Context.** v8 (2026-06) is ESM-only, drops `react-router-dom`, requires React ≥ 19.2.7; otherwise the
+v7 API.
+**Alternatives.** Declarative `<BrowserRouter>`; loaders for data.
+**Consequences.** One place for route definitions (`src/app/router.tsx`); code-split per feature.
+
+## D-004 · 2026-10-16 · TanStack Table v9 with explicit features
+
+**Decision.** `useTable` with `tableFeatures({ rowSortingFeature, rowPaginationFeature, columnVisibilityFeature })`,
+`manualSorting` / `manualPagination`; no `stockFeatures`, no `useLegacyTable`.
+**Context.** v9 (2026-08) renamed the hook and made the feature list explicit; smaller bundle.
+**Consequences.** Column helpers are typed with the features type; one `DataTable` wrapper hides it.
+
+## D-005 · 2026-10-16 · Hand-written fetch client over generated types
+
+**Decision.** `openapi-typescript` generates `src/api/schema.d.ts` (committed); a small hand-written
+`src/api/types.ts` re-exports the schemas with `| null` added where API.md marks `?`; the HTTP
+client is our own `fetch` wrapper (no `openapi-fetch`).
+**Context.** The spec omits nullability and the `ApiError` schema; the refresh single-flight and
+error mapping are easier to own than to bolt onto a generic client.
+**Consequences.** `npm run api:types` + fixing `types.ts` is the recipe for a backend change.
+
+## D-006 · 2026-10-16 · Session storage (gap G12, option A)
+
+**Decision.** Access token in memory, refresh token in `localStorage`, both behind `src/auth/tokenStore.ts`;
+silent refresh on load; sign-out revokes and clears.
+**Alternatives.** `sessionStorage` (per tab, worse UX), a BFF with an `HttpOnly` cookie (out of scope).
+**Consequences.** Documented XSS trade-off and mitigations (CSP, no third-party scripts, server-side
+reuse detection). Requires `CORS_ALLOWED_ORIGINS` to include the console origin (backend `.env`).
+
+## D-007 · 2026-10-16 · Own theme provider
+
+**Decision.** A small provider sets `class="dark"` on `<html>` from the system preference or the
+user's toggle (persisted in `localStorage`), instead of `next-themes`.
+**Consequences.** One dependency less; tokens defined once in CSS for both themes.
+
+## D-008 · 2026-10-16 · Typefaces
+
+**Decision.** Inter Variable for UI text, JetBrains Mono Variable for ids and tokens, both
+self-hosted via `@fontsource-variable/*`; tabular numerals in tables.
+**Alternatives.** System font stack (inconsistent across OS), Google Fonts (third-party request).
+
+## D-009 · 2026-10-16 · One lesson detail URL
+
+**Decision.** Lesson detail lives only at `/platform/lessons/:lessonId`; the organization and
+freelance ledgers link there.
+**Consequences.** No duplicated detail route; breadcrumbs carry the origin via `?from=`.
+
+## D-010 · 2026-10-16 · Members endpoint as the source for org people lists
+
+**Decision.** Admins / teachers / students tabs read `GET /orgs/{orgId}/members?role=…`, never the
+global `GET /students`.
+**Context.** Gap G4: the global lists have no organization filter; the members endpoint is scoped.
+**Consequences.** Lists sort by "joined" only and show account status after detail fetch (G14).
+
+## D-011 · 2026-10-16 · Student create rosters the student under the course's teacher
+
+**Decision.** `POST /students` is sent with `teacherId = selectedCourse.teacherId` in addition to the
+enrollment call.
+**Context.** Gap G3. The roster row records the organization scope and lets the teacher see the
+student in the mobile app at once; lessons without a course resolve their organization from it.
+**Consequences.** Removing a student from the organization must mention the roster row stays.
+
+## D-012 · 2026-10-16 · List and sheet state in the URL
+
+**Decision.** Search, filters, sort, page and view live in the query string; create / edit sheets open
+from `?new=1` / `?edit=<id>`.
+**Consequences.** Every list state and form is shareable and survives reload.
+
+## D-013 · 2026-10-16 · e2e logs in once per run
+
+**Decision.** The Playwright suite authenticates once and reuses storage state.
+**Context.** Gap G15: login is throttled to 5/min per email.
+
+## D-014 · 2026-10-16 · Gap defaults proposed at the checkpoint
+
+**Decision.** Recommended defaults per gap (see `BACKEND_GAPS.md` summary): B for G1, G4, G5, G6,
+G13; A for G2, G3, G7, G8, G9, G10, G11, G12, G14, G15. Each becomes its own entry here once decided.
+**Consequences.** Phase 0b (backend) runs only for approved B items, following
+`../novis-backend/CLAUDE.md` → "Adding a feature".
