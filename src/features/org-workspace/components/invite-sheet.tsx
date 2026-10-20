@@ -24,12 +24,14 @@ interface InviteSheetProps {
   onOpenChange: (open: boolean) => void
   /** Preselected role (from `?role=`). */
   initialRole?: StaffRole
-  /** Resend: email fixed. */
-  email?: string
 }
 
-/** `POST /orgs/{orgId}/invites`: the invitee chooses name and password through the emailed link. */
-export function InviteSheet({ open, onOpenChange, initialRole, email }: InviteSheetProps) {
+/**
+ * `POST /orgs/{orgId}/invites`: the invitee chooses name and password through the emailed link.
+ * Admin invitations are the super-admin's only. Resending an existing invitation is its own
+ * endpoint (invites page).
+ */
+export function InviteSheet({ open, onOpenChange, initialRole }: InviteSheetProps) {
   const { orgId, org, capabilities } = useOrgWorkspace()
   const queryClient = useQueryClient()
   const [formError, setFormError] = useState<string | null>(null)
@@ -38,15 +40,15 @@ export function InviteSheet({ open, onOpenChange, initialRole, email }: InviteSh
     initialRole && roles.includes(initialRole) ? initialRole : 'TEACHER'
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { email: email ?? '', role: defaultRole },
+    defaultValues: { email: '', role: defaultRole },
   })
 
   useEffect(() => {
     if (open) {
-      form.reset({ email: email ?? '', role: defaultRole })
+      form.reset({ email: '', role: defaultRole })
       setFormError(null)
     }
-  }, [open, email, defaultRole, form])
+  }, [open, defaultRole, form])
 
   const mutation = useMutation({
     mutationFn: (values: FormValues) => invitesApi.createForOrg(orgId, values),
@@ -58,7 +60,8 @@ export function InviteSheet({ open, onOpenChange, initialRole, email }: InviteSh
       onOpenChange(false)
     },
     onError: (error) => {
-      if (isApiError(error) && error.isConflict) {
+      // ROLE_CONFLICT / INVITE_PENDING get their own sentence from `errorMessage`.
+      if (isApiError(error) && error.is('CONFLICT')) {
         setFormError(
           error.message.includes('archived')
             ? 'This organization is archived; restore it before inviting.'
@@ -74,9 +77,9 @@ export function InviteSheet({ open, onOpenChange, initialRole, email }: InviteSh
     <FormSheet
       open={open}
       onOpenChange={onOpenChange}
-      title={email ? 'Resend invitation' : 'Invite by email'}
-      description={`They receive a link to choose their name and password and join ${org.name}. Invitations last 7 days.`}
-      submitLabel={email ? 'Send again' : 'Send invitation'}
+      title="Invite by email"
+      description={`They receive a link to choose their name and password and join ${org.name}. Invitations last 7 days. An email that already has a role elsewhere in Novis cannot be invited.`}
+      submitLabel="Send invitation"
       isSubmitting={mutation.isPending}
       onSubmit={form.handleSubmit((values) => {
         setFormError(null)
@@ -91,8 +94,7 @@ export function InviteSheet({ open, onOpenChange, initialRole, email }: InviteSh
             type="email"
             inputMode="email"
             autoComplete="off"
-            autoFocus={!email}
-            readOnly={!!email}
+            autoFocus
             {...form.register('email')}
           />
         )}

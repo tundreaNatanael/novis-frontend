@@ -8,7 +8,7 @@ import { enrollmentKeys, enrollmentsApi } from '@/api/enrollments'
 import { errorMessage, isApiError } from '@/api/errors'
 import { memberKeys } from '@/api/members'
 import { studentKeys, studentsApi } from '@/api/students'
-import type { Student } from '@/api/types'
+import type { Course, Student } from '@/api/types'
 import { Field } from '@/components/form/field'
 import { FormError } from '@/components/form/form-error'
 import { FormSheet } from '@/components/form/form-sheet'
@@ -56,6 +56,17 @@ export function AddStudentSheet({ open, onOpenChange, onCreated }: AddStudentShe
   )
   const courses = scope.kind === 'org' ? orgCourses : teacherCourses
   const teachers = useOrgTeachers(orgId ?? '', open && scope.kind === 'org')
+  const lookupsPending = courses.isPending || (scope.kind === 'org' && teachers.isPending)
+
+  /**
+   * Org scope: the course's teacher, while they are still a TEACHER of the organization. A removed
+   * teacher's courses stay active as history, and naming them as roster teacher is `404 Teacher`,
+   * so such a student is created without a roster teacher and the enrollment alone links them.
+   */
+  const rosterTeacherOf = (course: Course | undefined): string | undefined =>
+    course && teachers.data?.some((t) => t.userId === course.teacherId)
+      ? course.teacherId
+      : undefined
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -102,7 +113,7 @@ export function AddStudentSheet({ open, onOpenChange, onCreated }: AddStudentShe
     try {
       let created = student
       if (!created) {
-        const course = courses.data?.find((c) => c.id === values.courseId)
+        const rosterTeacherId = rosterTeacherOf(courses.data?.find((c) => c.id === values.courseId))
         try {
           created = await studentsApi.create(
             scope.kind === 'org'
@@ -111,7 +122,7 @@ export function AddStudentSheet({ open, onOpenChange, onCreated }: AddStudentShe
                   email: values.email,
                   organizationId: scope.orgId,
                   // Roster the student under the course's teacher so the teacher sees them at once (D-011).
-                  ...(course ? { teacherId: course.teacherId } : {}),
+                  ...(rosterTeacherId ? { teacherId: rosterTeacherId } : {}),
                 }
               : // Freelance: the super-admin names the teacher and no organization (gap G5-B).
                 { name: values.name, email: values.email, teacherId: scope.teacherId },
@@ -135,6 +146,9 @@ export function AddStudentSheet({ open, onOpenChange, onCreated }: AddStudentShe
   })
 
   const courseId = form.watch('courseId')
+  const selectedCourse = courses.data?.find((c) => c.id === courseId)
+  const courseWithoutTeacher =
+    scope.kind === 'org' && !!selectedCourse && !!teachers.data && !rosterTeacherOf(selectedCourse)
   const steps: Step[] | null = student
     ? [
         {
@@ -183,7 +197,11 @@ export function AddStudentSheet({ open, onOpenChange, onCreated }: AddStudentShe
         <Field
           label="Email"
           required
-          hint="If a student account with this email already exists, it is added to this organization."
+          hint={
+            scope.kind === 'org'
+              ? 'An existing student of this organization with this email is linked. A student of another school or teacher cannot be added.'
+              : 'An existing student of this teacher with this email is linked. A student of a school or another teacher cannot be added.'
+          }
           error={form.formState.errors.email?.message}
         >
           {(a11y) => (
@@ -200,9 +218,11 @@ export function AddStudentSheet({ open, onOpenChange, onCreated }: AddStudentShe
       <Field
         label="Course"
         hint={
-          courseId
-            ? 'The student is also placed on this course teacher’s roster.'
-            : 'Pick a course to enrol the student right away, or leave it for later.'
+          courseWithoutTeacher
+            ? 'This course’s teacher no longer teaches here, so the student is enrolled without a roster teacher. Reassign the course in the Courses tab.'
+            : courseId
+              ? 'The student is also placed on this course teacher’s roster.'
+              : 'Pick a course to enrol the student right away, or leave it for later.'
         }
         error={form.formState.errors.courseId?.message}
       >
@@ -217,8 +237,8 @@ export function AddStudentSheet({ open, onOpenChange, onCreated }: AddStudentShe
                 value={field.value}
                 onChange={field.onChange}
                 options={options}
-                disabled={!!student}
-                placeholder={courses.isPending ? 'Loading courses…' : 'No course yet'}
+                disabled={!!student || lookupsPending}
+                placeholder={lookupsPending ? 'Loading courses…' : 'No course yet'}
                 emptyText="No active courses yet. Create one in the Courses tab."
               />
             )}

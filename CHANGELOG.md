@@ -5,9 +5,93 @@ All notable changes to the Novis admin console. The format follows
 
 ## Unreleased
 
-### Planned
+### Breaking
 
-- Nothing scheduled. Follow-ups that need the backend are the **B** items in `docs/BACKEND_GAPS.md`.
+- One role per account (backend contract, gap G20, decision D-036): `User` lost `platformRole`,
+  `freelanceTeacher` and `memberships[]` and gained `role` (`SUPER_ADMIN`, `ADMIN`, `TEACHER`,
+  `FREELANCE_TEACHER`, `STUDENT` or `null`) and `organization`
+  (`{ id, name, slug, status, membershipId }` or `null`). `src/api/schema.d.ts` was edited by
+  hand to the contract; regenerate it with `npm run api:types` once the backend runs the change.
+
+### Changed
+
+- Capabilities read `role` / `organization`: the admin organization is the ADMIN membership's when
+  that organization is active (an archived organization's admin gets `/no-access`); an admin covers
+  the teachers and students of their organization, never another admin; admin accounts,
+  memberships and invitations are the super-admin's (disabled with the reason).
+- Staff and student details: one **Remove from organization** bound to `organization.membershipId`
+  (the 500-row member scan `useUserMemberships` is gone), a Role / Organization field instead of
+  "Platform role", "Freelance teacher" and the Memberships panel; remove / delete copy rewritten for
+  single-place accounts (removing a student also drops their roster entries and enrollments there).
+- Org invites: status filter (pending by default; expired, accepted, all) sent as `?status=`,
+  **Resend** through `POST /invites/{id}/resend` (new link, old one stops working) instead of a new
+  invitation, **Revoke** for any unused invitation; the overview counts pending invitations.
+- `409 ROLE_CONFLICT` and `409 INVITE_PENDING` have fixed sentences in `errorMessage`, used by the
+  invite, add-staff, add-student and freelance sheets; same-place `CONFLICT`s keep their sentences.
+  Add staff explains an existing account without a role (invite it instead). The add-student hint
+  no longer promises reuse. The accept-invite page explains `ROLE_CONFLICT`, a disabled account and
+  an inactive organization, and its button reads "Accept invitation".
+- API client: `freelance-teachers.ts` (`/freelance-teachers` list / get / create / update / delete)
+  replaces `usersApi.createFreelanceTeacher`; `invitesApi.resend`; invite lists take filters.
+- The account page shows the one role and organization; `/no-access` tells an archived
+  organization's admin to ask for a restore.
+- Freelance teachers section (super-admin only, D-037): the list is searched and filtered by
+  status on the server (`GET /freelance-teachers?q=&status=`, search debounced by
+  `useDebouncedValue`); Add explains `ROLE_CONFLICT` and an account without a role (invite it
+  instead); Invite explains `ROLE_CONFLICT` / `INVITE_PENDING` / an existing freelance teacher;
+  pending invitations come from `GET /invites?status=PENDING`, 10 per page, with **Resend**
+  (`POST /invites/{id}/resend`) and **Revoke** after a confirmation. The teacher's workspace loads
+  `GET /freelance-teachers/{id}` (breadcrumb included) and shows a not-found page for any other id.
+  The profile edits name and email through `PATCH /freelance-teachers/{id}`, has explicit
+  **Disable account** / **Re-enable account** actions (also in the list's row menu) with a
+  confirmation, and **Delete freelance teacher** explains the cascade (students deleted and signed
+  out, courses archived, lessons, homework and materials kept) and asks for the email.
+- e2e `screens.spec.ts` finds a freelance teacher through `GET /freelance-teachers`.
+- Error copy is chosen by `code`, never by `message` text (new backend codes for the one-role
+  review fixes): `ApiErrorCode` in `src/api/errors.ts` lists every documented code and types `ApiError.is()`.
+  `409 ACCOUNT_WITHOUT_ROLE` (add staff, add freelance teacher: an account without a role, invite
+  it instead) has its sentence in `errorMessage`; a plain `409 CONFLICT` on add freelance teacher
+  now reads "This person is already a freelance teacher." The accept-invite page maps
+  `INVITE_PASSWORD_MISMATCH` to the password field ("enter its current password"),
+  `INVITE_ACCOUNT_DISABLED` and `INVITE_ORGANIZATION_INACTIVE` to their own sentences, and says an
+  existing account accepts with its current password and keeps its name.
+
+### Removed
+
+- The `/org` organization picker (now a redirect home for old links), the top-bar organization
+  switcher, the "Choose an organization" sidebar state and their tests.
+- Freelance profile: the "Organization memberships" panel and every sentence saying a freelance
+  teacher may also teach in organizations; the Status select of the shared edit sheet (replaced by
+  the explicit actions); the "no longer marked as a freelance teacher" alert; resending a freelance
+  invitation by creating a new one.
+
+### Fixed
+
+- Add student (organization): the course's teacher is sent as roster teacher only while they are
+  still a TEACHER of the organization; a removed teacher's course (still active as history) used to
+  fail the whole create with `404 Teacher`. The course hint says the student is enrolled without a
+  roster teacher. The course select waits for the teacher list.
+- Removing or deleting a student from the members table (and deleting a freelance teacher's
+  student) refreshes enrollment lists, since the backend drops the student's enrollments.
+- Remove-student copy (members table, student detail, README) says every enrollment in the
+  organization goes, completed ones included, not only the active ones; `docs/PLAN.md` no longer
+  lists the removed `OrgSwitcher`, a memberships panel or the "Freelance" detail row.
+
+### Added
+
+- Tests: one-role capabilities (archived admin, other admins, freelance and role-less accounts,
+  invite actions), org invites (status filter, resend, revoke, admin invites read-only, admin role
+  for the super-admin only, 409 copy), staff / student removal by membership id, add-staff and
+  add-student 409 copy, accept-invite errors, `/org` redirect and archived-admin refusal.
+- Tests: freelance teachers (server-side search and status filter, create and invite with their
+  `409` copy, edit through the freelance endpoint, disable / re-enable, cascade delete
+  confirmation, pending invitations paged with resend and revoke, not-found page for other ids, no
+  freelance navigation or requests for an org admin) and `useDebouncedValue`.
+- Tests: `409`s by code on add staff (`ACCOUNT_WITHOUT_ROLE`, `ROLE_CONFLICT`, `INVITE_PENDING`, a
+  plain `CONFLICT` keeps the server sentence) and add freelance teacher (`ACCOUNT_WITHOUT_ROLE`,
+  existing freelance teacher); accept-invite `INVITE_PASSWORD_MISMATCH` on the password field and the
+  two other `400` codes; add student without a roster teacher for a removed teacher's course;
+  enrollment lists invalidated when a student (not a teacher) is removed.
 
 ## Phase 7 — Documentation — 2026-10-16
 

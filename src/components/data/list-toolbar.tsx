@@ -4,7 +4,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
 interface ListToolbarProps {
-  /** Client-side filter over the loaded page (the API has no `q` yet). */
+  /**
+   * The search box. Most lists filter the loaded page on the client (their API has no `q`) and
+   * pass `matched` / `loaded`; a list searched by the server omits both.
+   */
   query?: string
   onQueryChange?: (query: string) => void
   searchPlaceholder?: string

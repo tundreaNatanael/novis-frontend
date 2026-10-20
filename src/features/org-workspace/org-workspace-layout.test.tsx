@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import { http, HttpResponse } from 'msw/http'
 import { describe, expect, it } from 'vitest'
-import { orgAdmin, organization, page, superAdmin } from '@/test/fixtures'
+import { orgAdmin, organization, page, superAdmin, userOrganization } from '@/test/fixtures'
 import { api, renderApp, signedInAs } from '@/test/render'
 import { server } from '@/test/server'
 
@@ -54,5 +54,27 @@ describe('organization workspace', () => {
     const { router } = renderApp('/org/org-2/teachers')
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/org/org-1'))
+  })
+
+  it('sends the old /org picker URL to the admin’s one organization, with no switcher', async () => {
+    signedInAs(orgAdmin('org-1'))
+    orgHandlers()
+    const { router } = renderApp('/org')
+
+    await waitFor(() => expect(router.state.location.pathname).toBe('/org/org-1'))
+    const sidebar = await screen.findByRole('complementary', { name: 'Primary' })
+    expect(within(sidebar).getByText('Riverside Music School')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Switch organization' })).not.toBeInTheDocument()
+  })
+
+  it('refuses the console to the admin of an archived organization', async () => {
+    signedInAs({
+      ...orgAdmin('org-1'),
+      organization: userOrganization({ status: 'ARCHIVED', membershipId: 'm-admin-1' }),
+    })
+    const { router } = renderApp('/')
+
+    await waitFor(() => expect(router.state.location.pathname).toBe('/no-access'))
+    expect(await screen.findByText(/administrator of an archived organization/)).toBeInTheDocument()
   })
 })

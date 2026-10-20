@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { usePageTitle } from '@/lib/use-page-title'
 import { AuthLayout } from './auth-layout'
 
-/** Signed in, but neither super-admin nor an organization admin. */
+/** Signed in, but neither super-admin nor the admin of an active organization. */
 export function Component() {
   usePageTitle('No access')
   const { me, signOut } = useSession()
@@ -13,11 +13,18 @@ export function Component() {
     <AuthLayout
       title="This console is for administrators"
       description={
-        <>
-          You are signed in as <span className="font-medium text-foreground">{me?.email}</span>,
-          which has no administrator role. Teachers and students use the Novis app instead. If you
-          expected access, ask the platform owner or your school's administrator.
-        </>
+        me?.role === 'ADMIN' ? (
+          <>
+            You are signed in as <span className="font-medium text-foreground">{me.email}</span>,
+            the administrator of an archived organization. Ask the platform owner to restore it.
+          </>
+        ) : (
+          <>
+            You are signed in as <span className="font-medium text-foreground">{me?.email}</span>,
+            which has no administrator role. Teachers and students use the Novis app instead. If you
+            expected access, ask the platform owner or your school's administrator.
+          </>
+        )
       }
     >
       <Button

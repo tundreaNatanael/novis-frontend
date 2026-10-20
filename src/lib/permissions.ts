@@ -1,19 +1,22 @@
-import type { Lesson, MembershipSummary, User } from '@/api/types'
+import type { Invite, Lesson, MembershipRole, User, UserOrganization } from '@/api/types'
 
 /**
  * What the signed-in user may do, derived from `GET /users/me` and the organization in the URL.
  * Components read these flags, never raw roles. The server stays the authority: every `403` and
  * `404` is still handled where it happens.
  *
- * Console rules narrower than the API: org admins never manage other admins, organizations,
- * freelance teachers or lessons here (the API would allow some of it).
+ * One account holds one role in one place: the super-admin (platform only), an ADMIN or TEACHER
+ * of exactly one organization, a freelance teacher (no organization) or a student. Only the
+ * super-admin and an ADMIN of an active organization use the console. Admin accounts and
+ * freelance teachers are managed by the super-admin only; org admins never manage
+ * organizations or lessons here either.
  */
 export interface Capabilities {
   isSuperAdmin: boolean
   /** ADMIN in the current organization (always true for the super-admin). */
   isOrgAdmin: boolean
-  /** Organizations where the user holds ADMIN. */
-  adminOrgIds: string[]
+  /** The active organization the user administers (`null` for the super-admin and everyone else). */
+  adminOrgId: string | null
   canManageOrganizations: boolean
   canChangeOrgStatus: boolean
   canEditOrganization: boolean
@@ -33,36 +36,46 @@ export interface Capabilities {
   deleteAccountDisabledReason: (user: UserLike) => string | null
   canRemoveMembership: (membership: MembershipLike) => boolean
   removeMembershipDisabledReason: (membership: MembershipLike) => string | null
+  /** Resend / revoke of one invitation. */
+  inviteActionDisabledReason: (invite: InviteLike) => string | null
   canSendResetLink: (user: Pick<User, 'hasPassword' | 'status'>) => boolean
 }
 
-export type UserLike = Pick<User, 'id' | 'memberships' | 'platformRole'>
+export type UserLike = Pick<User, 'id' | 'role' | 'organization'>
 export interface MembershipLike {
   userId: string
   organizationId: string
-  role: MembershipSummary['role']
+  role: MembershipRole
 }
-
-export function adminOrganizations(me: User | null | undefined): MembershipSummary[] {
-  return (me?.memberships ?? []).filter((m) => m.role === 'ADMIN')
-}
+export type InviteLike = Pick<Invite, 'organizationId' | 'role'>
 
 export function isSuperAdmin(me: User | null | undefined): boolean {
-  return me?.platformRole === 'SUPER_ADMIN'
+  return me?.role === 'SUPER_ADMIN'
 }
 
-/** Super-admins and users with at least one ADMIN membership may use the console. */
+/** The organization an ADMIN runs, or `null` (not an admin, or the organization is archived). */
+export function adminOrganization(me: User | null | undefined): UserOrganization | null {
+  return me?.role === 'ADMIN' && me.organization?.status === 'ACTIVE' ? me.organization : null
+}
+
+/** The role the user's one membership grants (`null` without a membership). */
+export function membershipRoleOf(user: Pick<User, 'role' | 'organization'>): MembershipRole | null {
+  if (!user.organization) return null
+  return user.role === 'ADMIN' || user.role === 'TEACHER' || user.role === 'STUDENT'
+    ? user.role
+    : null
+}
+
+/** The super-admin and the admin of an active organization may use the console. */
 export function hasConsoleAccess(me: User | null | undefined): boolean {
-  return isSuperAdmin(me) || adminOrganizations(me).length > 0
+  return isSuperAdmin(me) || adminOrganization(me) !== null
 }
 
 /** Where `/` sends the user. */
 export function homeFor(me: User | null | undefined): string {
   if (isSuperAdmin(me)) return '/platform'
-  const orgs = adminOrganizations(me)
-  if (orgs.length === 1) return `/org/${orgs[0]!.organizationId}`
-  if (orgs.length > 1) return '/org'
-  return '/no-access'
+  const org = adminOrganization(me)
+  return org ? `/org/${org.id}` : '/no-access'
 }
 
 export function deriveCapabilities(
@@ -70,38 +83,48 @@ export function deriveCapabilities(
   orgId?: string | null,
 ): Capabilities {
   const superAdmin = isSuperAdmin(me)
-  const adminOrgIds = adminOrganizations(me).map((m) => m.organizationId)
-  const isOrgAdmin = superAdmin || (!!orgId && adminOrgIds.includes(orgId))
+  const adminOrgId = adminOrganization(me)?.id ?? null
+  const isOrgAdmin = superAdmin || (!!orgId && adminOrgId === orgId)
   const self = (user: UserLike) => !!me && user.id === me.id
-  /** An admin covers a user when every membership of that user is in an organization the admin administers. */
+  /** An admin covers the teachers and students of their own organization, never another admin. */
   const covers = (user: UserLike) =>
-    user.memberships.length > 0 &&
-    user.memberships.every((m) => adminOrgIds.includes(m.organizationId))
+    adminOrgId !== null && user.organization?.id === adminOrgId && user.role !== 'ADMIN'
 
   const deleteAccountDisabledReason = (user: UserLike): string | null => {
     if (self(user)) return 'You cannot delete your own account.'
-    if (user.platformRole === 'SUPER_ADMIN') return 'The platform owner account cannot be deleted.'
+    if (user.role === 'SUPER_ADMIN') return 'The platform owner account cannot be deleted.'
     if (superAdmin) return null
-    if (!covers(user)) {
-      return 'This account also belongs to an organization you do not administer; only the platform owner can delete it.'
-    }
+    if (user.role === 'ADMIN') return 'Only the platform owner can delete an admin account.'
+    if (!covers(user)) return 'Only an admin of this account’s organization can delete it.'
     return null
   }
 
   const removeMembershipDisabledReason = (membership: MembershipLike): string | null => {
-    if (!superAdmin && !adminOrgIds.includes(membership.organizationId)) {
+    if (!superAdmin && membership.organizationId !== adminOrgId) {
       return 'Only an admin of this organization can remove members.'
     }
     if (!!me && membership.userId === me.id && membership.role === 'ADMIN') {
       return 'You cannot remove your own admin membership.'
     }
+    if (!superAdmin && membership.role === 'ADMIN') {
+      return 'Only the platform owner can remove an admin.'
+    }
+    return null
+  }
+
+  const inviteActionDisabledReason = (invite: InviteLike): string | null => {
+    if (superAdmin) return null
+    if (invite.organizationId === null || invite.organizationId !== adminOrgId) {
+      return 'Only an admin of this organization can manage its invitations.'
+    }
+    if (invite.role === 'ADMIN') return 'Only the platform owner manages admin invitations.'
     return null
   }
 
   return {
     isSuperAdmin: superAdmin,
     isOrgAdmin,
-    adminOrgIds,
+    adminOrgId,
     canManageOrganizations: superAdmin,
     canChangeOrgStatus: superAdmin,
     canEditOrganization: isOrgAdmin,
@@ -121,6 +144,7 @@ export function deriveCapabilities(
     deleteAccountDisabledReason,
     canRemoveMembership: (membership) => removeMembershipDisabledReason(membership) === null,
     removeMembershipDisabledReason,
+    inviteActionDisabledReason,
     canSendResetLink: (user) => user.hasPassword && user.status === 'ACTIVE',
   }
 }

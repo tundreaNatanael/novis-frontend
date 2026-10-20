@@ -1,3 +1,38 @@
+/**
+ * The `code`s API.md §1.6 documents. UI copy branches on these, never on `message` text.
+ * `ApiError.code` stays a `string`: an unknown code (or `HTTP_<status>` for a body without one)
+ * falls back to the server's message.
+ */
+export type ApiErrorCode =
+  | 'VALIDATION_FAILED'
+  | 'BAD_REQUEST'
+  | 'MALFORMED_REQUEST'
+  | 'UNAUTHORIZED'
+  | 'TOKEN_EXPIRED'
+  | 'INVALID_TOKEN'
+  | 'INVALID_CREDENTIALS'
+  | 'INVALID_REFRESH_TOKEN'
+  | 'ACCOUNT_UNAVAILABLE'
+  | 'FORBIDDEN'
+  | 'NOT_FOUND'
+  | 'METHOD_NOT_ALLOWED'
+  | 'UNSUPPORTED_MEDIA_TYPE'
+  | 'CONFLICT'
+  | 'TOO_MANY_REQUESTS'
+  | 'NOT_IMPLEMENTED'
+  | 'SERVICE_UNAVAILABLE'
+  | 'INTERNAL_ERROR'
+  // One role per account (409): a role elsewhere, a pending invitation elsewhere, a known
+  // account without a role on a direct create (`POST /orgs/{orgId}/staff`, `POST /freelance-teachers`).
+  | 'ROLE_CONFLICT'
+  | 'INVITE_PENDING'
+  | 'ACCOUNT_WITHOUT_ROLE'
+  // `POST /auth/accept-invite` (400): an existing account's current password did not match,
+  // that account is disabled, the invitation's organization is no longer active.
+  | 'INVITE_PASSWORD_MISMATCH'
+  | 'INVITE_ACCOUNT_DISABLED'
+  | 'INVITE_ORGANIZATION_INACTIVE'
+
 /** The error body every Novis endpoint returns (API.md §1.6). */
 export interface FieldError {
   field: string
@@ -43,7 +78,7 @@ export class ApiError extends Error {
     return new ApiError(status, `HTTP_${status}`, fallbackMessage)
   }
 
-  is(code: string): boolean {
+  is(code: ApiErrorCode): boolean {
     return this.code === code
   }
 
@@ -78,6 +113,17 @@ export function isApiError(error: unknown): error is ApiError {
   return error instanceof ApiError
 }
 
+/**
+ * `409` codes of the one-role-per-account rule (API.md §1.6). Same-place duplicates stay
+ * `CONFLICT` and keep the sentence of the form that sent them.
+ */
+export const CONFLICT_COPY = {
+  ROLE_CONFLICT: 'This email already belongs to an account with a role elsewhere in Novis.',
+  INVITE_PENDING: 'This email already has a pending invitation elsewhere.',
+  ACCOUNT_WITHOUT_ROLE:
+    'This email already belongs to an account without a role. Invite it by email instead; the person accepts with their current password and keeps their name.',
+} satisfies Partial<Record<ApiErrorCode, string>>
+
 /** A sentence for toasts and inline errors; never apologizes, always says what happened. */
 export function errorMessage(error: unknown): string {
   if (error instanceof ApiError) {
@@ -91,6 +137,12 @@ export function errorMessage(error: unknown): string {
         return 'Not found, or not accessible with your role.'
       case 'FORBIDDEN':
         return 'Your role does not allow this action.'
+      case 'ROLE_CONFLICT':
+        return CONFLICT_COPY.ROLE_CONFLICT
+      case 'INVITE_PENDING':
+        return CONFLICT_COPY.INVITE_PENDING
+      case 'ACCOUNT_WITHOUT_ROLE':
+        return CONFLICT_COPY.ACCOUNT_WITHOUT_ROLE
       default:
         return error.message || `Request failed (${error.status}).`
     }

@@ -29,7 +29,6 @@ import { usePageTitle } from '@/lib/use-page-title'
 import { StudentCrumb } from '../components/crumbs'
 import { AddPrepaidSheet } from '@/features/lessons/components/add-prepaid-sheet'
 import { EditStudentSheet } from '../components/edit-student-sheet'
-import { useUserMemberships } from '../hooks/use-user-memberships'
 import { useWorkspaceScope } from '../use-org-workspace'
 
 export const handle: RouteHandle = {
@@ -39,7 +38,8 @@ export const handle: RouteHandle = {
 const ENROLLMENTS = { page: 0, size: 100, sort: 'enrolledAt,desc' }
 
 /**
- * Student detail: `GET /students/{id}` + `GET /users/{id}` (memberships), balances from
+ * Student detail: `GET /students/{id}` + `GET /users/{id}` (the one organization, with the
+ * membership id, or none for a freelance teacher's student), balances from
  * `GET /students/{id}/lessons/summary`, courses from `GET /students/{id}/enrollments`.
  */
 export function Component() {
@@ -73,7 +73,6 @@ export function Component() {
     queryKey: studentKeys.enrollments(studentId, ENROLLMENTS),
     queryFn: ({ signal }) => studentsApi.enrollments(studentId, ENROLLMENTS, signal),
   })
-  const memberships = useUserMemberships(orgId ?? '', studentId)
   usePageTitle(studentQuery.data?.name)
 
   const invalidate = () =>
@@ -115,8 +114,18 @@ export function Component() {
   const user = userQuery.data ?? null
   const covers = user ? capabilities.canEditUser(user) : capabilities.isSuperAdmin
   const canEditIdentity = capabilities.isSuperAdmin || (scope.kind === 'org' && covers)
-  const studentMembership = (memberships.data ?? []).find((m) => m.role === 'STUDENT')
   const orgName = scope.kind === 'org' ? scope.org.name : null
+  // One place per student: `organization` carries the membership id `DELETE /memberships` needs.
+  const membership = orgId && user?.organization?.id === orgId ? user.organization : null
+  const removeReason = membership
+    ? capabilities.removeMembershipDisabledReason({
+        userId: studentId,
+        organizationId: membership.id,
+        role: 'STUDENT',
+      })
+    : userQuery.isPending
+      ? 'Loading the student’s organization…'
+      : `This student is not a member of ${orgName}.`
   const courseHref = (courseId: string) => `${basePath}/courses/${courseId}`
 
   return (
@@ -150,11 +159,7 @@ export function Component() {
                         icon: UserMinus,
                         destructive: true,
                         onSelect: () => setRemoving(true),
-                        disabledReason: !studentMembership
-                          ? memberships.isPending
-                            ? 'Loading memberships…'
-                            : 'No student membership of this organization was found for this account.'
-                          : null,
+                        disabledReason: removeReason,
                       },
                     ]
                   : []),
@@ -303,8 +308,8 @@ export function Component() {
             )}
           </DetailPanel>
           <DetailPanel
-            title="Memberships"
-            description="Organizations where this student is enrolled."
+            title="Organization"
+            description="A student belongs to one organization or to one freelance teacher."
           >
             {userQuery.isPending ? (
               <DetailField label="Loading">…</DetailField>
@@ -312,27 +317,28 @@ export function Component() {
               <DetailField label="Unavailable">
                 {isApiError(userQuery.error) && userQuery.error.isNotFound
                   ? 'Not accessible with your role.'
-                  : 'Could not load memberships.'}
+                  : 'Could not load the organization.'}
               </DetailField>
-            ) : user.memberships.length === 0 ? (
+            ) : !user.organization ? (
               <DetailField label="None">
                 No organization: a freelance teacher’s student.
               </DetailField>
             ) : (
-              user.memberships.map((m) => (
-                <DetailField key={`${m.organizationId}-${m.role}`} label={enumLabel(m.role)}>
-                  {capabilities.isSuperAdmin ? (
-                    <Link
-                      to={`/platform/orgs/${m.organizationId}`}
-                      className="font-medium text-primary underline-offset-4 hover:underline"
-                    >
-                      {m.organizationName}
-                    </Link>
-                  ) : (
-                    m.organizationName
-                  )}
-                </DetailField>
-              ))
+              <DetailField label="Student of">
+                {capabilities.isSuperAdmin ? (
+                  <Link
+                    to={`/platform/orgs/${user.organization.id}`}
+                    className="font-medium text-primary underline-offset-4 hover:underline"
+                  >
+                    {user.organization.name}
+                  </Link>
+                ) : (
+                  user.organization.name
+                )}
+                {user.organization.status === 'ARCHIVED' ? (
+                  <span className="ml-2 text-xs text-muted-foreground">(archived)</span>
+                ) : null}
+              </DetailField>
             )}
           </DetailPanel>
         </div>
@@ -357,7 +363,7 @@ export function Component() {
           onOpenChange={setAddingPrepaid}
         />
       ) : null}
-      {studentMembership ? (
+      {membership ? (
         <ConfirmDialog
           open={removing}
           onOpenChange={setRemoving}
@@ -367,16 +373,16 @@ export function Component() {
           description={
             <>
               <p>
-                Removes <strong>{student.name}</strong>'s student membership in{' '}
-                <strong>{orgName}</strong>. Their account and other organizations are not affected.
+                Removes <strong>{student.name}</strong> from <strong>{orgName}</strong>, with their
+                roster entries and enrollments here (completed ones included).
               </p>
               <p>
-                Enrollments in this organization's courses and roster entries stay on record;
-                lessons are kept as history.
+                The account stays without an organization, so another school or teacher can add them
+                later. Lessons are kept as history.
               </p>
             </>
           }
-          onConfirm={() => removeMembership.mutateAsync(studentMembership.membershipId)}
+          onConfirm={() => removeMembership.mutateAsync(membership.membershipId)}
         />
       ) : null}
       <ConfirmDialog
@@ -386,27 +392,14 @@ export function Component() {
         destructive
         confirmLabel="Delete student account"
         description={
-          capabilities.isSuperAdmin ? (
-            <>
-              <p>
-                Deletes <strong>{student.name}</strong>'s account everywhere: every membership,
-                roster entry and enrollment is removed, in every organization. The student can no
-                longer sign in.
-              </p>
-              <p>Lessons and payments are kept as history.</p>
-            </>
-          ) : (
-            <>
-              <p>
-                Removes <strong>{student.name}</strong> from every organization you administer, with
-                their roster entries and enrollments there.
-              </p>
-              <p>
-                The account is deleted only if nothing else links to it. Lessons and payments are
-                kept as history.
-              </p>
-            </>
-          )
+          <>
+            <p>
+              Deletes <strong>{student.name}</strong>'s account: their{' '}
+              {scope.kind === 'org' ? 'membership, roster entries' : 'roster entry'} and enrollments
+              are removed and the student can no longer sign in.
+            </p>
+            <p>Lessons and payments are kept as history.</p>
+          </>
         }
         onConfirm={() => deleteStudent.mutateAsync()}
       />

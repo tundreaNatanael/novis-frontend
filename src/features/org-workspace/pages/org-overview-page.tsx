@@ -5,7 +5,7 @@ import { Link } from 'react-router'
 import { courseKeys, coursesApi } from '@/api/courses'
 import { inviteKeys, invitesApi } from '@/api/invites'
 import { memberKeys, membersApi } from '@/api/members'
-import type { MembershipRole } from '@/api/types'
+import type { InviteFilters, MembershipRole } from '@/api/types'
 import type { RouteHandle } from '@/app/route-handle'
 import {
   DetailField,
@@ -23,6 +23,7 @@ import { useOrgWorkspace } from '../use-org-workspace'
 export const handle: RouteHandle = { title: 'Overview' }
 
 const ONE = { page: 0, size: 1 }
+const PENDING: InviteFilters = { status: 'PENDING' }
 
 function useCount(
   key: readonly unknown[],
@@ -53,8 +54,8 @@ export function Component() {
   const courses = useCount(courseKeys.list({ organizationId: orgId }, ONE), (signal) =>
     coursesApi.list({ organizationId: orgId }, ONE, signal),
   )
-  const invites = useCount(inviteKeys.orgList(orgId, ONE), (signal) =>
-    invitesApi.listForOrg(orgId, ONE, signal),
+  const invites = useCount(inviteKeys.orgList(orgId, PENDING, ONE), (signal) =>
+    invitesApi.listForOrg(orgId, PENDING, ONE, signal),
   )
 
   const counts = [
@@ -64,7 +65,7 @@ export function Component() {
     { label: 'Teachers', value: teachers.data, to: `${basePath}/teachers` },
     { label: 'Students', value: students.data, to: `${basePath}/students` },
     { label: 'Courses', value: courses.data, to: `${basePath}/courses` },
-    { label: 'Invites', value: invites.data, to: `${basePath}/invites` },
+    { label: 'Pending invites', value: invites.data, to: `${basePath}/invites` },
   ].filter((c): c is NonNullable<typeof c> => c !== null)
 
   return (

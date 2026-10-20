@@ -10,7 +10,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import type { User } from '@/api/types'
-import { adminOrganizations, isSuperAdmin } from '@/lib/permissions'
+import { adminOrganization, isSuperAdmin } from '@/lib/permissions'
 
 export interface NavItem {
   label: string
@@ -25,8 +25,8 @@ export interface NavSection {
   items: NavItem[]
 }
 
-/** Sidebar entries for the signed-in user and the organization in the URL (admins). */
-export function navigationFor(me: User, activeOrgId: string | null): NavSection[] {
+/** Sidebar entries for the signed-in user: the platform for the super-admin, their one organization for an admin. */
+export function navigationFor(me: User): NavSection[] {
   if (isSuperAdmin(me)) {
     return [
       {
@@ -39,14 +39,12 @@ export function navigationFor(me: User, activeOrgId: string | null): NavSection[
       },
     ]
   }
-  const orgs = adminOrganizations(me)
-  // On the picker (`/org`) an admin of several organizations has not chosen one yet.
-  const orgId = activeOrgId ?? (orgs.length === 1 ? orgs[0]?.organizationId : undefined)
-  if (!orgId) return []
-  const base = `/org/${orgId}`
+  const org = adminOrganization(me)
+  if (!org) return []
+  const base = `/org/${org.id}`
   return [
     {
-      label: orgs.find((o) => o.organizationId === orgId)?.organizationName,
+      label: org.name,
       items: [
         { label: 'Overview', to: base, icon: LayoutDashboard, end: true },
         { label: 'Teachers', to: `${base}/teachers`, icon: Users },

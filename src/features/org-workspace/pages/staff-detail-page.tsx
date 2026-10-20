@@ -5,7 +5,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router'
 import { toast } from 'sonner'
 import { courseKeys, coursesApi } from '@/api/courses'
 import { memberKeys, membersApi } from '@/api/members'
-import type { Member, StaffRole } from '@/api/types'
+import type { StaffRole } from '@/api/types'
 import { userKeys, usersApi } from '@/api/users'
 import type { RouteHandle } from '@/app/route-handle'
 import { PageSkeleton } from '@/app/shell/app-shell'
@@ -14,7 +14,6 @@ import { ConfirmDialog } from '@/components/confirm-dialog'
 import { ErrorState } from '@/components/data/error-state'
 import { DetailHeader } from '@/components/detail/detail-header'
 import {
-  BooleanValue,
   DetailField,
   DetailPanel,
   EnumValue,
@@ -25,19 +24,22 @@ import { RowActions } from '@/components/row-actions'
 import { StatusBadge } from '@/components/status-badge'
 import { Button } from '@/components/ui/button'
 import { enumLabel } from '@/lib/format'
+import { membershipRoleOf } from '@/lib/permissions'
 import { usePageTitle } from '@/lib/use-page-title'
 import { CourseFormSheet } from '../components/course-form-sheet'
 import { UserCrumb } from '../components/crumbs'
 import { EditUserSheet } from '../components/edit-user-sheet'
 import { ResetLinkDialog } from '../components/reset-link-dialog'
-import { useUserMemberships } from '../hooks/use-user-memberships'
 import { useOrgWorkspace } from '../use-org-workspace'
 
 export const handle: RouteHandle = { crumb: (params) => <UserCrumb userId={params.userId} /> }
 
 const COURSES = { page: 0, size: 100, sort: 'title,asc' }
 
-/** Admin or teacher detail: `GET /users/{id}` (every field, memberships), courses they own here. */
+/**
+ * Admin or teacher detail: `GET /users/{id}` (every field, its one organization and membership
+ * id), courses they own here.
+ */
 export function Component() {
   const { orgId, org, basePath, capabilities } = useOrgWorkspace()
   const { userId = '' } = useParams<{ userId: string }>()
@@ -49,7 +51,7 @@ export function Component() {
   const role: StaffRole = segment === 'admins' ? 'ADMIN' : 'TEACHER'
   const [editing, setEditing] = useState(false)
   const [resetting, setResetting] = useState(false)
-  const [removing, setRemoving] = useState<Member | null>(null)
+  const [removing, setRemoving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [newCourse, setNewCourse] = useState(false)
 
@@ -57,7 +59,6 @@ export function Component() {
     queryKey: userKeys.detail(userId),
     queryFn: ({ signal }) => usersApi.get(userId, signal),
   })
-  const memberships = useUserMemberships(orgId, userId)
   const courses = useQuery({
     queryKey: courseKeys.list({ organizationId: orgId, teacherId: userId }, COURSES),
     queryFn: ({ signal }) =>
@@ -72,10 +73,11 @@ export function Component() {
       queryClient.invalidateQueries({ queryKey: userKeys.detail(userId) }),
     ])
   const removeMembership = useMutation({
-    mutationFn: (member: Member) => membersApi.remove(member.membershipId),
+    mutationFn: (membershipId: string) => membersApi.remove(membershipId),
     onSuccess: async () => {
       await invalidate()
       toast.success('Removed from organization')
+      navigate(`${basePath}/${segment}`)
     },
   })
   const deleteAccount = useMutation({
@@ -92,7 +94,17 @@ export function Component() {
     return <ErrorState error={userQuery.error} onRetry={() => void userQuery.refetch()} />
   const user = userQuery.data
   const self = user.id === me.id
-  const hereMemberships = memberships.data ?? []
+  // One membership per account: `organization` names it, with the id `DELETE /memberships` needs.
+  const membership = user.organization?.id === orgId ? user.organization : null
+  const memberRole = membershipRoleOf(user)
+  const removeReason =
+    !membership || !memberRole
+      ? `This account is not a member of ${org.name}.`
+      : capabilities.removeMembershipDisabledReason({
+          userId: user.id,
+          organizationId: orgId,
+          role: memberRole,
+        })
   const deleteReason = capabilities.deleteAccountDisabledReason(user)
   const listLabel = segment === 'admins' ? 'Admins' : 'Teachers'
 
@@ -128,18 +140,14 @@ export function Component() {
                     ? null
                     : 'Only active password accounts can receive a reset link.',
                 },
-                ...hereMemberships.map((m) => ({
-                  label: `Remove ${enumLabel(m.role).toLowerCase()} role in ${org.name}`,
+                {
+                  label: 'Remove from organization',
                   icon: UserMinus,
                   destructive: true,
                   separatorBefore: true,
-                  onSelect: () => setRemoving(m),
-                  disabledReason: capabilities.removeMembershipDisabledReason({
-                    userId: m.userId,
-                    organizationId: orgId,
-                    role: m.role,
-                  }),
-                })),
+                  onSelect: () => setRemoving(true),
+                  disabledReason: removeReason,
+                },
                 {
                   label: 'Delete account',
                   icon: Trash2,
@@ -167,15 +175,31 @@ export function Component() {
               ? 'Password account (admin / teacher)'
               : 'Student account (email-only sign-in)'}
           </DetailField>
-          <DetailField label="Platform role">
-            {user.platformRole ? (
-              <EnumValue value={user.platformRole} />
+          <DetailField label="Role">
+            {user.role ? (
+              <EnumValue value={user.role} />
             ) : (
               <span className="text-muted-foreground">None</span>
             )}
           </DetailField>
-          <DetailField label="Freelance teacher">
-            <BooleanValue value={user.freelanceTeacher} />
+          <DetailField label="Organization">
+            {!user.organization ? (
+              <span className="text-muted-foreground">None</span>
+            ) : user.organization.id === orgId ? (
+              <>
+                {user.organization.name}
+                <span className="ml-2 text-xs text-muted-foreground">(this organization)</span>
+              </>
+            ) : capabilities.isSuperAdmin ? (
+              <Link
+                to={`/platform/orgs/${user.organization.id}`}
+                className="font-medium text-primary underline-offset-4 hover:underline"
+              >
+                {user.organization.name}
+              </Link>
+            ) : (
+              user.organization.name
+            )}
           </DetailField>
           <DetailField label="Created">
             <TimeValue value={user.createdAt} />
@@ -185,34 +209,6 @@ export function Component() {
           ) : null}
         </DetailPanel>
         <div className="flex flex-col gap-5">
-          <DetailPanel
-            title="Memberships"
-            description="Organizations where this account holds a role."
-          >
-            {user.memberships.length === 0 ? (
-              <DetailField label="None">
-                This account holds no role in any organization.
-              </DetailField>
-            ) : (
-              user.memberships.map((m) => (
-                <DetailField key={`${m.organizationId}-${m.role}`} label={enumLabel(m.role)}>
-                  {capabilities.isSuperAdmin ? (
-                    <Link
-                      to={`/platform/orgs/${m.organizationId}`}
-                      className="font-medium text-primary underline-offset-4 hover:underline"
-                    >
-                      {m.organizationName}
-                    </Link>
-                  ) : (
-                    m.organizationName
-                  )}
-                  {m.organizationId === orgId ? (
-                    <span className="ml-2 text-xs text-muted-foreground">(this organization)</span>
-                  ) : null}
-                </DetailField>
-              ))
-            )}
-          </DetailPanel>
           {role === 'TEACHER' ? (
             <DetailPanel
               title="Courses here"
@@ -265,19 +261,19 @@ export function Component() {
         teacherId={user.id}
         onSaved={(c) => navigate(`${basePath}/courses/${c.id}`)}
       />
-      {removing ? (
+      {membership ? (
         <ConfirmDialog
-          open
-          onOpenChange={(open) => !open && setRemoving(null)}
-          title="Remove from this organization"
+          open={removing}
+          onOpenChange={setRemoving}
+          title="Remove from organization"
           destructive
           confirmLabel="Remove from organization"
           description={
             <>
               <p>
-                Removes the <strong>{enumLabel(removing.role).toLowerCase()}</strong> role of{' '}
-                <strong>{user.name}</strong> in <strong>{org.name}</strong>. The account and roles
-                elsewhere are not affected.
+                Removes <strong>{user.name}</strong> from <strong>{org.name}</strong>. The account
+                stays without a role: they can still sign in but reach nothing until they are
+                invited or added somewhere again.
               </p>
               <p>
                 Courses they own here keep them as the owner; reassign them from the Courses tab if
@@ -285,11 +281,7 @@ export function Component() {
               </p>
             </>
           }
-          onConfirm={async () => {
-            await removeMembership.mutateAsync(removing)
-            setRemoving(null)
-            if (hereMemberships.length <= 1) navigate(`${basePath}/${segment}`)
-          }}
+          onConfirm={() => removeMembership.mutateAsync(membership.membershipId)}
         />
       ) : null}
       <ConfirmDialog
@@ -301,8 +293,8 @@ export function Component() {
         description={
           <>
             <p>
-              Soft-deletes <strong>{user.name}</strong>'s account: every membership, roster entry
-              and enrollment is removed and all their sessions end. They can no longer sign in.
+              Soft-deletes <strong>{user.name}</strong>'s account: their membership, roster entries
+              and enrollments are removed and all their sessions end. They can no longer sign in.
             </p>
             <p>Lessons and payments are kept as history.</p>
           </>

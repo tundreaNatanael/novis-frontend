@@ -32,7 +32,7 @@ test.describe('screens', () => {
     const freelancers = await api<{ content: { id: string }[] }>(
       tokens,
       'GET',
-      '/users?freelance=true&page=0&size=1',
+      '/freelance-teachers?page=0&size=1',
     )
     const org = orgs.data?.content?.[0]?.id
     const lesson = lessons.data?.content?.[0]?.id

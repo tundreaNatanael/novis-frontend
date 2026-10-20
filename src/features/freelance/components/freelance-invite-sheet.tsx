@@ -16,29 +16,31 @@ import { emailSchema } from '@/lib/schemas'
 const schema = z.object({ email: emailSchema })
 type FormValues = z.infer<typeof schema>
 
-/** `POST /invites`: the invitee chooses name and password through the emailed link. */
+/**
+ * `POST /invites`: the invitee chooses name and password through the emailed link. A pending
+ * freelance invitation for the same email is replaced; resending an existing one is
+ * `POST /invites/{id}/resend` from the pending list.
+ */
 export function FreelanceInviteSheet({
   open,
   onOpenChange,
-  email,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
-  email?: string
 }) {
   const queryClient = useQueryClient()
   const [formError, setFormError] = useState<string | null>(null)
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { email: email ?? '' },
+    defaultValues: { email: '' },
   })
 
   useEffect(() => {
     if (open) {
-      form.reset({ email: email ?? '' })
+      form.reset({ email: '' })
       setFormError(null)
     }
-  }, [open, email, form])
+  }, [open, form])
 
   const mutation = useMutation({
     mutationFn: (values: FormValues) => invitesApi.createFreelance(values),
@@ -50,7 +52,8 @@ export function FreelanceInviteSheet({
       onOpenChange(false)
     },
     onError: (error) => {
-      if (isApiError(error) && error.isConflict)
+      // ROLE_CONFLICT / INVITE_PENDING get their own sentence from `errorMessage`.
+      if (isApiError(error) && error.is('CONFLICT'))
         setFormError('This person is already a freelance teacher.')
       else setFormError(applyServerErrors(error, form.setError, ['email']))
     },
@@ -60,9 +63,9 @@ export function FreelanceInviteSheet({
     <FormSheet
       open={open}
       onOpenChange={onOpenChange}
-      title={email ? 'Resend invitation' : 'Invite a freelance teacher'}
-      description="They receive a link to choose their name and password. Invitations last 7 days."
-      submitLabel={email ? 'Send again' : 'Send invitation'}
+      title="Invite a freelance teacher"
+      description="They receive a link to choose their name and password; invitations last 7 days. An existing account without a role accepts with its current password and keeps its name."
+      submitLabel="Send invitation"
       isSubmitting={mutation.isPending}
       onSubmit={form.handleSubmit((values) => {
         setFormError(null)
@@ -77,8 +80,7 @@ export function FreelanceInviteSheet({
             type="email"
             inputMode="email"
             autoComplete="off"
-            autoFocus={!email}
-            readOnly={!!email}
+            autoFocus
             {...form.register('email')}
           />
         )}

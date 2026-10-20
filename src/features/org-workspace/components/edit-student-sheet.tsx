@@ -81,7 +81,7 @@ export function EditStudentSheet({
       description={
         canEditIdentity
           ? undefined
-          : 'Email and status can be changed only by the platform owner or an admin of every organization the student belongs to.'
+          : 'Email and status can be changed only by the platform owner or an admin of the student’s organization.'
       }
       submitLabel="Save changes"
       isSubmitting={mutation.isPending}

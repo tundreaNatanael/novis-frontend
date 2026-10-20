@@ -152,7 +152,8 @@ export const routes: RouteObject[] = [
                   },
                 ],
               },
-              { path: 'org', lazy: () => import('@/features/org-workspace/org-picker-page') },
+              // One organization per admin: the old `/org` picker URL just goes home.
+              { path: 'org', element: <HomeRedirect /> },
               {
                 path: 'org/:orgId',
                 element: <RequireOrgAdmin />,

@@ -2,11 +2,11 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { ExternalLink, Trash2, UserMinus, Users } from 'lucide-react'
 import { type ReactNode, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
+import { enrollmentKeys } from '@/api/enrollments'
 import { memberKeys, membersApi } from '@/api/members'
 import { studentKeys, studentsApi } from '@/api/students'
 import type { Member, MembershipRole } from '@/api/types'
 import { userKeys, usersApi } from '@/api/users'
-import { useMe } from '@/auth/session'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { columnHelper, DataTable } from '@/components/data/data-table'
 import { EmptyState } from '@/components/data/empty-state'
@@ -53,7 +53,6 @@ interface MembersTableProps {
  */
 export function MembersTable({ role, segment, singular, plural, createAction }: MembersTableProps) {
   const { orgId, org, basePath, capabilities } = useOrgWorkspace()
-  const me = useMe()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const params = useListParams({ sort: 'createdAt,asc' })
@@ -73,11 +72,15 @@ export function MembersTable({ role, segment, singular, plural, createAction }: 
     [query.data, params.q],
   )
 
+  // Removing or deleting a student also drops their enrollments in the organization's courses.
   const invalidatePeople = async (userId: string) => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: memberKeys.org(orgId) }),
       queryClient.invalidateQueries({ queryKey: userKeys.detail(userId) }),
       queryClient.invalidateQueries({ queryKey: studentKeys.all }),
+      ...(role === 'STUDENT'
+        ? [queryClient.invalidateQueries({ queryKey: enrollmentKeys.all })]
+        : []),
     ])
   }
 
@@ -91,15 +94,25 @@ export function MembersTable({ role, segment, singular, plural, createAction }: 
     onSuccess: (_result, member) => invalidatePeople(member.userId),
   })
 
-  const isSelf = (member: Member) => member.userId === me.id
   const removeDisabledReason = (member: Member) =>
     capabilities.removeMembershipDisabledReason({
       userId: member.userId,
       organizationId: orgId,
       role,
     })
+  // A member row is the account's one membership, so it describes the whole account.
   const deleteDisabledReason = (member: Member) =>
-    isSelf(member) ? 'You cannot delete your own account.' : null
+    capabilities.deleteAccountDisabledReason({
+      id: member.userId,
+      role,
+      organization: {
+        id: orgId,
+        name: org.name,
+        slug: org.slug,
+        status: org.status,
+        membershipId: member.membershipId,
+      },
+    })
 
   const roleLabel = singular.toLowerCase()
 
@@ -189,21 +202,29 @@ export function MembersTable({ role, segment, singular, plural, createAction }: 
           confirmLabel="Remove from organization"
           description={
             <>
-              <p>
-                Removes the <strong>{roleLabel}</strong> role of <strong>{removing.name}</strong> in{' '}
-                <strong>{org.name}</strong>. Their account and their roles elsewhere are not
-                affected.
-              </p>
               {role === 'STUDENT' ? (
-                <p>
-                  Enrollments in this organization's courses and roster entries stay on record;
-                  lessons are kept as history.
-                </p>
+                <>
+                  <p>
+                    Removes <strong>{removing.name}</strong> from <strong>{org.name}</strong>, with
+                    their roster entries and enrollments here (completed ones included).
+                  </p>
+                  <p>
+                    The account stays without an organization, so another school or teacher can add
+                    them later. Lessons are kept as history.
+                  </p>
+                </>
               ) : (
-                <p>
-                  Courses they own here keep them as the owner; reassign them from the Courses tab
-                  if needed.
-                </p>
+                <>
+                  <p>
+                    Removes <strong>{removing.name}</strong> from <strong>{org.name}</strong>. The
+                    account stays without a role: they can still sign in but reach nothing until
+                    they are invited or added somewhere again.
+                  </p>
+                  <p>
+                    Courses they own here keep them as the owner; reassign them from the Courses tab
+                    if needed.
+                  </p>
+                </>
               )}
             </>
           }
@@ -222,40 +243,20 @@ export function MembersTable({ role, segment, singular, plural, createAction }: 
           confirmLabel={role === 'STUDENT' ? 'Delete student account' : 'Delete account'}
           description={
             role === 'STUDENT' ? (
-              capabilities.isSuperAdmin ? (
-                <>
-                  <p>
-                    Deletes the account of <strong>{deleting.name}</strong> everywhere and removes
-                    every membership, roster entry and enrollment they have, in every organization.
-                  </p>
-                  <p>
-                    Lessons and payments are kept as history. The student can no longer sign in.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p>
-                    Removes <strong>{deleting.name}</strong> from every organization you administer,
-                    with their roster entries and enrollments there.
-                  </p>
-                  <p>
-                    The account is deleted only if nothing else links to it; lessons and payments
-                    are kept as history.
-                  </p>
-                </>
-              )
+              <>
+                <p>
+                  Deletes the account of <strong>{deleting.name}</strong>: their membership, roster
+                  entries and enrollments are removed and the student can no longer sign in.
+                </p>
+                <p>Lessons and payments are kept as history.</p>
+              </>
             ) : (
               <>
                 <p>
-                  Soft-deletes the account of <strong>{deleting.name}</strong>: every membership,
-                  roster entry and enrollment is removed and all their sessions end.
+                  Soft-deletes the account of <strong>{deleting.name}</strong>: their membership,
+                  roster entries and enrollments are removed and all their sessions end.
                 </p>
-                <p>
-                  Lessons and payments are kept as history.
-                  {capabilities.isSuperAdmin
-                    ? ''
-                    : ' If this person also belongs to an organization you do not administer, the API refuses and only the platform owner can delete the account.'}
-                </p>
+                <p>Lessons and payments are kept as history.</p>
               </>
             )
           }

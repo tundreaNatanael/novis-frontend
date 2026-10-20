@@ -15,7 +15,8 @@ import type {
 
 /**
  * Students (API.md §7, §9.4). Invalidation: `create` → `lists()` + the org's member lists;
- * `update` → `detail(id)` + `lists()`; `remove` → everything under `all` + member lists;
+ * `update` → `detail(id)` + `lists()`; `remove` → everything under `all` + member lists +
+ * `enrollmentKeys.all`;
  * `addPrepaid` → `summary(id)` + `lessonKeys.lists()`.
  */
 export const studentKeys = {

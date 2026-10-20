@@ -3,6 +3,7 @@ import { ExternalLink, GraduationCap, Plus, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
+import { enrollmentKeys } from '@/api/enrollments'
 import { studentKeys, studentsApi } from '@/api/students'
 import type { Student } from '@/api/types'
 import type { RouteHandle } from '@/app/route-handle'
@@ -68,7 +69,10 @@ export function Component() {
   const remove = useMutation({
     mutationFn: (student: Student) => studentsApi.remove(student.id),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: studentKeys.all })
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: studentKeys.all }),
+        queryClient.invalidateQueries({ queryKey: enrollmentKeys.all }),
+      ])
       toast.success('Student account deleted')
     },
   })
@@ -167,13 +171,11 @@ export function Component() {
           description={
             <>
               <p>
-                Deletes <strong>{deleting.name}</strong>'s account everywhere: every roster entry,
-                membership and enrollment is removed. The student can no longer sign in.
+                Deletes <strong>{deleting.name}</strong>'s account: a freelance student belongs to
+                this teacher only, so their roster entry and every enrollment go with it. The
+                student can no longer sign in.
               </p>
-              <p>
-                Lessons and payments are kept as history. There is no way to remove a student from
-                only this teacher's roster through the console.
-              </p>
+              <p>Lessons and payments are kept as history.</p>
             </>
           }
           onConfirm={async () => {

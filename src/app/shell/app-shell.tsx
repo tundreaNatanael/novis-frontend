@@ -1,6 +1,6 @@
 import { Menu, Search } from 'lucide-react'
 import { Suspense, useState } from 'react'
-import { Outlet, useMatch } from 'react-router'
+import { Outlet } from 'react-router'
 import { useMe } from '@/auth/session'
 import { BrandMark } from '@/components/brand-mark'
 import { Button } from '@/components/ui/button'
@@ -18,9 +18,6 @@ import { useMediaQuery } from '@/lib/use-media-query'
 import { Breadcrumbs } from './breadcrumbs'
 import { CommandPalette } from './command-palette'
 import { navigationFor } from './navigation'
-import { cn } from '@/lib/utils'
-import { adminOrganizations } from '@/lib/permissions'
-import { OrgSwitcher } from './org-switcher'
 import { MobileNav, Sidebar } from './sidebar'
 import { ThemeToggle } from './theme-toggle'
 import { UserMenu } from './user-menu'
@@ -28,11 +25,7 @@ import { UserMenu } from './user-menu'
 /** Collapsible sidebar on desktop, top bar with a drawer on phones; one shell for both roles. */
 export function Component() {
   const me = useMe()
-  const orgMatch = useMatch('/org/:orgId/*')
-  const platformOrgMatch = useMatch('/platform/orgs/:orgId/*')
-  const activeOrgId = orgMatch?.params.orgId ?? platformOrgMatch?.params.orgId ?? null
-  const sections = navigationFor(me, activeOrgId)
-  const hasSwitcher = adminOrganizations(me).length > 1
+  const sections = navigationFor(me)
   // Tablets (md–lg) start with the icon rail so tables keep their columns; a toggle is remembered.
   const narrow = useMediaQuery('(max-width: 1023px)')
   const [storedCollapsed, setStoredCollapsed] = useLocalStorage<string>(
@@ -71,9 +64,7 @@ export function Component() {
               <Menu aria-hidden />
             </Button>
             <div className="flex min-w-0 flex-1 items-center gap-3">
-              <OrgSwitcher me={me} activeOrgId={activeOrgId} />
-              {/* With a switcher there is no room for crumbs on a phone; the page title says where you are. */}
-              <div className={cn('min-w-0', hasSwitcher && 'hidden sm:block')}>
+              <div className="min-w-0">
                 <Breadcrumbs />
               </div>
             </div>

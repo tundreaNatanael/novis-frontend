@@ -1,28 +1,42 @@
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ExternalLink, Mail, Plus, Send, Trash2, UserRound, XCircle } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { Ban, CircleCheck, ExternalLink, Mail, Plus, Trash2, UserRound } from 'lucide-react'
+import { useId, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { toast } from 'sonner'
-import { inviteKeys, invitesApi, isPendingInvite } from '@/api/invites'
-import type { Invite, User } from '@/api/types'
-import { userKeys, usersApi } from '@/api/users'
+import { freelanceTeacherKeys, freelanceTeachersApi } from '@/api/freelance-teachers'
+import type { FreelanceTeacherFilters, User, UserStatus } from '@/api/types'
 import type { RouteHandle } from '@/app/route-handle'
-import { useMe } from '@/auth/session'
-import { ConfirmDialog } from '@/components/confirm-dialog'
 import { columnHelper, DataTable } from '@/components/data/data-table'
 import { EmptyState } from '@/components/data/empty-state'
-import { ListToolbar, matchesQuery } from '@/components/data/list-toolbar'
+import { ListToolbar } from '@/components/data/list-toolbar'
+import { SelectField } from '@/components/form/select-field'
 import { PageHeader } from '@/components/page-header'
 import { RowActions } from '@/components/row-actions'
-import { StatusBadge, ToneBadge } from '@/components/status-badge'
+import { StatusBadge } from '@/components/status-badge'
 import { Button } from '@/components/ui/button'
-import { formatDate, formatRelative } from '@/lib/format'
+import { Label } from '@/components/ui/label'
+import { formatDate } from '@/lib/format'
+import { useDebouncedValue } from '@/lib/use-debounced-value'
 import { useListParams } from '@/lib/use-list-params'
 import { usePageTitle } from '@/lib/use-page-title'
 import { AddFreelanceTeacherSheet } from './components/add-freelance-teacher-sheet'
+import { DeleteFreelanceTeacherDialog } from './components/delete-freelance-teacher-dialog'
 import { FreelanceInviteSheet } from './components/freelance-invite-sheet'
+import { FreelanceStatusDialog } from './components/freelance-status-dialog'
+import { PendingFreelanceInvites } from './components/pending-freelance-invites'
 
 export const handle: RouteHandle = { title: 'Freelance teachers' }
+
+/** `?status=` in the URL; absent means every status. */
+type StatusView = UserStatus | 'ALL'
+const STATUS_VIEWS: { value: StatusView; label: string }[] = [
+  { value: 'ALL', label: 'All' },
+  { value: 'ACTIVE', label: 'Active' },
+  { value: 'DISABLED', label: 'Disabled' },
+]
+
+function statusView(value: string | undefined): StatusView {
+  return STATUS_VIEWS.find((view) => view.value === value)?.value ?? 'ALL'
+}
 
 const col = columnHelper<User>()
 const columns = [
@@ -47,50 +61,31 @@ const columns = [
   }),
 ]
 
-const INVITES = { page: 0, size: 50, sort: 'createdAt,desc' }
-
-/** `GET /users?freelance=true` (gap G5-B) plus the pending freelance invitations (`GET /invites`). */
+/**
+ * `GET /freelance-teachers?q=&status=` (super-admin only): the server searches name and email
+ * and filters by status. Add with a password, invite by email, disable / re-enable and delete
+ * (with its cascade) from here; the pending invitations sit below the list.
+ */
 export function Component() {
   usePageTitle('Freelance teachers')
-  const me = useMe()
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
   const params = useListParams({ sort: 'name,asc' })
+  const statusId = useId()
+  const [statusChange, setStatusChange] = useState<User | null>(null)
   const [deleting, setDeleting] = useState<User | null>(null)
-  const [revoking, setRevoking] = useState<Invite | null>(null)
-  const [resending, setResending] = useState<Invite | null>(null)
+  const view = statusView(params.filter('status'))
+  const q = useDebouncedValue(params.q.trim())
+  const filters = useMemo<FreelanceTeacherFilters>(
+    () => ({ ...(q ? { q } : {}), ...(view === 'ALL' ? {} : { status: view }) }),
+    [q, view],
+  )
+  const filtered = !!q || view !== 'ALL'
+  const invitesPage = Math.max(0, Number.parseInt(params.filter('invitesPage') ?? '0', 10) || 0)
 
   const query = useQuery({
-    queryKey: userKeys.list({ freelance: true }, params.pageParams),
-    queryFn: ({ signal }) => usersApi.list({ freelance: true }, params.pageParams, signal),
+    queryKey: freelanceTeacherKeys.list(filters, params.pageParams),
+    queryFn: ({ signal }) => freelanceTeachersApi.list(filters, params.pageParams, signal),
     placeholderData: keepPreviousData,
-  })
-  const invites = useQuery({
-    queryKey: inviteKeys.freelanceList(INVITES),
-    queryFn: ({ signal }) => invitesApi.listFreelance(INVITES, signal),
-  })
-  const rows = useMemo(
-    () =>
-      (query.data?.content ?? []).filter((u) =>
-        matchesQuery(u, params.q, [(r) => r.name, (r) => r.email]),
-      ),
-    [query.data, params.q],
-  )
-  const openInvites = (invites.data?.content ?? []).filter((i) => i.usedAt === null)
-
-  const remove = useMutation({
-    mutationFn: (teacher: User) => usersApi.remove(teacher.id),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: userKeys.all })
-      toast.success('Account deleted')
-    },
-  })
-  const revoke = useMutation({
-    mutationFn: (invite: Invite) => invitesApi.revoke(invite.id),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: inviteKeys.freelance() })
-      toast.success('Invitation revoked')
-    },
   })
 
   const actions = (
@@ -110,20 +105,31 @@ export function Component() {
     <div className="flex flex-col gap-5">
       <PageHeader
         title="Freelance teachers"
-        description="Teachers without an organization. They manage their own students, courses and lessons; you see and manage everything here."
+        description="Teachers without an organization, managed by the platform owner only. They run their own students, courses and lessons in the Novis app; you see and manage everything here."
         actions={actions}
       />
       <ListToolbar
         query={params.q}
         onQueryChange={params.setQuery}
-        searchPlaceholder="Filter by name or email…"
-        matched={rows.length}
-        loaded={query.data?.content.length}
+        searchPlaceholder="Search name or email…"
+        filters={
+          <div className="flex items-center gap-2 sm:w-48">
+            <Label htmlFor={statusId} className="shrink-0 text-muted-foreground">
+              Status
+            </Label>
+            <SelectField
+              id={statusId}
+              value={view}
+              onChange={(value) => params.set({ status: value === 'ALL' ? null : value })}
+              options={STATUS_VIEWS}
+            />
+          </div>
+        }
       />
       <DataTable
         caption="Freelance teachers"
         columns={columns}
-        data={rows}
+        data={query.data?.content ?? []}
         total={query.data?.totalElements ?? 0}
         page={params.page}
         size={params.size}
@@ -155,13 +161,19 @@ export function Component() {
                 icon: ExternalLink,
                 onSelect: () => navigate(`/platform/freelance/${u.id}`),
               },
+              u.status === 'ACTIVE'
+                ? { label: 'Disable account', icon: Ban, onSelect: () => setStatusChange(u) }
+                : {
+                    label: 'Re-enable account',
+                    icon: CircleCheck,
+                    onSelect: () => setStatusChange(u),
+                  },
               {
-                label: 'Delete account',
+                label: 'Delete freelance teacher',
                 icon: Trash2,
                 destructive: true,
                 separatorBefore: true,
                 onSelect: () => setDeleting(u),
-                disabledReason: u.id === me.id ? 'You cannot delete your own account.' : null,
               },
             ]}
           />
@@ -169,87 +181,22 @@ export function Component() {
         emptyState={
           <EmptyState
             icon={UserRound}
-            title={
-              params.q ? 'No freelance teachers match this filter' : 'No freelance teachers yet'
-            }
+            title={filtered ? 'No freelance teachers match' : 'No freelance teachers yet'}
             description={
-              params.q
-                ? 'Clear the filter or load another page.'
+              filtered
+                ? 'Change the search or the status filter.'
                 : 'Add one with a password, or invite them by email.'
             }
-            action={params.q ? null : actions}
+            action={filtered ? null : actions}
           />
         }
       />
-      <section
-        className="rounded-lg border border-border bg-card"
-        aria-labelledby="freelance-invites"
-      >
-        <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
-          <div>
-            <h2 id="freelance-invites" className="text-sm font-semibold text-card-foreground">
-              Open invitations{' '}
-              {invites.data ? (
-                <span className="text-muted-foreground tabular-nums">({openInvites.length})</span>
-              ) : null}
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              Freelance-teacher invitations not accepted yet.
-            </p>
-          </div>
-        </header>
-        {invites.isPending ? (
-          <p className="p-4 text-sm text-muted-foreground">Loading…</p>
-        ) : invites.isError ? (
-          <p className="p-4 text-sm text-destructive">Could not load invitations.</p>
-        ) : openInvites.length === 0 ? (
-          <p className="p-4 text-sm text-muted-foreground">No open invitations.</p>
-        ) : (
-          <ul className="divide-y divide-border">
-            {openInvites.map((invite) => {
-              const pending = isPendingInvite(invite)
-              return (
-                <li
-                  key={invite.id}
-                  className="flex min-h-12 items-center justify-between gap-3 px-4 py-2 text-sm"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate font-medium text-card-foreground">{invite.email}</p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      Sent {formatDate(invite.createdAt)} ·{' '}
-                      {pending ? `expires ${formatRelative(invite.expiresAt)}` : 'expired'}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    {pending ? (
-                      <ToneBadge tone="info">Pending</ToneBadge>
-                    ) : (
-                      <ToneBadge tone="neutral">Expired</ToneBadge>
-                    )}
-                    <RowActions
-                      label={`Actions for invitation to ${invite.email}`}
-                      actions={[
-                        {
-                          label: 'Resend invitation',
-                          icon: Send,
-                          onSelect: () => setResending(invite),
-                        },
-                        {
-                          label: 'Revoke invitation',
-                          icon: XCircle,
-                          destructive: true,
-                          onSelect: () => setRevoking(invite),
-                          disabledReason: pending ? null : 'This invitation has already expired.',
-                        },
-                      ]}
-                    />
-                  </div>
-                </li>
-              )
-            })}
-          </ul>
-        )}
-      </section>
+      <PendingFreelanceInvites
+        page={invitesPage}
+        onPageChange={(next) =>
+          params.set({ invitesPage: next > 0 ? next : null, page: params.page || null })
+        }
+      />
       <AddFreelanceTeacherSheet
         open={params.filter('new') === '1'}
         onOpenChange={(open) => params.setFlag('new', open ? 1 : null)}
@@ -259,53 +206,18 @@ export function Component() {
         open={params.filter('invite') === '1'}
         onOpenChange={(open) => params.setFlag('invite', open ? 1 : null)}
       />
-      {resending ? (
-        <FreelanceInviteSheet
+      {statusChange ? (
+        <FreelanceStatusDialog
+          teacher={statusChange}
           open
-          onOpenChange={(open) => !open && setResending(null)}
-          email={resending.email}
-        />
-      ) : null}
-      {revoking ? (
-        <ConfirmDialog
-          open
-          onOpenChange={(open) => !open && setRevoking(null)}
-          title="Revoke invitation"
-          destructive
-          confirmLabel="Revoke invitation"
-          description={
-            <p>
-              The link sent to <strong>{revoking.email}</strong> stops working. You can send a new
-              one at any time.
-            </p>
-          }
-          onConfirm={async () => {
-            await revoke.mutateAsync(revoking)
-            setRevoking(null)
-          }}
+          onOpenChange={(open) => !open && setStatusChange(null)}
         />
       ) : null}
       {deleting ? (
-        <ConfirmDialog
+        <DeleteFreelanceTeacherDialog
+          teacher={deleting}
           open
           onOpenChange={(open) => !open && setDeleting(null)}
-          title="Delete account"
-          destructive
-          confirmLabel="Delete account"
-          description={
-            <>
-              <p>
-                Soft-deletes <strong>{deleting.name}</strong>'s account: roster entries and any
-                memberships are removed and all their sessions end. Their students keep their own
-                accounts.
-              </p>
-              <p>Lessons and payments are kept as history.</p>
-            </>
-          }
-          onConfirm={async () => {
-            await remove.mutateAsync(deleting)
-            setDeleting(null)
-          }}
         />
       ) : null}
     </div>

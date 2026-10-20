@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
+import { isApiError } from '@/api/errors'
+import { freelanceTeacherKeys, freelanceTeachersApi } from '@/api/freelance-teachers'
 import type { User } from '@/api/types'
-import { userKeys, usersApi } from '@/api/users'
+import { userKeys } from '@/api/users'
 import { Field } from '@/components/form/field'
 import { FormError } from '@/components/form/form-error'
 import { FormSheet } from '@/components/form/form-sheet'
@@ -23,7 +25,13 @@ interface Props {
   onCreated: (teacher: User) => void
 }
 
-/** `POST /freelance-teachers`: a password account with no organization, usable at once (gap G1-B). */
+/**
+ * `POST /freelance-teachers`: a password account with no organization, usable at once (gap G1-B).
+ * The 409s are told apart by code: an email with a role elsewhere (or a student account) is
+ * `ROLE_CONFLICT`, a pending invitation is `INVITE_PENDING`, an account without a role is
+ * `ACCOUNT_WITHOUT_ROLE` (invite it instead; the wording comes from `errorMessage`), and an
+ * existing freelance teacher is a plain `CONFLICT`.
+ */
 export function AddFreelanceTeacherSheet({ open, onOpenChange, onCreated }: Props) {
   const queryClient = useQueryClient()
   const [formError, setFormError] = useState<string | null>(null)
@@ -40,15 +48,22 @@ export function AddFreelanceTeacherSheet({ open, onOpenChange, onCreated }: Prop
   }, [open, form])
 
   const mutation = useMutation({
-    mutationFn: (values: FormValues) => usersApi.createFreelanceTeacher(values),
+    mutationFn: (values: FormValues) => freelanceTeachersApi.create(values),
     onSuccess: async (teacher) => {
-      await queryClient.invalidateQueries({ queryKey: userKeys.lists() })
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: freelanceTeacherKeys.lists() }),
+        queryClient.invalidateQueries({ queryKey: userKeys.lists() }),
+      ])
       toast.success('Freelance teacher created')
       onOpenChange(false)
       onCreated(teacher)
     },
     onError: (error) =>
-      setFormError(applyServerErrors(error, form.setError, ['email', 'name', 'password'])),
+      setFormError(
+        isApiError(error) && error.is('CONFLICT')
+          ? 'This person is already a freelance teacher.'
+          : applyServerErrors(error, form.setError, ['email', 'name', 'password']),
+      ),
   })
 
   return (

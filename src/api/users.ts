@@ -1,18 +1,11 @@
 import { http } from './client'
 import { pageQuery } from './paging'
-import type {
-  CreateFreelanceTeacherRequest,
-  Page,
-  PageParams,
-  UpdateUserRequest,
-  User,
-  UserFilters,
-} from './types'
+import type { Page, PageParams, UpdateUserRequest, User, UserFilters } from './types'
 
 /**
  * Users (API.md §5). Invalidation: `update` → `detail(id)` + `me` (when self) + every list;
- * `remove` → every user key plus the member lists of the organizations involved;
- * `createFreelanceTeacher` → `lists()`.
+ * `remove` → every user key plus the member lists of the organizations involved. Freelance
+ * teachers have their own module (`freelance-teachers.ts`).
  */
 export const userKeys = {
   all: ['users'] as const,
@@ -30,6 +23,4 @@ export const usersApi = {
   get: (id: string, signal?: AbortSignal) => http.get<User>(`/users/${id}`, undefined, signal),
   update: (id: string, body: UpdateUserRequest) => http.patch<User>(`/users/${id}`, body),
   remove: (id: string) => http.delete(`/users/${id}`),
-  createFreelanceTeacher: (body: CreateFreelanceTeacherRequest) =>
-    http.post<User>('/freelance-teachers', body),
 }

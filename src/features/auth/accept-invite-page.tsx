@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form'
 import { Link, useNavigate, useParams } from 'react-router'
 import { z } from 'zod'
 import { authApi } from '@/api/auth'
-import { isApiError } from '@/api/errors'
+import { CONFLICT_COPY, errorMessage, isApiError } from '@/api/errors'
 import { useSession } from '@/auth/session'
 import { Field } from '@/components/form/field'
 import { FormError } from '@/components/form/form-error'
@@ -21,6 +21,10 @@ const schema = z
   .object({ name: nameSchema, ...passwordConfirmation.shape })
   .refine(passwordConfirmation.refine, passwordConfirmation.error)
 type FormValues = z.infer<typeof schema>
+
+/** `400 INVITE_PASSWORD_MISMATCH`: an existing account accepts with its current password. */
+const EXISTING_ACCOUNT_PASSWORD =
+  'This email already has a Novis account: enter its current password.'
 
 export function Component() {
   usePageTitle('Accept your invitation')
@@ -44,20 +48,25 @@ export function Component() {
       const me = await signIn(tokens)
       navigate(hasConsoleAccess(me) ? homeFor(me) : '/no-access', { replace: true })
     } catch (error) {
-      if (isApiError(error) && error.status === 400 && error.fieldErrors.length === 0) {
-        setFormError(
-          'This invitation is invalid, already used or expired (invitations last 7 days). Ask for a new one.',
+      if (isApiError(error) && error.is('INVITE_PASSWORD_MISMATCH')) {
+        // An existing account accepts with its current password, not a new one.
+        form.setError(
+          'password',
+          { type: 'server', message: EXISTING_ACCOUNT_PASSWORD },
+          { shouldFocus: true },
         )
         return
       }
-      setFormError(applyServerErrors(error, form.setError, ['name', 'password']))
+      setFormError(
+        acceptErrorMessage(error) ?? applyServerErrors(error, form.setError, ['name', 'password']),
+      )
     }
   })
 
   return (
     <AuthLayout
       title="Accept your invitation"
-      description="Choose the name colleagues will see and a password. Your role and organization come from the invitation."
+      description="Choose the name colleagues will see and a password. Your role and organization come from the invitation. If this email already has a Novis account, enter its current password instead: the account keeps its name and password."
       footer={
         <span>
           Already have an account?{' '}
@@ -75,7 +84,7 @@ export function Component() {
         <Field
           label="Password"
           required
-          hint="8 to 128 characters."
+          hint="8 to 128 characters. If this email already has an account, its current password."
           error={form.formState.errors.password?.message}
         >
           {(a11y) => (
@@ -105,9 +114,30 @@ export function Component() {
           {form.formState.isSubmitting ? (
             <Loader2 className="animate-spin motion-reduce:animate-none" aria-hidden />
           ) : null}
-          Create my account
+          Accept invitation
         </Button>
       </form>
     </AuthLayout>
   )
+}
+
+/**
+ * The accept errors that are not about a form field (API.md §4, `POST /auth/accept-invite`),
+ * told apart by code. The invitation stays unused when the server refuses it, so it can still be
+ * revoked or re-sent.
+ */
+function acceptErrorMessage(error: unknown): string | null {
+  if (!isApiError(error)) return null
+  if (error.is('ROLE_CONFLICT')) {
+    return `${CONFLICT_COPY.ROLE_CONFLICT} This invitation cannot be accepted with it; ask whoever invited you to use another email.`
+  }
+  if (error.is('INVITE_ACCOUNT_DISABLED')) {
+    return 'This account is disabled, so the invitation cannot be accepted. Ask the platform owner.'
+  }
+  if (error.is('INVITE_ORGANIZATION_INACTIVE')) {
+    return 'The organization of this invitation is no longer active. Ask the platform owner.'
+  }
+  if (error.isConflict) return errorMessage(error)
+  if (error.status !== 400 || error.fieldErrors.length > 0) return null
+  return 'This invitation is invalid, already used or expired (invitations last 7 days). Ask for a new one.'
 }

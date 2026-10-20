@@ -10,7 +10,7 @@
  * Request bodies are small and written by hand so required fields stay required. When the
  * backend changes: regenerate the schema, then fix the compile errors in this file first.
  */
-import type { components } from './schema'
+import type { components, operations } from './schema'
 
 type S = components['schemas']
 
@@ -22,8 +22,9 @@ type Nullable<T, K extends keyof T> = Omit<T, K> & { [P in K]: T[P] | null }
 // --- enumerations (API.md §2) --------------------------------------------------------------
 
 export type TokenScope = NonNullable<S['AuthTokensResponse']['scope']>
-export type PlatformRole = NonNullable<S['UserResponse']['platformRole']>
-export type MembershipRole = NonNullable<S['MembershipSummary']['role']>
+/** What an account is (API.md §3 `User.role`); `null` on `User` means an account without a role. */
+export type AccountRole = NonNullable<S['UserResponse']['role']>
+export type MembershipRole = NonNullable<S['MemberResponse']['role']>
 export type StaffRole = Extract<MembershipRole, 'ADMIN' | 'TEACHER'>
 export type UserStatus = NonNullable<S['UserResponse']['status']>
 export type OrganizationStatus = NonNullable<S['OrganizationResponse']['status']>
@@ -32,6 +33,10 @@ export type EnrollmentStatus = NonNullable<S['EnrollmentResponse']['status']>
 export type LessonStatus = NonNullable<S['LessonResponse']['status']>
 export type LessonOutcome = Exclude<LessonStatus, 'PENDING'>
 export type MaterialType = NonNullable<S['MaterialResponse']['type']>
+/** `?status=` of the invite lists: PENDING = unused and unexpired, EXPIRED = unused and expired. */
+export type InviteStatus = NonNullable<
+  NonNullable<operations['listOrganizationInvites']['parameters']['query']>['status']
+>
 
 // --- paging (API.md §1.5) --------------------------------------------------------------------
 
@@ -57,10 +62,16 @@ export interface PageParams {
 
 export type AuthTokens = Strict<S['AuthTokensResponse']>
 export type Message = Strict<S['MessageResponse']>
-export type MembershipSummary = Strict<S['MembershipSummary']>
+/** The one organization a user belongs to, with the membership id for `DELETE /memberships/{id}`. */
+export type UserOrganization = Strict<S['OrganizationSummary']>
+/**
+ * One role in one place: `role` is `null` for an account without a role (e.g. after its
+ * membership was removed); `organization` is `null` unless the user holds a membership (it stays
+ * present when that organization is archived).
+ */
 export type User = Nullable<
-  Omit<Strict<S['UserResponse']>, 'memberships'> & { memberships: MembershipSummary[] },
-  'platformRole'
+  Omit<Strict<S['UserResponse']>, 'organization'> & { organization: UserOrganization },
+  'role' | 'organization'
 >
 export type Organization = Strict<S['OrganizationResponse']>
 export type Invite = Nullable<Strict<S['InviteResponse']>, 'organizationId' | 'usedAt'>
@@ -155,6 +166,11 @@ export interface CreateFreelanceTeacherRequest {
   name: string
   password: string
 }
+export interface UpdateFreelanceTeacherRequest {
+  name?: string
+  email?: string
+  status?: UserStatus
+}
 export interface AddMembershipRequest {
   userId: string
   role: MembershipRole
@@ -228,6 +244,15 @@ export interface AddPrepaidLessonsRequest {
 export interface UserFilters {
   freelance?: boolean
   q?: string
+}
+export interface FreelanceTeacherFilters {
+  /** Name or email, case-insensitive. */
+  q?: string
+  status?: UserStatus
+}
+export interface InviteFilters {
+  /** Omitted: every invite. */
+  status?: InviteStatus
 }
 export interface StudentFilters {
   organizationId?: string

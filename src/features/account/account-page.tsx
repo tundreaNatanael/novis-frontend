@@ -72,14 +72,13 @@ export function Component() {
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
       <PageHeader
         title="Account"
-        description="Your own profile. Roles are granted by organizations and cannot be changed here."
+        description="Your own profile. Your role is granted by the platform owner or your organization and cannot be changed here."
       />
       <Card>
         <CardHeader>
           <CardTitle>Profile</CardTitle>
           <CardDescription>
-            {me.platformRole ? enumLabel(me.platformRole) : 'Administrator'} · member since{' '}
-            {formatDateTime(me.createdAt)}
+            {me.role ? enumLabel(me.role) : 'No role'} · member since {formatDateTime(me.createdAt)}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -183,28 +182,26 @@ export function Component() {
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle>Memberships</CardTitle>
-          <CardDescription>Where your account holds a role.</CardDescription>
+          <CardTitle>Role</CardTitle>
+          <CardDescription>Each account holds one role in one place.</CardDescription>
         </CardHeader>
         <CardContent>
-          {me.memberships.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              {me.platformRole === 'SUPER_ADMIN'
-                ? 'Platform owner: no organization memberships needed.'
-                : 'No memberships.'}
+          {me.organization ? (
+            <p className="flex items-center justify-between gap-3 text-sm">
+              <span className="truncate">
+                {me.organization.name}
+                {me.organization.status === 'ARCHIVED' ? (
+                  <span className="ml-2 text-xs text-muted-foreground">(archived)</span>
+                ) : null}
+              </span>
+              <span className="text-muted-foreground">{enumLabel(me.role)}</span>
             </p>
           ) : (
-            <ul className="divide-y divide-border text-sm">
-              {me.memberships.map((m) => (
-                <li
-                  key={`${m.organizationId}-${m.role}`}
-                  className="flex items-center justify-between gap-3 py-2"
-                >
-                  <span className="truncate">{m.organizationName}</span>
-                  <span className="text-muted-foreground">{enumLabel(m.role)}</span>
-                </li>
-              ))}
-            </ul>
+            <p className="text-sm text-muted-foreground">
+              {me.role === 'SUPER_ADMIN'
+                ? 'Platform owner: the whole platform, no organization.'
+                : 'No organization.'}
+            </p>
           )}
         </CardContent>
       </Card>

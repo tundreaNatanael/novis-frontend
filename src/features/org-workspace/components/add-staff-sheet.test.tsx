@@ -60,26 +60,78 @@ describe('add teacher with a course', () => {
     expect(staffBodies).toHaveLength(1)
   })
 
-  it('maps server field errors onto the form', async () => {
+  it('words the 409s by code: an account without a role, a role or an invitation elsewhere', async () => {
+    const answers = [
+      apiError(
+        409,
+        'ACCOUNT_WITHOUT_ROLE',
+        'This email belongs to an account without a role; invite it instead',
+      ),
+      apiError(
+        409,
+        'ROLE_CONFLICT',
+        'This email already belongs to an account with a role elsewhere',
+      ),
+      apiError(409, 'INVITE_PENDING', 'This email has a pending invitation elsewhere'),
+      // A plain CONFLICT is not mistaken for the role-less case, whatever its wording.
+      apiError(409, 'CONFLICT', 'Email already in use by an account without a role'),
+    ]
     server.use(
       http.get(api('/orgs/org-1'), () => HttpResponse.json(organization())),
       http.get(api('/orgs/org-1/members'), () => HttpResponse.json(page([]))),
       http.get(api('/courses'), () => HttpResponse.json(page([]))),
-      http.post(api('/orgs/org-1/staff'), () =>
-        apiError(
-          409,
-          'CONFLICT',
-          'Email already in use; add the existing account with POST /orgs/{orgId}/memberships or invite it',
-        ),
-      ),
+      http.post(api('/orgs/org-1/staff'), () => answers.shift()),
     )
     const { user: actor } = renderApp('/platform/orgs/org-1/admins?new=1')
 
     await actor.type(await screen.findByLabelText(/^Email/), 'taken@riverside.test')
     await actor.type(screen.getByLabelText(/^Name/), 'Taken')
     await actor.type(screen.getByLabelText(/^Password/), 'Str0ngPassw0rd!')
+    const create = screen.getByRole('button', { name: 'Create admin' })
+    await actor.click(create)
+    expect(
+      await screen.findByText(
+        'This email already belongs to an account without a role. Invite it by email instead; the person accepts with their current password and keeps their name.',
+      ),
+    ).toBeInTheDocument()
+
+    await actor.click(create)
+    expect(
+      await screen.findByText(
+        'This email already belongs to an account with a role elsewhere in Novis.',
+      ),
+    ).toBeInTheDocument()
+
+    await actor.click(create)
+    expect(
+      await screen.findByText('This email already has a pending invitation elsewhere.'),
+    ).toBeInTheDocument()
+
+    await actor.click(create)
+    expect(
+      await screen.findByText('Email already in use by an account without a role'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/Invite it by email instead/)).not.toBeInTheDocument()
+  })
+
+  it('maps server field errors onto the form', async () => {
+    server.use(
+      http.get(api('/orgs/org-1'), () => HttpResponse.json(organization())),
+      http.get(api('/orgs/org-1/members'), () => HttpResponse.json(page([]))),
+      http.get(api('/courses'), () => HttpResponse.json(page([]))),
+      http.post(api('/orgs/org-1/staff'), () =>
+        apiError(400, 'VALIDATION_FAILED', 'Validation failed', [
+          { field: 'email', message: 'must be a well-formed email address' },
+        ]),
+      ),
+    )
+    const { user: actor } = renderApp('/platform/orgs/org-1/admins?new=1')
+
+    await actor.type(await screen.findByLabelText(/^Email/), 'odd@riverside.test')
+    await actor.type(screen.getByLabelText(/^Name/), 'Odd')
+    await actor.type(screen.getByLabelText(/^Password/), 'Str0ngPassw0rd!')
     await actor.click(screen.getByRole('button', { name: 'Create admin' }))
 
-    expect(await screen.findByText(/Email already in use/)).toBeInTheDocument()
+    expect(await screen.findByText('must be a well-formed email address')).toBeInTheDocument()
   })
 })

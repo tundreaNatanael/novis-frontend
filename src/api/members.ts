@@ -11,7 +11,9 @@ import type {
 
 /**
  * Memberships and staff (API.md §6). Invalidation: `createStaff` / `add` → `list(orgId, role)` for
- * the role (and `null` role); `remove` → every member list of the organization + `userKeys.detail`.
+ * the role (and `null` role); `remove` → every member list of the organization + `userKeys.detail`,
+ * plus `studentKeys.all` and `enrollmentKeys.all` for a STUDENT membership (its roster rows and
+ * enrollments in the organization go with it).
  */
 export const memberKeys = {
   all: ['members'] as const,

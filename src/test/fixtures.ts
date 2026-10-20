@@ -9,6 +9,7 @@ import type {
   Student,
   StudentEnrollment,
   User,
+  UserOrganization,
 } from '@/api/types'
 
 export function page<T>(content: T[], overrides: Partial<Page<T>> = {}): Page<T> {
@@ -27,12 +28,23 @@ export const superAdmin: User = {
   id: 'root',
   email: 'admin@novis.local',
   name: 'Platform Owner',
-  platformRole: 'SUPER_ADMIN',
-  freelanceTeacher: false,
+  role: 'SUPER_ADMIN',
+  organization: null,
   status: 'ACTIVE',
   hasPassword: true,
-  memberships: [],
   createdAt: '2026-10-11T17:24:36Z',
+}
+
+/** `User.organization`: the one organization of a member, with its membership id. */
+export function userOrganization(overrides: Partial<UserOrganization> = {}): UserOrganization {
+  return {
+    id: 'org-1',
+    name: 'Riverside Music School',
+    slug: 'riverside',
+    status: 'ACTIVE',
+    membershipId: 'm-1',
+    ...overrides,
+  }
 }
 
 export function orgAdmin(
@@ -43,13 +55,14 @@ export function orgAdmin(
     id: 'admin-1',
     email: 'admin@riverside.test',
     name: 'Riverside Admin',
-    platformRole: null,
-    freelanceTeacher: false,
+    role: 'ADMIN',
+    organization: userOrganization({
+      id: organizationId,
+      name: organizationName,
+      membershipId: 'm-admin-1',
+    }),
     status: 'ACTIVE',
     hasPassword: true,
-    memberships: [
-      { organizationId, organizationName, organizationSlug: 'riverside', role: 'ADMIN' },
-    ],
     createdAt: '2026-10-12T10:00:00Z',
   }
 }
@@ -79,26 +92,44 @@ export function member(overrides: Partial<Member> = {}): Member {
   }
 }
 
+/** A TEACHER of org-1 unless overridden. */
 export function user(overrides: Partial<User> = {}): User {
   return {
     id: 'u-1',
     email: 'ana@riverside.test',
     name: 'Ana Pop',
-    platformRole: null,
-    freelanceTeacher: false,
+    role: 'TEACHER',
+    organization: userOrganization(),
     status: 'ACTIVE',
     hasPassword: true,
-    memberships: [
-      {
-        organizationId: 'org-1',
-        organizationName: 'Riverside Music School',
-        organizationSlug: 'riverside',
-        role: 'TEACHER',
-      },
-    ],
     createdAt: '2026-10-12T10:00:00Z',
     ...overrides,
   }
+}
+
+/** A freelance teacher: no organization, ever. */
+export function freelanceTeacher(overrides: Partial<User> = {}): User {
+  return user({
+    id: 'f-1',
+    name: 'Free Lancer',
+    email: 'free@test.local',
+    role: 'FREELANCE_TEACHER',
+    organization: null,
+    ...overrides,
+  })
+}
+
+/** A student account (no password) as `GET /users/{id}` returns it; a STUDENT of org-1 by default. */
+export function studentUser(overrides: Partial<User> = {}): User {
+  return user({
+    id: 's-1',
+    email: 'kid@riverside.test',
+    name: 'Kid Student',
+    role: 'STUDENT',
+    hasPassword: false,
+    organization: userOrganization({ membershipId: 'm-s-1' }),
+    ...overrides,
+  })
 }
 
 export function student(overrides: Partial<Student> = {}): Student {

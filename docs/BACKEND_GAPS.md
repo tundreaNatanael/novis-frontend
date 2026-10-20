@@ -6,6 +6,11 @@ discrepancies found are listed in [G16](#g16-documentation--code-discrepancies).
 
 Paths below are relative to `novis-backend/api/src/main/java/com/novis/api/`.
 
+**Later the same day** the backend adopted "one role per account" ([G20](#g20-one-role-per-account)):
+the notes below that assume several memberships per user, reuse of an existing student across
+places or a student → staff conversion through an invite are superseded where they say
+"Update (G20)".
+
 Status legend: **open** · **adapted in UI** (option A, with the phase that builds it) ·
 **fixed in backend** (option B, with the backend commit) · **deferred**. Decisions taken at the
 Phase 0 checkpoint on 2026-10-16 (`docs/DECISIONS.md` D-015).
@@ -30,8 +35,9 @@ Phase 0 checkpoint on 2026-10-16 (`docs/DECISIONS.md` D-015).
 | [G14](#g14-member-rows-carry-no-status-and-sort-only-by-membership-columns) | Member lists                                          | **A** — status on detail only; sort by "joined"                                                                                                        | UI only     | adapted in UI (phase 2)                                                                 |
 | [G15](#g15-rate-limits-in-development)                                      | e2e against the live API                              | **A** — one login per run                                                                                                                              | tests       | adapted (e2e signs in once)                                                             |
 | [G17](#g17-refresh-token-rotation-has-no-reuse-grace-window)                | Reload during a refresh signs the user out everywhere | **B** (small) — accept the previous token for a few seconds after rotation; UI mitigates with a per-tab access token (D-021)                           | ½ day       | open (mitigated in UI)                                                                  |
-| [G18](#g18-small-shape-gaps-found-while-building-phase-2)                   | Membership ids, clearing optional fields              | **B** (tiny) — add `id` to `MembershipSummary`; accept `null` for `description` / `defaultMeetingUrl` in `PATCH /courses/{id}`                         | hours       | open (worked around)                                                                    |
+| [G18](#g18-small-shape-gaps-found-while-building-phase-2)                   | Membership ids, clearing optional fields              | **B** (tiny) — add `id` to `MembershipSummary`; accept `null` for `description` / `defaultMeetingUrl` in `PATCH /courses/{id}`                         | hours       | membership id fixed with G20 (`organization.membershipId`); course nulls open           |
 | [G19](#g19-lesson-rows-carry-ids-only)                                      | Ledger rows need N name lookups                       | **B** (small) — add `teacherName`, `studentName`, `courseTitle`, `organizationName` to `LessonResponse`                                                | hours       | open (worked around)                                                                    |
+| [G20](#g20-one-role-per-account)                                            | One role per account                                  | **B** — `User.role` + `User.organization`, `409 ROLE_CONFLICT` / `INVITE_PENDING`, `/freelance-teachers`, invite `?status=` + resend                   | backend     | adapted in UI (schema hand-edited to the contract; regenerate)                          |
 | [G16](#g16-documentation--code-discrepancies)                               | Docs ≠ code                                           | record; no action in the console                                                                                                                       | —           | recorded                                                                                |
 
 Everything marked **B** keeps the backend's rules: authorization in the service, roles and
@@ -87,6 +93,15 @@ extend `OnboardingFlowIT`. Update `API.md`, `README.md`, `CHANGELOG.md`, `CLAUDE
 exists immediately). The invite flow stays available as a secondary "Invite by email" action.
 
 **Effort.** ~½ day including tests and docs.
+
+**Update (G20).** Any live account with the email is now `409`: `ROLE_CONFLICT` when it holds a
+role elsewhere or is a student account, `ACCOUNT_WITHOUT_ROLE` when it is a password account without
+a role (invite it instead: it accepts with its current password and keeps its name); a usable
+invitation for the email is `INVITE_PENDING`. Student accounts are never turned into
+staff any more. ADMIN staff and invites are the super-admin's only. Invite lists take
+`?status=PENDING|USED|EXPIRED`; `POST /invites/{id}/resend` rotates the link and the expiry; a new
+invite for the same email, place and role replaces the pending one, and one for another place is
+`409 INVITE_PENDING`.
 
 **Security.** The creating admin knows the initial password. Mitigations: the console shows a
 "Send password reset link" action (public `POST /auth/forgot-password`), the account owner can
@@ -165,6 +180,11 @@ and lessons without a course resolve their organization from the roster row.
 **Option B.** A combined `POST /students { …, courseId }` would save one round trip; not worth it.
 
 **Recommendation: A.**
+
+**Update (G20).** An existing student email is linked only when the student is already in the same
+place (a STUDENT of this organization, or on this freelance teacher's roster) or has no place at
+all; any other existing account is `409 ROLE_CONFLICT`, and a usable invitation for the email is
+`409 INVITE_PENDING`. The form's hint says so instead of promising reuse.
 
 ---
 
@@ -253,6 +273,11 @@ created from the console at all.
 
 **Effort.** ~1 day with tests and docs.
 
+**Update (G20).** A teacher teaches in exactly one place, so item 4's "otherwise keep `400`" is
+gone, and an org admin naming a teacher outside their organization gets `404`. Freelance
+management moves to the super-admin-only `/freelance-teachers` (list with `q` / `status`, create,
+get, patch, delete with cascade).
+
 **Security.** All new reads are super-admin only (or admin-of-the-teacher's-org for item 3) and
 return existing DTOs. Item 4 only lets the super-admin do what a freelance teacher can already do
 for themself; the roster row still records the derived scope.
@@ -325,6 +350,13 @@ reset link covers the need without an admin ever knowing a password.
 
 **Recommendation: A.**
 
+**Update (G20).** One membership per user: the detail page has a single **Remove from
+organization** (`organization.membershipId`), which leaves the account without a role (it can be
+invited or added elsewhere later). An admin covers the teachers and students of their organization
+only; another admin's account, membership or invitation is the super-admin's (`403`, disabled with
+the reason in the console). Freelance teachers and accounts without a role are `404` to admins.
+Disabling an account revokes its refresh tokens.
+
 ---
 
 ## G8 Deleting students
@@ -361,6 +393,12 @@ reset link covers the need without an admin ever knowing a password.
 roster rows, enrollments of that org) in one call. Nice to have.
 
 **Recommendation: A** (B optional later).
+
+**Update (G20).** A student belongs to one organization or one freelance teacher. Removing a
+STUDENT membership now also deletes that organization's roster rows and drops all the student's
+enrollments in its courses (completed ones included) (option B's effect, through `DELETE /memberships/{id}`); the account
+stays without a place. An admin's `DELETE /students/{id}` therefore leaves no link and deletes the
+account. The console copy says exactly that.
 
 ---
 
@@ -530,15 +568,16 @@ cache; tests for both branches.
 
 ## G18 Small shape gaps found while building Phase 2
 
-- `User.memberships[]` (`MembershipSummary`) carries no membership **id**, so "remove from this
+- ~~`User.memberships[]` (`MembershipSummary`) carries no membership **id**, so "remove from this
   organization" on a detail page must find the id by scanning `GET /orgs/{orgId}/members`
-  (`useUserMemberships`, up to 500 rows). **B:** add `id` to `MembershipSummary`.
+  (`useUserMemberships`, up to 500 rows).~~ **Fixed with G20:** `User.organization.membershipId`;
+  the scan is gone.
 - `PATCH /courses/{id}` cannot **clear** `description` or `defaultMeetingUrl` (omitted = unchanged; an
   empty string fails `@AbsoluteHttpsUrl`). The edit form keeps the current link when the field is
   emptied and says so. **B:** accept explicit `null` for both.
 - `Member` rows carry no `status` (see G14).
 
-**Status: open (worked around in the UI).**
+**Status: open for the course fields (worked around in the UI); membership id fixed (G20).**
 
 ## G19 Lesson rows carry ids only
 
@@ -551,3 +590,45 @@ per distinct id, D-028) and shows short ids while loading.
 **Option A (done).** Resolve names in the console. **Option B.** Add `teacherName`,
 `studentName`, `courseTitle` and `organizationName` to `LessonResponse` (a join in
 `LessonQueriesImpl`, mapper change, no migration). **Status: open (worked around in the UI).**
+
+## G20 One role per account
+
+**Backend change (contract "one user = one role in one place", 2026-10-16).** Every account holds
+one role in one place: the super-admin (platform only), an ADMIN or TEACHER of exactly one
+organization, a freelance teacher (never in an organization) or a student of exactly one
+organization or one freelance teacher. Removing a membership leaves an account without a role,
+which may later be invited or added elsewhere; there is no path from freelance teacher to an
+organization and no student → staff conversion.
+
+- `User` drops `platformRole`, `freelanceTeacher` and `memberships[]` for
+  `role: SUPER_ADMIN | ADMIN | TEACHER | FREELANCE_TEACHER | STUDENT | null` and
+  `organization: { id, name, slug, status, membershipId } | null` (present even when the
+  organization is archived).
+- New `409` codes: `ROLE_CONFLICT` (the email or account has a role elsewhere, or is the wrong kind
+  of account) and `INVITE_PENDING` (a usable invitation exists for another place or role); same-place
+  duplicates stay `CONFLICT`. Review fixes added `409 ACCOUNT_WITHOUT_ROLE` (direct create of staff
+  or a freelance teacher for an account without a role) and three accept-invite `400`s:
+  `INVITE_PASSWORD_MISMATCH` (an existing account must enter its current password),
+  `INVITE_ACCOUNT_DISABLED`, `INVITE_ORGANIZATION_INACTIVE`.
+- Admin accounts (create, invite, add, remove, edit, delete) and freelance teachers are managed by
+  the super-admin only.
+- New endpoints: `GET/POST /freelance-teachers`, `GET/PATCH/DELETE /freelance-teachers/{id}`,
+  `POST /invites/{id}/resend`; `?status=PENDING|USED|EXPIRED` on `GET /orgs/{orgId}/invites` and
+  `GET /invites`.
+
+**Console (D-036).** Capabilities read `role` / `organization` (the admin organization is the
+ADMIN membership's when that organization is active; otherwise `/no-access`); the `/org` picker and
+the switcher are gone; detail pages remove the one membership by `organization.membershipId`; org
+screens show nothing freelance; org invites filter by status (pending by default), resend and
+revoke; `ROLE_CONFLICT` / `INVITE_PENDING` / `ACCOUNT_WITHOUT_ROLE` have fixed sentences
+(`src/api/errors.ts`, chosen by code, never by message text), and the accept-invite page maps its
+codes (the current-password mismatch onto the password field). The super-admin's Freelance section (D-037) runs on
+`/freelance-teachers` (server-side `q` / `status`, create, edit, disable / re-enable, cascade
+delete, a not-found page for non-freelance ids) and lists pending freelance invitations with
+`GET /invites?status=PENDING`, resending through `POST /invites/{id}/resend`.
+
+**Schema.** `src/api/schema.d.ts` was edited **by hand** to the contract while the backend was
+being changed in parallel. Regenerate it with `npm run api:types` against the updated backend and
+fix any drift in `src/api/types.ts` first (operation ids of the new routes will differ).
+
+**Status: adapted in UI.**

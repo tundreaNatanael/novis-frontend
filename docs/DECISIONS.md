@@ -88,6 +88,7 @@ enrollment call.
 **Context.** Gap G3. The roster row records the organization scope and lets the teacher see the
 student in the mobile app at once; lessons without a course resolve their organization from it.
 **Consequences.** Removing a student from the organization must mention the roster row stays.
+**Update (D-039).** Only while that teacher is still a TEACHER of the organization.
 
 ## D-012 · 2026-10-16 · List and sheet state in the URL
 
@@ -234,7 +235,7 @@ optimistic update rolled back with the server's message.
 **Context.** `PATCH /lessons/{id}/payment` has no status precondition in the service; admins fix
 payment records after the fact. Deleting stays limited to pending + unpaid, as the server enforces.
 
-## D-032 · 2026-10-16 · Picker only for admins of several organizations
+## D-032 · 2026-10-16 · Picker only for admins of several organizations (superseded by D-036)
 
 **Decision.** `/org` lists ADMIN memberships as cards with live teacher / student counts; an admin
 of one organization never sees it (`homeFor` → `/org/:orgId`), and the top-bar switcher appears
@@ -267,3 +268,74 @@ card, which the design reserves for tab strips only.
 Phones keep the drawer, desktops the full sidebar.
 **Context.** A 240 px sidebar left 496 px for a table at 768 px, which clipped the row menu even
 after hiding the date column. The rail leaves 680 px, enough for every list at that width.
+
+## D-036 · 2026-10-16 · One role per account: no picker, no switcher, single membership
+
+**Decision.** The backend now gives every account one role in one place (`User.role` +
+`User.organization`, gap G20). The console follows: `homeFor` sends the super-admin to `/platform`,
+the ADMIN of an **active** organization to `/org/:orgId` and everyone else (an archived
+organization's admin included) to `/no-access`. The `/org` picker page and the top-bar switcher are
+gone; `/org` only redirects home for old links. Staff and student details offer one "Remove from
+organization" bound to `organization.membershipId` (the member-list scan `useUserMemberships` is
+gone). An org admin covers the teachers and students of their organization, never another admin:
+admin accounts, admin memberships and admin invitations are the super-admin's (disabled with the
+reason otherwise). Org invites list pending ones by default (`?status=`), resend through
+`POST /invites/{id}/resend` and revoke any unused one. `409 ROLE_CONFLICT` / `INVITE_PENDING` get
+fixed sentences in `errorMessage`; same-place `CONFLICT`s keep their form's own sentence.
+**Context.** Supersedes D-032: an admin of several organizations can no longer exist, and the
+membership id now comes with the user.
+**Alternatives.** Keep the picker as a fallback for legacy rows — rejected, the backend's V7
+migration refuses to start with such rows.
+**Consequences.** `src/api/schema.d.ts` was edited by hand to the agreed contract while the backend
+was being changed; regenerate it (`npm run api:types`) once the backend runs and fix any drift in
+`src/api/types.ts` first.
+
+## D-037 · 2026-10-16 · Freelance teachers: own resource, explicit status actions, typed delete
+
+**Decision.** The super-admin's Freelance section works on `/freelance-teachers` only (list, get,
+create, patch, delete); `GET /users?freelance=true` stays for the lesson pickers. The list is
+searched and filtered by status **on the server** (`q`, `status`), the search debounced 300 ms
+(`useDebouncedValue`) so typing sends one request per pause; it is the only list without the
+"filters this page only" note. Status is not a field of the edit sheet: **Disable account** and
+**Re-enable account** are their own actions, each behind a confirmation (disabling ends every
+session). **Delete freelance teacher** spells out the cascade (students deleted and signed out,
+courses archived, lessons, homework and materials kept) and asks for the teacher's email, as
+archiving an organization asks for its slug. Pending invitations are only the usable ones
+(`GET /invites?status=PENDING`, 10 per page), resent through `POST /invites/{id}/resend`. The
+teacher's workspace shows a not-found page for any id `GET /freelance-teachers/{id}` refuses (an
+org member, a student, a deleted account) instead of the old "no longer marked as freelance"
+alert; its breadcrumb fetches for the super-admin only, because breadcrumbs render before the
+guard redirects anyone else.
+**Context.** One role per account (D-036, gap G20): a freelance teacher never belongs to an
+organization, is managed by the super-admin only, and deleting one removes their students.
+**Alternatives.** A Status select in the edit sheet (as for staff) — rejected, disabling ends
+sessions and deserves its own confirmation; a plain confirm for delete — rejected, the cascade
+deletes other people's accounts and cannot be undone.
+
+## D-038 · 2026-10-16 · Error copy by code, never by message text
+
+**Decision.** Forms choose their sentence from `ApiError.code` (`error.is(code)`, typed by
+`ApiErrorCode` in `src/api/errors.ts`), never by matching `message`. Codes with a console sentence
+live in `errorMessage` (`ROLE_CONFLICT`, `INVITE_PENDING`, `ACCOUNT_WITHOUT_ROLE`); a form maps a
+code to its own sentence or field only when the meaning is form-specific (add freelance teacher:
+plain `CONFLICT` = already a freelance teacher; accept-invite: `INVITE_PASSWORD_MISMATCH` on the
+password field, `INVITE_ACCOUNT_DISABLED`, `INVITE_ORGANIZATION_INACTIVE`).
+**Context.** The first one-role pass matched message text ("without a role", "disabled", "no
+longer active") and assumed the add-freelance `CONFLICT` had one meaning; the backend then gave
+those cases their own codes.
+**Consequences.** A backend rewording cannot change the console's copy; a new case needs a code
+in API.md §1.6 and in `ApiErrorCode`.
+
+## D-039 · 2026-10-16 · Roster teacher only while they still teach in the organization
+
+**Decision.** The organization's add-student sheet sends `teacherId = course.teacherId` only when
+that teacher is in the organization's TEACHER members; otherwise the student is created without a
+roster teacher and the enrollment alone links them. The course hint says so, and the course
+select waits for the teacher list.
+**Context.** Removing a TEACHER membership keeps their courses active as history, and the backend
+answers an org admin's `teacherId` that is not a current TEACHER with `404 Teacher`, which failed
+the whole create.
+**Alternatives.** Hide such courses — rejected, enrolling in them still works and is useful until
+the course is reassigned.
+**Consequences.** The teacher list is the first 100 TEACHER members; a course owned by a teacher
+beyond that is enrolled without a roster teacher too.

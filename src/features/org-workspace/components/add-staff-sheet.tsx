@@ -138,6 +138,9 @@ export function AddStaffSheet({ role, open, onOpenChange, onCreated }: AddStaffS
             role,
           })
         } catch (error) {
+          // `errorMessage` words the 409s by code: ROLE_CONFLICT (a role elsewhere, a student
+          // account), INVITE_PENDING, and ACCOUNT_WITHOUT_ROLE (a known account without a role,
+          // which is invited instead).
           setFormError(applyServerErrors(error, form.setError, ['email', 'name', 'password']))
           return
         }

@@ -50,7 +50,9 @@ docs/           PLAN.md · BACKEND_GAPS.md · DECISIONS.md
 bearer header, JSON, `ApiError` (`status`, `code`, `message`, `fieldErrors`) and `NetworkError`.
 `401 TOKEN_EXPIRED` → one shared refresh, both tokens replaced, request retried once;
 `INVALID_REFRESH_TOKEN` / `ACCOUNT_UNAVAILABLE` / `INVALID_TOKEN` → `expireSession()`. Never
-send roles or organization ids as authorization input; the server derives them.
+send roles or organization ids as authorization input; the server derives them. Copy is chosen by
+`error.is(code)` (typed by `ApiErrorCode`), never by matching `message` text (D-038); shared
+sentences live in `errorMessage`.
 
 **Types.** `src/api/schema.d.ts` is generated and never edited. `src/api/types.ts` is the typed
 overlay: it makes response fields required (springdoc emits no `required`) and re-adds `| null`
@@ -128,7 +130,16 @@ from the files alone.
 All seven phases of `docs/PLAN.md` §10 are delivered: discovery and the approved backend changes
 (committed in `../novis-backend`), foundation, the organization workspace (mounted at
 `/platform/orgs/:orgId/*` and `/org/:orgId/*`), the freelance-teacher workspace, lessons, the
-admin console (`/org` picker + switcher), the polish pass and the docs. Shared detail pages read
+admin console, the polish pass and the docs. **One role per account** (D-036, gap G20): `User`
+has `role` + `organization` (with `membershipId`); an admin runs exactly one active organization,
+so there is no picker or switcher; `ROLE_CONFLICT` / `INVITE_PENDING` / `ACCOUNT_WITHOUT_ROLE`
+copy lives in `errorMessage`, and accept-invite maps its own codes (an existing account enters its
+current password). The super-admin's Freelance section (D-037) runs on `/freelance-teachers`: the
+list is searched on the server (`q` debounced with `useDebouncedValue`, the only list that does
+not filter the loaded page), Disable / Re-enable are explicit confirmed actions, Delete asks for
+the email and explains the cascade, and the teacher workspace shows a 404 page for any other id.
+`src/api/schema.d.ts` is **hand-edited** to that contract until the backend change
+lands: regenerate it with `npm run api:types` and fix `types.ts` first. Shared detail pages read
 their scope with `useWorkspaceScope()` (`kind: 'org' | 'freelance'`). Lessons live in
 `src/features/lessons`: `LessonLedger` takes a `FixedScope` and is mounted three times; every
 filter is a URL param (`lessonFiltersFromParams`); names for id-only rows come from
@@ -136,8 +147,8 @@ filter is a URL param (`lessonFiltersFromParams`); names for id-only rows come f
 `src/lib/permissions.ts`; the paid toggle is the only optimistic update. Tests: Vitest + MSW over
 the real route tree (`src/test/render.tsx`), Playwright in `e2e/` (API sign-in fixture, live
 smoke flow, phone checks, screenshots + axe). Open follow-ups are the **B** items in
-`docs/BACKEND_GAPS.md` (G17 refresh grace window, G18 membership ids / nullable PATCH fields,
-G19 names on lesson rows) and the README's Known limitations.
+`docs/BACKEND_GAPS.md` (G17 refresh grace window, G18 nullable PATCH fields, G19 names on lesson
+rows) and the README's Known limitations.
 
 ## Don'ts
 

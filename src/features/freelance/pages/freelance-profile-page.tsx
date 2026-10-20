@@ -1,13 +1,8 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { KeyRound, Pencil, Trash2 } from 'lucide-react'
+import { Ban, CircleCheck, KeyRound, Pencil, Trash2 } from 'lucide-react'
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router'
-import { toast } from 'sonner'
-import { userKeys, usersApi } from '@/api/users'
+import { useNavigate } from 'react-router'
 import type { RouteHandle } from '@/app/route-handle'
-import { ConfirmDialog } from '@/components/confirm-dialog'
 import {
-  BooleanValue,
   DetailField,
   DetailPanel,
   EnumValue,
@@ -16,31 +11,28 @@ import {
 } from '@/components/detail/detail-panel'
 import { RowActions } from '@/components/row-actions'
 import { SectionHeader } from '@/components/section-header'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import { EditUserSheet } from '@/features/org-workspace/components/edit-user-sheet'
 import { ResetLinkDialog } from '@/features/org-workspace/components/reset-link-dialog'
-import { enumLabel } from '@/lib/format'
+import { DeleteFreelanceTeacherDialog } from '../components/delete-freelance-teacher-dialog'
+import { EditFreelanceTeacherSheet } from '../components/edit-freelance-teacher-sheet'
+import { FreelanceStatusDialog } from '../components/freelance-status-dialog'
 import { useFreelanceWorkspace } from '../use-freelance-workspace'
 
 export const handle: RouteHandle = { title: 'Profile' }
 
-/** Every field of the freelance teacher's account (`GET /users/{id}`), with edit, reset link and delete. */
+/**
+ * Every field of the freelance teacher's account (`GET /freelance-teachers/{id}`), with edit
+ * (name, email), disable / re-enable, reset link and delete (with its cascade).
+ */
 export function Component() {
-  const { teacher, teacherId, capabilities } = useFreelanceWorkspace()
+  const { teacher, capabilities } = useFreelanceWorkspace()
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
   const [editing, setEditing] = useState(false)
+  const [changingStatus, setChangingStatus] = useState(false)
   const [resetting, setResetting] = useState(false)
   const [deleting, setDeleting] = useState(false)
-
-  const remove = useMutation({
-    mutationFn: () => usersApi.remove(teacherId),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: userKeys.all })
-      toast.success('Account deleted')
-      navigate('/platform/freelance')
-    },
-  })
+  const active = teacher.status === 'ACTIVE'
 
   return (
     <div className="flex flex-col gap-4">
@@ -51,6 +43,10 @@ export function Component() {
             <Button variant="outline" onClick={() => setEditing(true)}>
               <Pencil aria-hidden />
               Edit
+            </Button>
+            <Button variant="outline" onClick={() => setChangingStatus(true)}>
+              {active ? <Ban aria-hidden /> : <CircleCheck aria-hidden />}
+              {active ? 'Disable account' : 'Re-enable account'}
             </Button>
             <RowActions
               label="More actions"
@@ -64,18 +60,26 @@ export function Component() {
                     : 'Only active password accounts can receive a reset link.',
                 },
                 {
-                  label: 'Delete account',
+                  label: 'Delete freelance teacher',
                   icon: Trash2,
                   destructive: true,
                   separatorBefore: true,
                   onSelect: () => setDeleting(true),
-                  disabledReason: capabilities.deleteAccountDisabledReason(teacher),
                 },
               ]}
             />
           </>
         }
       />
+      {!active ? (
+        <Alert>
+          <Ban aria-hidden />
+          <AlertDescription>
+            This account is disabled: {teacher.name} cannot sign in. Their students, courses and
+            lessons are unchanged.
+          </AlertDescription>
+        </Alert>
+      ) : null}
       <div className="grid grid-cols-[minmax(0,1fr)] gap-5 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <DetailPanel title="Details" description="Every field the API returns for this account.">
           <DetailField label="Id">
@@ -86,66 +90,34 @@ export function Component() {
           <DetailField label="Status">
             <EnumValue value={teacher.status} />
           </DetailField>
-          <DetailField label="Account type">
-            {teacher.hasPassword ? 'Password account (teacher)' : 'Student account'}
-          </DetailField>
-          <DetailField label="Freelance teacher">
-            <BooleanValue value={teacher.freelanceTeacher} />
-          </DetailField>
-          <DetailField label="Platform role">
-            {teacher.platformRole ? (
-              <EnumValue value={teacher.platformRole} />
+          <DetailField label="Role">
+            {teacher.role ? (
+              <EnumValue value={teacher.role} />
             ) : (
               <span className="text-muted-foreground">None</span>
             )}
           </DetailField>
+          <DetailField label="Organization">
+            <span className="text-muted-foreground">
+              None (freelance teachers never belong to one)
+            </span>
+          </DetailField>
+          <DetailField label="Password">{teacher.hasPassword ? 'Set' : 'Not set'}</DetailField>
           <DetailField label="Created">
             <TimeValue value={teacher.createdAt} />
           </DetailField>
         </DetailPanel>
-        <DetailPanel
-          title="Organization memberships"
-          description="A freelance teacher may also teach in organizations."
-        >
-          {teacher.memberships.length === 0 ? (
-            <DetailField label="None">Works outside every organization.</DetailField>
-          ) : (
-            teacher.memberships.map((m) => (
-              <DetailField key={`${m.organizationId}-${m.role}`} label={enumLabel(m.role)}>
-                <Link
-                  to={`/platform/orgs/${m.organizationId}`}
-                  className="font-medium text-primary underline-offset-4 hover:underline"
-                >
-                  {m.organizationName}
-                </Link>
-              </DetailField>
-            ))
-          )}
-        </DetailPanel>
       </div>
-      <EditUserSheet
-        user={teacher}
-        capabilities={capabilities}
-        open={editing}
-        onOpenChange={setEditing}
-      />
+      <EditFreelanceTeacherSheet teacher={teacher} open={editing} onOpenChange={setEditing} />
+      {changingStatus ? (
+        <FreelanceStatusDialog teacher={teacher} open onOpenChange={setChangingStatus} />
+      ) : null}
       <ResetLinkDialog email={teacher.email} open={resetting} onOpenChange={setResetting} />
-      <ConfirmDialog
+      <DeleteFreelanceTeacherDialog
+        teacher={teacher}
         open={deleting}
         onOpenChange={setDeleting}
-        title="Delete account"
-        destructive
-        confirmLabel="Delete account"
-        description={
-          <>
-            <p>
-              Soft-deletes <strong>{teacher.name}</strong>'s account: roster entries and memberships
-              are removed and all their sessions end. Their students keep their own accounts.
-            </p>
-            <p>Lessons and payments are kept as history.</p>
-          </>
-        }
-        onConfirm={() => remove.mutateAsync()}
+        onDeleted={() => navigate('/platform/freelance')}
       />
     </div>
   )
