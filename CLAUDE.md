@@ -22,7 +22,7 @@ ESLint 10 + Prettier 3. Node ≥ 22.22.
 ## Commands
 
 ```bash
-npm run dev            # http://localhost:5173 (backend CORS must allow this origin)
+npm run start          # http://localhost:5173 (backend CORS must allow this origin)
 npm run typecheck && npm run lint && npm test && npm run build   # the gate for every task
 npm run e2e            # Playwright against the dev server + a live API (VITE_API_BASE_URL / .env); needs `npx playwright install chromium` once
 npm run api:types      # regenerate src/api/schema.d.ts from the running backend's OpenAPI
