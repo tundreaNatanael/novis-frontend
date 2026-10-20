@@ -27,6 +27,7 @@ dist-ssr
 coverage
 playwright-report
 test-results
+test-results-*
 e2e/.auth
 e2e/screenshots
 
