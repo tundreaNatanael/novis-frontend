@@ -148,12 +148,13 @@ current password). The super-admin's Freelance section (D-037) runs on `/freelan
 list is searched on the server (`q` debounced with `useDebouncedValue`, the only list that does
 not filter the loaded page), Disable / Re-enable are explicit confirmed actions, Delete asks for
 the email and explains the cascade, and the teacher workspace shows a 404 page for any other id.
-`src/api/schema.d.ts` is generated from the backend (`npm run api:types`, last run against the
-student profiles on one email: `StudentCreatedResponse`, `StudentLoginResponse`,
-`GET /students/{id}/profiles`, `GET /me/profiles`, the select / switch auth routes); after a
-backend change regenerate it and fix `types.ts` first. **Siblings on one email** (D-049): a
+`src/api/schema.d.ts` is generated from the backend (`npm run api:types`, last run on 2026-10-24
+after `StudentFinanceRowResponse` gained `active`; before that, the student profiles on one email:
+`StudentCreatedResponse`, `StudentLoginResponse`, `GET /students/{id}/profiles`, `GET /me/profiles`,
+the select / switch auth routes); after a backend change regenerate it and fix `types.ts` first. **Siblings on one email** (D-049): a
 student is one profile of its email; the student page lists the other profiles inside the
-workspace from `GET /students/{id}/profiles` (the server filters by reach), Add student's toast
+workspace from `GET /students/{id}/profiles` (the server filters by reach; the super-admin gets every
+sibling and sees each one's school, linked into that school's workspace), Add student's toast
 follows `profileCreated`, and `PATCH /students/{id}` `email` moves one profile only. Lessons have a length (New lesson follows the course's default until edited, the schedule
 sheet sends it when changed) and show start–end times (`formatTimeRange` /
 `formatDateTimeRange`); an overlap is confirmed and booked anyway on request (D-045); weekly series
@@ -185,7 +186,9 @@ workspace (`canViewFinance`; `src/features/finance`, `src/api/reports.ts`, page
 `org-workspace/pages/finance-page.tsx`): a period in the URL turned into instants in the browser's
 time zone (`finance-period.ts`), four cards from the summary, and a Students and a Teachers table
 sorted and paged by the API under their own URL prefixes (`useListParams({ prefix })`); counted in
-lessons with the names of `src/features/lessons/lesson-counts.ts`, which the Lesson balances share.
+lessons with the names of `src/features/lessons/lesson-counts.ts`, which the Lesson balances share; a
+teacher or student who left is marked "Former …" and linked for the super-admin only
+(`canOpenFormerTeachers` / `canOpenFormerStudents`).
 Tests: Vitest + MSW over
 the real route tree (`src/test/render.tsx`), Playwright in `e2e/` (API sign-in fixture, live
 smoke flow, phone checks, screenshots + axe). Open follow-ups are the **B** items in

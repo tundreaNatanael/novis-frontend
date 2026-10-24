@@ -3,7 +3,7 @@
 All notable changes to the Novis admin console. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); dates are the day the change landed on `main`.
 
-## Unreleased
+## Student profiles on one email — Unreleased
 
 ### Breaking
 
@@ -12,26 +12,6 @@ All notable changes to the Novis admin console. The format follows
   `409 ROLE_CONFLICT` (was `CONFLICT`) and its `email` moves one profile only, and
   `POST /auth/student-login` answers `{ tokens, profileSelection }` (the console does not call it).
   `src/api/schema.d.ts` was regenerated (`npm run api:types`).
-
-- Lessons have a length and may not overlap (backend scheduling change, D-045): `Lesson` gained
-  `durationMinutes` and `seriesId`, `Course` gained `defaultDurationMinutes`, and `POST /lessons` /
-  `PATCH /lessons/{id}/schedule` answer `409 SCHEDULE_CONFLICT` when the time overlaps another
-  lesson of the teacher or the student (new `ApiErrorCode`). `src/api/schema.d.ts` was regenerated
-  (`npm run api:types`).
-- Homework stands on its own (backend `POST /homework`, D-041): closing a lesson no longer sends
-  `homework` (the API answers `400` if it does), and `LessonDetail.homework[]` is gone. The
-  `Homework` type gained `title`, `dueAt`, `completedAt` and the labels `teacherName`,
-  `studentName`, `courseTitle`, `lessonScheduledAt`. `src/api/schema.d.ts` was regenerated
-  (`npm run api:types`).
-- Payments belong to payment managers (backend payment change, D-040): `Lesson.paid` / `paidAt`
-  were replaced by `studentPayment: { paid, paidAt, recordedById } | null`, and the balance counts
-  of `LessonSummary` are nullable next to the new `toSchedule`. `src/api/schema.d.ts` was
-  regenerated from the backend (`npm run api:types`).
-- One role per account (backend contract, gap G20, decision D-036): `User` lost `platformRole`,
-  `freelanceTeacher` and `memberships[]` and gained `role` (`SUPER_ADMIN`, `ADMIN`, `TEACHER`,
-  `FREELANCE_TEACHER`, `STUDENT` or `null`) and `organization`
-  (`{ id, name, slug, status, membershipId }` or `null`). `src/api/schema.d.ts` was edited by
-  hand to the contract; regenerate it with `npm run api:types` once the backend runs the change.
 
 ### Added
 
@@ -42,6 +22,21 @@ All notable changes to the Novis admin console. The format follows
   share one email (each name on it is its own profile; the same name links the existing student)
   and the toast reads "New profile created for <name>" when the API created one; Edit student's
   email hint says a change moves only this profile.
+
+### Changed
+
+- `ApiErrorCode` lists the two student sign-in codes of API.md §1.6, `STUDENT_LOGIN_FAILED` and
+  `INVALID_SELECTION_TOKEN`, so the union matches the documented list again (types only: the
+  console never signs students in).
+- For the super-admin, **Other profiles on this email** says it lists every profile of the email,
+  wherever it learns, and names each sibling's school (`GET /users/{id}`), linking into that school's
+  workspace; a sibling without a school is listed without a link. It used to word them as this
+  organization's and link them into the current workspace (D-049 update).
+
+## Finance reports — Unreleased
+
+### Added
+
 - **Finance** (backend finance reports, API.md §9.7, D-048): a **Finance** tab in the organization
   workspace (both mounts, and the org admin's sidebar) for the new `canViewFinance` capability (the
   super-admin and the organization's admin). Counted in lessons, never money. A period picker
@@ -57,6 +52,32 @@ All notable changes to the Novis admin console. The format follows
   with an icon and words. A teacher who left is marked "Former teacher" and linked only for the
   super-admin (gap G21). The reports refetch on every visit (`staleTime: 0`) instead of being
   invalidated by lesson, payment and payout writes. `src/api/reports.ts`, `src/features/finance`.
+
+- **Former students** in the Students table: a student who left the organization (or whose account
+  was deleted) is marked "Former student" and linked only for the super-admin
+  (`canOpenFormerStudents`), from the reports' new `active` field. `src/api/schema.d.ts`
+  regenerated (`npm run api:types`).
+
+### Changed
+
+- `src/api/schema.d.ts` regenerated (`npm run api:types`) after the finance reports (additions only:
+  the three `/orgs/{orgId}/reports/*` routes and their rows), typed in `types.ts` as
+  `StudentFinanceRow`, `TeacherFinanceRow`, `FinanceSummary` and `FinancePeriod`.
+- A student's **Lesson balances** take their labels and hints from `src/features/lessons/lesson-counts.ts`,
+  which the Finance tab shares: Prepaid left and Unpaid due are the same numbers under the same
+  names in both places. The words did not change.
+- The **Payouts** panel has the id `payouts` and scrolls into view once its lessons are in when
+  the URL ends in `#payouts` (`payoutsPath`).
+- `useListParams` takes an optional `prefix` (`students` → `studentsPage`, `studentsSort`, …) so
+  two tables on one page keep apart URL state; `DataTable`'s `rowHref` may return `undefined` for
+  a row that opens nothing.
+- The third card reads **Paid out to teachers** (was "Paid to teachers"): a teacher payout is "paid
+  out", never "paid", as everywhere else in the console.
+
+## Teacher payouts — Unreleased
+
+### Added
+
 - **Teacher payouts** (backend teacher payouts, D-047): a **Payouts** panel on a teacher's page in
   both workspace mounts, for the new `canManageTeacherPayouts` capability (the super-admin and the
   organization's admin). It shows what the organization owes the teacher ("Owed: N lessons", the
@@ -73,6 +94,35 @@ All notable changes to the Novis admin console. The format follows
 - Lesson detail shows a **Teacher payout** field on organization lessons: "Paid to the teacher on
   <day>" (`Lesson.teacherPayout`), "Not paid out yet" for a held or late-canceled lesson, or why
   the lesson is not paid out.
+
+### Changed
+
+- `src/api/schema.d.ts` regenerated (`npm run api:types`) after the teacher payouts and the teacher
+  calendar: `Lesson` gained `teacherPayout` (`LessonTeacherPayout | null`, typed in `types.ts`),
+  and some generated operation names moved (`create_2` → `create_3`…); nothing in the console
+  refers to them.
+- The checkbox shows a dash, not a tick, when it is indeterminate (some rows of a page selected).
+
+## Teacher calendar — Unreleased
+
+### Changed
+
+- The teacher calendar (`GET /teacher/calendar`, `CalendarLessonResponse`) is in `schema.d.ts` but
+  not called: it is for teachers only (admins and the super-admin get `403`), and the console keeps
+  the lesson ledger and agenda (D-046).
+
+## Lesson length and overlaps — Unreleased
+
+### Breaking
+
+- Lessons have a length and may not overlap (backend scheduling change, D-045): `Lesson` gained
+  `durationMinutes` and `seriesId`, `Course` gained `defaultDurationMinutes`, and `POST /lessons` /
+  `PATCH /lessons/{id}/schedule` answer `409 SCHEDULE_CONFLICT` when the time overlaps another
+  lesson of the teacher or the student (new `ApiErrorCode`). `src/api/schema.d.ts` was regenerated
+  (`npm run api:types`).
+
+### Added
+
 - **Lesson length** in **New lesson** and **Reschedule lesson**: a "Length (minutes)" field
   (15–240). In New lesson it follows the chosen course's default (else 60) until edited; in
   Reschedule it starts at the lesson's length and is sent only when it changed.
@@ -85,6 +135,39 @@ All notable changes to the Novis admin console. The format follows
   page title and header, a Length row (plus Series when a weekly series booked it) on lesson
   detail, and the next lesson on student detail (`formatTimeRange`, `formatDateTimeRange`,
   `formatDuration`).
+
+## Optional fields removed with `null` (gap G18) — Unreleased
+
+### Changed
+
+- Rescheduling removes an emptied meeting link (backend `PATCH /lessons/{id}/schedule` now removes
+  `meetingUrl` sent as `null`; gap G18 closed for the lesson link): the schedule sheet sends
+  `meetingUrl: null` for a link it emptied, still leaves out an untouched one, and its hint no
+  longer says the current link is kept. `ScheduleLessonRequest` takes `null` for `meetingUrl`
+  (D-044).
+- Edit course removes an emptied description or default meeting link (backend
+  `PATCH /courses/{id}` now removes a field sent as `null`; gap G18 closed): the sheet sends `null`
+  for a field it emptied and leaves out one that was and stays empty, and the link hint no longer
+  says the current link is kept. `UpdateCourseRequest` takes `null` for `description` and
+  `defaultMeetingUrl` (D-043). The backend also stores a blank description as `null`, on create
+  too, so a course created with an empty description now has none instead of `""`.
+- Edit homework can remove a due date (backend `PATCH /homework/{id}` now removes a field sent as
+  `null`; gap G18 closed for homework): emptying the field, or its new **Clear** button, sends
+  `dueAt: null`, and the field is no longer required once set. `UpdateHomeworkRequest` takes `null`
+  for `lessonId`, `title`, `notes` and `dueAt` (D-042 update).
+
+## Homework on its own — Unreleased
+
+### Breaking
+
+- Homework stands on its own (backend `POST /homework`, D-041): closing a lesson no longer sends
+  `homework` (the API answers `400` if it does), and `LessonDetail.homework[]` is gone. The
+  `Homework` type gained `title`, `dueAt`, `completedAt` and the labels `teacherName`,
+  `studentName`, `courseTitle`, `lessonScheduledAt`. `src/api/schema.d.ts` was regenerated
+  (`npm run api:types`).
+
+### Added
+
 - A **Homework** panel on lesson detail (`GET /homework?lessonId=`) and on student detail
   (`GET /homework?studentId=`, plus `teacherId` in a freelance workspace): open first, then by due
   date, with an Open / Overdue / Done badge, due date, teacher, course, lesson date, progress, notes
@@ -108,46 +191,44 @@ All notable changes to the Novis admin console. The format follows
 
 ### Changed
 
-- `src/api/schema.d.ts` regenerated (`npm run api:types`) after the finance reports (additions only:
-  the three `/orgs/{orgId}/reports/*` routes and their rows), typed in `types.ts` as
-  `StudentFinanceRow`, `TeacherFinanceRow`, `FinanceSummary` and `FinancePeriod`.
-- A student's **Lesson balances** take their labels and hints from `src/features/lessons/lesson-counts.ts`,
-  which the Finance tab shares: Prepaid left and Unpaid due are the same numbers under the same
-  names in both places. The words did not change.
-- The **Payouts** panel has the id `payouts` and scrolls into view once its lessons are in when
-  the URL ends in `#payouts` (`payoutsPath`).
-- `useListParams` takes an optional `prefix` (`students` → `studentsPage`, `studentsSort`, …) so
-  two tables on one page keep apart URL state; `DataTable`'s `rowHref` may return `undefined` for
-  a row that opens nothing.
-- `src/api/schema.d.ts` regenerated (`npm run api:types`) after the teacher payouts and the teacher
-  calendar: `Lesson` gained `teacherPayout` (`LessonTeacherPayout | null`, typed in `types.ts`),
-  and some generated operation names moved (`create_2` → `create_3`…); nothing in the console
-  refers to them.
-- The teacher calendar (`GET /teacher/calendar`, `CalendarLessonResponse`) is in `schema.d.ts` but
-  not called: it is for teachers only (admins and the super-admin get `403`), and the console keeps
-  the lesson ledger and agenda (D-046).
-- The checkbox shows a dash, not a tick, when it is indeterminate (some rows of a page selected).
-- Rescheduling removes an emptied meeting link (backend `PATCH /lessons/{id}/schedule` now removes
-  `meetingUrl` sent as `null`; gap G18 closed for the lesson link): the schedule sheet sends
-  `meetingUrl: null` for a link it emptied, still leaves out an untouched one, and its hint no
-  longer says the current link is kept. `ScheduleLessonRequest` takes `null` for `meetingUrl`
-  (D-044).
-- Edit course removes an emptied description or default meeting link (backend
-  `PATCH /courses/{id}` now removes a field sent as `null`; gap G18 closed): the sheet sends `null`
-  for a field it emptied and leaves out one that was and stays empty, and the link hint no longer
-  says the current link is kept. `UpdateCourseRequest` takes `null` for `description` and
-  `defaultMeetingUrl` (D-043). The backend also stores a blank description as `null`, on create
-  too, so a course created with an empty description now has none instead of `""`.
-- Edit homework can remove a due date (backend `PATCH /homework/{id}` now removes a field sent as
-  `null`; gap G18 closed for homework): emptying the field, or its new **Clear** button, sends
-  `dueAt: null`, and the field is no longer required once set. `UpdateHomeworkRequest` takes `null`
-  for `lessonId`, `title`, `notes` and `dueAt` (D-042 update).
 - The close sheet asks for the outcome and the journal only (D-030 updated); the lesson's delete
   confirmation says homework is kept without the link.
+
+## Payments belong to payment managers — Unreleased
+
+### Breaking
+
+- Payments belong to payment managers (backend payment change, D-040): `Lesson.paid` / `paidAt`
+  were replaced by `studentPayment: { paid, paidAt, recordedById } | null`, and the balance counts
+  of `LessonSummary` are nullable next to the new `toSchedule`. `src/api/schema.d.ts` was
+  regenerated from the backend (`npm run api:types`).
+
+### Added
+
+- Org admins run their organization's lessons (D-040): a Lessons tab and sidebar entry at
+  `/org/:orgId/lessons`, lesson detail at `/org/:orgId/lessons/:lessonId` with Mark paid / unpaid
+  and Add prepaid lessons, and Add prepaid on the student detail. `useLessonPaths()` builds the
+  lesson links for each role (no page hard-codes `/platform/lessons` any more).
+
+### Changed
+
 - Payment actions (Mark paid / unpaid, Add prepaid, the use-prepaid box, the Payment filter and
   column) follow the new `canManageStudentPayments` capability; payment display follows the data:
   `PaidBadge`, the Payment / Paid at fields and the balance counts render nothing when the API
   sends `null`, never "unpaid". The balance panels show "To schedule" (`BalanceFields`).
+
+## One role per account — Unreleased
+
+### Breaking
+
+- One role per account (backend contract, gap G20, decision D-036): `User` lost `platformRole`,
+  `freelanceTeacher` and `memberships[]` and gained `role` (`SUPER_ADMIN`, `ADMIN`, `TEACHER`,
+  `FREELANCE_TEACHER`, `STUDENT` or `null`) and `organization`
+  (`{ id, name, slug, status, membershipId }` or `null`). `src/api/schema.d.ts` was edited by
+  hand to the contract at first and has been regenerated from the backend since (`npm run api:types`).
+
+### Changed
+
 - Capabilities read `role` / `organization`: the admin organization is the ADMIN membership's when
   that organization is active (an archived organization's admin gets `/no-access`); an admin covers
   the teachers and students of their organization, never another admin; admin accounts,
@@ -212,10 +293,6 @@ All notable changes to the Novis admin console. The format follows
 
 ### Added
 
-- Org admins run their organization's lessons (D-040): a Lessons tab and sidebar entry at
-  `/org/:orgId/lessons`, lesson detail at `/org/:orgId/lessons/:lessonId` with Mark paid / unpaid
-  and Add prepaid lessons, and Add prepaid on the student detail. `useLessonPaths()` builds the
-  lesson links for each role (no page hard-codes `/platform/lessons` any more).
 - Tests: one-role capabilities (archived admin, other admins, freelance and role-less accounts,
   invite actions), org invites (status filter, resend, revoke, admin invites read-only, admin role
   for the super-admin only, 409 copy), staff / student removal by membership id, add-staff and
