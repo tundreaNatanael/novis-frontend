@@ -7,6 +7,7 @@ import { z } from 'zod'
 import { isApiError } from '@/api/errors'
 import { lessonKeys, lessonsApi } from '@/api/lessons'
 import { studentKeys } from '@/api/students'
+import { useMe } from '@/auth/session'
 import { Field } from '@/components/form/field'
 import { FormError } from '@/components/form/form-error'
 import { FormSheet } from '@/components/form/form-sheet'
@@ -16,6 +17,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { fromDateTimeLocal } from '@/lib/format'
+import { deriveCapabilities } from '@/lib/permissions'
 import { optionalHttpsUrl } from '@/lib/schemas'
 import { FREELANCE, useLessonFilterOptions } from '../hooks/use-lesson-filter-options'
 import type { FixedScope } from './lesson-filters'
@@ -41,7 +43,8 @@ interface CreateLessonSheetProps {
 
 /**
  * `POST /lessons`: teacher → that teacher's student → optional course, date and meeting link.
- * `usePrepaid` (default on) spends one of the student's prepaid lessons when a dated lesson matches.
+ * `usePrepaid` (default on) spends one of the student's prepaid lessons when a dated lesson
+ * matches; only a payment manager may turn it off, so only they see the box.
  */
 export function CreateLessonSheet({
   open,
@@ -51,6 +54,7 @@ export function CreateLessonSheet({
   onCreated,
 }: CreateLessonSheetProps) {
   const queryClient = useQueryClient()
+  const { canManageStudentPayments } = deriveCapabilities(useMe(), fixed.organizationId)
   const [formError, setFormError] = useState<string | null>(null)
   const defaults = (): FormValues => ({
     org: fixed.organizationId ?? (fixed.teacherId ? FREELANCE : ''),
@@ -88,14 +92,18 @@ export function CreateLessonSheet({
           ? { scheduledAt: fromDateTimeLocal(values.scheduledAt) ?? undefined }
           : {}),
         ...(values.meetingUrl ? { meetingUrl: values.meetingUrl } : {}),
-        usePrepaid: values.usePrepaid,
+        ...(canManageStudentPayments ? { usePrepaid: values.usePrepaid } : {}),
       }),
     onSuccess: async (detail) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: lessonKeys.lists() }),
         queryClient.invalidateQueries({ queryKey: studentKeys.all }),
       ])
-      toast.success(detail.lesson.paid ? 'Lesson created · Prepaid lesson used' : 'Lesson created')
+      toast.success(
+        detail.lesson.studentPayment?.paid
+          ? 'Lesson created · Prepaid lesson used'
+          : 'Lesson created',
+      )
       onOpenChange(false)
       onCreated(detail.lesson.id)
     },
@@ -274,30 +282,32 @@ export function CreateLessonSheet({
           />
         )}
       </Field>
-      <Controller
-        control={form.control}
-        name="usePrepaid"
-        render={({ field }) => (
-          <div className="flex items-start gap-3 rounded-lg border border-border p-3">
-            <Checkbox
-              id="use-prepaid"
-              checked={field.value}
-              onCheckedChange={(checked) => field.onChange(checked === true)}
-              className="mt-0.5"
-            />
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="use-prepaid" className="font-medium">
-                Use one of the student’s prepaid lessons if available
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                A dated lesson spends the student’s oldest prepaid lesson with this teacher (bought
-                for this course or for no course) instead of adding an unpaid one. Unscheduled
-                lessons never spend credits. Untick to always add a new unpaid lesson.
-              </p>
+      {canManageStudentPayments ? (
+        <Controller
+          control={form.control}
+          name="usePrepaid"
+          render={({ field }) => (
+            <div className="flex items-start gap-3 rounded-lg border border-border p-3">
+              <Checkbox
+                id="use-prepaid"
+                checked={field.value}
+                onCheckedChange={(checked) => field.onChange(checked === true)}
+                className="mt-0.5"
+              />
+              <div className="flex flex-col gap-1">
+                <Label htmlFor="use-prepaid" className="font-medium">
+                  Use one of the student’s prepaid lessons if available
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  A dated lesson spends the student’s oldest prepaid lesson with this teacher
+                  (bought for this course or for no course) instead of adding an unpaid one.
+                  Unscheduled lessons never spend credits. Untick to always add a new unpaid lesson.
+                </p>
+              </div>
             </div>
-          </div>
-        )}
-      />
+          )}
+        />
+      ) : null}
     </FormSheet>
   )
 }

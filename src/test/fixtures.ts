@@ -3,11 +3,13 @@ import type {
   Enrollment,
   Lesson,
   LessonDetail,
+  LessonSummary,
   Member,
   Organization,
   Page,
   Student,
   StudentEnrollment,
+  StudentPayment,
   User,
   UserOrganization,
 } from '@/api/types'
@@ -185,7 +187,21 @@ export function studentEnrollment(overrides: Partial<StudentEnrollment> = {}): S
   }
 }
 
-export const summary = { prepaidRemaining: 2, unpaidDue: 1, upcomingUnpaid: 0, nextLesson: null }
+/** A student's counts as a payment manager (the console's users) gets them. */
+export const summary: LessonSummary = {
+  prepaidRemaining: 2,
+  unpaidDue: 1,
+  upcomingUnpaid: 0,
+  toSchedule: 1,
+  nextLesson: null,
+}
+
+export const unpaid: StudentPayment = { paid: false, paidAt: null, recordedById: null }
+
+/** A payment recorded by the organization's admin (`orgAdmin`, `admin-1`). */
+export function paid(paidAt = '2026-10-14T10:00:00Z'): StudentPayment {
+  return { paid: true, paidAt, recordedById: 'admin-1' }
+}
 
 export function lesson(overrides: Partial<Lesson> = {}): Lesson {
   return {
@@ -196,8 +212,7 @@ export function lesson(overrides: Partial<Lesson> = {}): Lesson {
     organizationId: 'org-1',
     status: 'PENDING',
     scheduledAt: '2026-10-20T15:00:00Z',
-    paid: false,
-    paidAt: null,
+    studentPayment: unpaid,
     journal: null,
     meetingUrl: null,
     closedAt: null,

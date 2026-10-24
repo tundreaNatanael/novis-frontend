@@ -77,10 +77,15 @@ List state (search, filters, sort, page, view) lives in the query string; sheet 
 | `/org/:orgId/students` · `/students/:studentId`                    | admin                    | Same                                                                                                                              | as above                                                                                                                                                                                                               |
 | `/org/:orgId/courses` · `/courses/:courseId`                       | admin                    | Same                                                                                                                              | as above                                                                                                                                                                                                               |
 | `/org/:orgId/invites`                                              | admin                    | Same (TEACHER invites only)                                                                                                       | as above                                                                                                                                                                                                               |
+| `/org/:orgId/lessons`                                              | admin                    | Same org ledger as the platform mount (D-040)                                                                                     | `GET /lessons?organizationId`                                                                                                                                                                                          |
+| `/org/:orgId/lessons/:lessonId`                                    | admin                    | Lesson detail and actions, payments included (D-040)                                                                              | `GET /lessons/{id}`, `PATCH …/schedule`, `POST …/close`, `PATCH …/journal`, `PATCH …/payment`, `DELETE /lessons/{id}`, `POST /students/{id}/lessons/prepaid`                                                           |
 | `*`                                                                | any                      | Not found                                                                                                                         | —                                                                                                                                                                                                                      |
 
-Lesson detail has a single URL (`/platform/lessons/:lessonId`); org and freelance ledgers link to it.
-Admins do not get the Admins or Lessons tabs; the router does not even register them under `/org`.
+Lesson detail has one URL per role: `/platform/lessons/:lessonId` for the super-admin (every ledger
+links there) and `/org/:orgId/lessons/:lessonId` for an org admin (D-040). Admins do not get the
+Admins tab; the router does not even register it under `/org`. Since only payment managers (org
+admins, the super-admin, a freelance teacher for their own lessons) record payments, admins get
+the Lessons tab and the payment actions.
 
 ## 4. Screens (behavior notes)
 
@@ -104,7 +109,8 @@ Admins do not get the Admins or Lessons tabs; the router does not even register 
   group). Status badges per API.md §9.1 (upcoming · credit / not scheduled · held · canceled ·
   canceled late — charged) plus a separate paid / unpaid badge, each with icon + text. Create form:
   teacher → that teacher's students → optional course → date-time → meeting link → "Use one of the
-  student's prepaid lessons if available" (checked by default). Response `paid: true` → toast
+  student's prepaid lessons if available" (checked by default, payment managers only). Response
+  `studentPayment.paid: true` → toast
   "Prepaid lesson used". Detail actions as in `BACKEND_GAPS.md` G9; student panel: balances and
   "Add prepaid lessons".
 
@@ -148,7 +154,7 @@ scroll-area, avatar, sonner.
 - **Capabilities** (`src/lib/permissions.ts`): `deriveCapabilities(me, orgId?)` →
   `{ isSuperAdmin, isOrgAdmin, canManageOrganizations, canChangeOrgStatus, canManageAdmins,
 canManageTeachers, canManageStudents, canManageCourses, canReassignCourse, canManageInvites,
-canManageLessons, canManageFreelance, canEditUser(user), canEditEmail(user), canEditStatus,
+canManageLessons, canManageStudentPayments, canManageFreelance, canEditUser(user), canEditEmail(user), canEditStatus,
 canDeleteAccount(user), canRemoveMembership(m), canSendResetLink(user) }` and pure lesson
   predicates (`canSchedule`, `canClose`, `canEditJournal`, `canDelete`, `deleteDisabledReason`).
 

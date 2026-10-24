@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Lesson, User, UserOrganization } from '@/api/types'
+import { paid, unpaid } from '@/test/fixtures'
 import {
   deriveCapabilities,
   hasConsoleAccess,
@@ -93,6 +94,8 @@ describe('deriveCapabilities', () => {
     expect(caps.canManageOrganizations).toBe(true)
     expect(caps.canManageAdmins).toBe(true)
     expect(caps.canManageLessons).toBe(true)
+    expect(caps.canManageStudentPayments).toBe(true)
+    expect(deriveCapabilities(superAdmin).canManageStudentPayments).toBe(true)
     expect(caps.canManageFreelance).toBe(true)
     expect(caps.canEditStatus).toBe(true)
     expect(caps.canEditEmail(teacherOnly)).toBe(true)
@@ -111,7 +114,8 @@ describe('deriveCapabilities', () => {
     expect(inOwnOrg.adminOrgId).toBe(org)
     expect(inOwnOrg.canManageTeachers).toBe(true)
     expect(inOwnOrg.canManageAdmins).toBe(false)
-    expect(inOwnOrg.canManageLessons).toBe(false)
+    expect(inOwnOrg.canManageLessons).toBe(true)
+    expect(inOwnOrg.canManageStudentPayments).toBe(true)
     expect(inOwnOrg.canManageFreelance).toBe(false)
     expect(inOwnOrg.canEditStatus).toBe(false)
     expect(inOwnOrg.canEditEmail(teacherOnly)).toBe(false)
@@ -124,6 +128,8 @@ describe('deriveCapabilities', () => {
     const elsewhere = deriveCapabilities(admin, other)
     expect(elsewhere.isOrgAdmin).toBe(false)
     expect(elsewhere.canManageTeachers).toBe(false)
+    expect(elsewhere.canManageLessons).toBe(false)
+    expect(elsewhere.canManageStudentPayments).toBe(false)
   })
 
   it('leaves other admins, other organizations and freelance teachers to the super-admin', () => {
@@ -184,10 +190,10 @@ describe('deriveCapabilities', () => {
 })
 
 describe('lessonRules', () => {
-  const base: Pick<Lesson, 'status' | 'scheduledAt' | 'paid'> = {
+  const base: Pick<Lesson, 'status' | 'scheduledAt' | 'studentPayment'> = {
     status: 'PENDING',
     scheduledAt: '2030-01-01T10:00:00Z',
-    paid: false,
+    studentPayment: unpaid,
   }
 
   it('maps statuses to display states', () => {
@@ -205,9 +211,16 @@ describe('lessonRules', () => {
     expect(lessonRules.canEditJournal(base)).toBe(false)
     expect(lessonRules.canEditJournal({ ...base, status: 'PRESENT' })).toBe(true)
     expect(lessonRules.canDelete(base)).toBe(true)
-    expect(lessonRules.canDelete({ ...base, paid: true })).toBe(false)
-    expect(lessonRules.deleteDisabledReason({ ...base, paid: true })).toMatch(/Paid/)
+    expect(lessonRules.canDelete({ ...base, studentPayment: paid() })).toBe(false)
+    expect(lessonRules.deleteDisabledReason({ ...base, studentPayment: paid() })).toMatch(/Paid/)
     expect(lessonRules.deleteDisabledReason({ ...base, status: 'CANCELED' })).toMatch(/history/)
     expect(lessonRules.canSchedule({ status: 'CANCELED_LATE' })).toBe(false)
+  })
+
+  it('leaves a pending lesson whose payment is not shown to the server', () => {
+    const hidden = { ...base, studentPayment: null }
+    expect(lessonRules.canDelete(hidden)).toBe(true)
+    expect(lessonRules.deleteDisabledReason(hidden)).toBeNull()
+    expect(lessonRules.deleteDisabledReason({ ...hidden, status: 'PRESENT' })).toMatch(/history/)
   })
 })

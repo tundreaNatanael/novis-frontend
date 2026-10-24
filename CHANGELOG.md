@@ -7,6 +7,10 @@ All notable changes to the Novis admin console. The format follows
 
 ### Breaking
 
+- Payments belong to payment managers (backend payment change, D-040): `Lesson.paid` / `paidAt`
+  were replaced by `studentPayment: { paid, paidAt, recordedById } | null`, and the balance counts
+  of `LessonSummary` are nullable next to the new `toSchedule`. `src/api/schema.d.ts` was
+  regenerated from the backend (`npm run api:types`).
 - One role per account (backend contract, gap G20, decision D-036): `User` lost `platformRole`,
   `freelanceTeacher` and `memberships[]` and gained `role` (`SUPER_ADMIN`, `ADMIN`, `TEACHER`,
   `FREELANCE_TEACHER`, `STUDENT` or `null`) and `organization`
@@ -15,6 +19,10 @@ All notable changes to the Novis admin console. The format follows
 
 ### Changed
 
+- Payment actions (Mark paid / unpaid, Add prepaid, the use-prepaid box, the Payment filter and
+  column) follow the new `canManageStudentPayments` capability; payment display follows the data:
+  `PaidBadge`, the Payment / Paid at fields and the balance counts render nothing when the API
+  sends `null`, never "unpaid". The balance panels show "To schedule" (`BalanceFields`).
 - Capabilities read `role` / `organization`: the admin organization is the ADMIN membership's when
   that organization is active (an archived organization's admin gets `/no-access`); an admin covers
   the teachers and students of their organization, never another admin; admin accounts,
@@ -79,6 +87,10 @@ All notable changes to the Novis admin console. The format follows
 
 ### Added
 
+- Org admins run their organization's lessons (D-040): a Lessons tab and sidebar entry at
+  `/org/:orgId/lessons`, lesson detail at `/org/:orgId/lessons/:lessonId` with Mark paid / unpaid
+  and Add prepaid lessons, and Add prepaid on the student detail. `useLessonPaths()` builds the
+  lesson links for each role (no page hard-codes `/platform/lessons` any more).
 - Tests: one-role capabilities (archived admin, other admins, freelance and role-less accounts,
   invite actions), org invites (status filter, resend, revoke, admin invites read-only, admin role
   for the super-admin only, 409 copy), staff / student removal by membership id, add-staff and

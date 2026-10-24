@@ -72,9 +72,12 @@ export function AddPrepaidSheet({
         queryClient.invalidateQueries({ queryKey: studentKeys.all }),
         queryClient.invalidateQueries({ queryKey: lessonKeys.lists() }),
       ])
+      const remaining = result.summary.prepaidRemaining
       toast.success(
         `${result.created} prepaid ${result.created === 1 ? 'lesson' : 'lessons'} added`,
-        { description: `${result.summary.prepaidRemaining} prepaid left with this teacher.` },
+        remaining === null
+          ? undefined
+          : { description: `${remaining} prepaid left with this teacher.` },
       )
       onOpenChange(false)
     },

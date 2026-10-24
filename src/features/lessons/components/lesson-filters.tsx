@@ -13,8 +13,19 @@ export interface FixedScope {
   teacherId?: string
 }
 
-/** Every `GET /lessons` filter, in the URL. Fixed parts (an organization or a teacher tab) are not shown. */
-export function LessonFilters({ params, fixed }: { params: ListParams; fixed: FixedScope }) {
+/**
+ * Every `GET /lessons` filter, in the URL. Fixed parts (an organization or a teacher tab) are not
+ * shown, nor is the payment filter to someone who does not manage payments (the API answers `400`).
+ */
+export function LessonFilters({
+  params,
+  fixed,
+  showPayment,
+}: {
+  params: ListParams
+  fixed: FixedScope
+  showPayment: boolean
+}) {
   const org = fixed.organizationId ?? params.filter('org')
   const teacherId = fixed.teacherId ?? params.filter('teacherId')
   const options = useLessonFilterOptions({ org: fixed.teacherId ? undefined : org, teacherId })
@@ -146,20 +157,22 @@ export function LessonFilters({ params, fixed }: { params: ListParams; fixed: Fi
             />
           )}
         </Filter>
-        <Filter label="Payment">
-          {(id) => (
-            <SelectField
-              id={id}
-              value={params.filter('paid') ?? ''}
-              onChange={(value) => params.set({ paid: value || null })}
-              options={[
-                { value: 'true', label: 'Paid' },
-                { value: 'false', label: 'Unpaid' },
-              ]}
-              placeholder="Paid or unpaid"
-            />
-          )}
-        </Filter>
+        {showPayment ? (
+          <Filter label="Payment">
+            {(id) => (
+              <SelectField
+                id={id}
+                value={params.filter('paid') ?? ''}
+                onChange={(value) => params.set({ paid: value || null })}
+                options={[
+                  { value: 'true', label: 'Paid' },
+                  { value: 'false', label: 'Unpaid' },
+                ]}
+                placeholder="Paid or unpaid"
+              />
+            )}
+          </Filter>
+        ) : null}
         <Filter label="Scheduled">
           {(id) => (
             <SelectField

@@ -73,6 +73,8 @@ self-hosted via `@fontsource-variable/*`; tabular numerals in tables.
 **Decision.** Lesson detail lives only at `/platform/lessons/:lessonId`; the organization and
 freelance ledgers link there.
 **Consequences.** No duplicated detail route; breadcrumbs carry the origin via `?from=`.
+**Update (D-040).** That is the super-admin's one URL; an org admin's lesson detail lives in their
+workspace, `/org/:orgId/lessons/:lessonId`.
 
 ## D-010 · 2026-10-16 · Members endpoint as the source for org people lists
 
@@ -234,6 +236,8 @@ asking for text it will throw away would be a form that pretends.
 optimistic update rolled back with the server's message.
 **Context.** `PATCH /lessons/{id}/payment` has no status precondition in the service; admins fix
 payment records after the fact. Deleting stays limited to pending + unpaid, as the server enforces.
+**Update (D-040).** Offered only to payment managers (`canManageStudentPayments`), and only when
+the lesson carries a `studentPayment`.
 
 ## D-032 · 2026-10-16 · Picker only for admins of several organizations (superseded by D-036)
 
@@ -339,3 +343,25 @@ the whole create.
 the course is reassigned.
 **Consequences.** The teacher list is the first 100 TEACHER members; a course owned by a teacher
 beyond that is enrolled without a roster teacher too.
+
+## D-040 · 2026-10-23 · Org admins run their lessons and record payments (amends D-009)
+
+**Decision.** An org admin gets the organization's ledger as a Lessons tab and sidebar entry
+(`/org/:orgId/lessons`, the same `LessonLedger`) and lesson detail inside their workspace
+(`/org/:orgId/lessons/:lessonId`), where they mark lessons paid / unpaid and add prepaid lessons.
+The super-admin keeps one detail URL, `/platform/lessons/:lessonId`, for every ledger.
+`lessonPaths(me)` (`src/features/lessons/lesson-paths.ts`) builds the ledger, detail and workspace
+links for the signed-in role; no page hard-codes `/platform/lessons` any more. Payment actions
+(Mark paid, Add prepaid, the use-prepaid box, the Payment filter and column) follow the new
+`canManageStudentPayments` capability; payment data on screen follows the response
+(`studentPayment: null` and `null` balance counts render nothing, never "unpaid").
+**Context.** The backend now lets only payment managers — the organization's admin, the
+super-admin, a freelance teacher for their own lessons — record and see whether a student paid
+(API.md §9). Org teachers lost it, so the org admin needs the screens that were super-admin only.
+**Alternatives.** Detail routes under every workspace mount (`/platform/orgs/:orgId/lessons/:id`,
+`/platform/freelance/:teacherId/lessons/:id`) — rejected: two URLs for one lesson for the
+super-admin, against D-009. Opening `/platform/lessons/:id` to org admins — rejected: `/platform`
+is the super-admin's area behind `RequireSuperAdmin`.
+**Consequences.** An org admin's lesson detail renders under the workspace header and tabs, like
+the other detail pages there, so its breadcrumb is organization › lesson. Each role has exactly one
+detail URL per lesson.

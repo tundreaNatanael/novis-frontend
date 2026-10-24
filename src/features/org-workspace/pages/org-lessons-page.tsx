@@ -5,7 +5,7 @@ import { useOrgWorkspace } from '../use-org-workspace'
 
 export const handle: RouteHandle = { crumb: () => 'Lessons', title: 'Lessons' }
 
-/** The organization's share of the ledger (`GET /lessons?organizationId=`). */
+/** The organization's share of the ledger (`GET /lessons?organizationId=`), on both workspace mounts (D-040). */
 export function Component() {
   const { orgId, org } = useOrgWorkspace()
   return (

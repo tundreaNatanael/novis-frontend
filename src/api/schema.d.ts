@@ -882,9 +882,7 @@ export interface components {
             status?: "PENDING" | "PRESENT" | "CANCELED" | "CANCELED_LATE";
             /** Format: date-time */
             scheduledAt?: string;
-            paid?: boolean;
-            /** Format: date-time */
-            paidAt?: string;
+            studentPayment?: components["schemas"]["StudentPaymentResponse"];
             journal?: string;
             meetingUrl?: string;
             /** Format: date-time */
@@ -903,6 +901,8 @@ export interface components {
             unpaidDue?: number;
             /** Format: int64 */
             upcomingUnpaid?: number;
+            /** Format: int64 */
+            toSchedule?: number;
             nextLesson?: components["schemas"]["LessonResponse"];
         };
         PrepaidLessonsResponse: {
@@ -910,6 +910,13 @@ export interface components {
             created?: number;
             lessons?: components["schemas"]["LessonResponse"][];
             summary?: components["schemas"]["LessonSummaryResponse"];
+        };
+        StudentPaymentResponse: {
+            paid?: boolean;
+            /** Format: date-time */
+            paidAt?: string;
+            /** Format: uuid */
+            recordedById?: string;
         };
         CreateOrganizationRequest: {
             name: string;
@@ -1319,6 +1326,8 @@ export interface components {
             unpaidDue?: number;
             /** Format: int64 */
             upcomingUnpaid?: number;
+            /** Format: int64 */
+            toSchedule?: number;
             nextLesson?: components["schemas"]["LessonResponse"];
         };
         PageResponseStudentResponse: {
@@ -1430,6 +1439,8 @@ export interface components {
             unpaidDue?: number;
             /** Format: int64 */
             upcomingUnpaid?: number;
+            /** Format: int64 */
+            toSchedule?: number;
             courses?: components["schemas"]["CourseResponse"][];
         };
         SignedUrlResponse: {

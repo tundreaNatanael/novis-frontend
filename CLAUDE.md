@@ -69,6 +69,11 @@ The only optimistic update is the lesson paid / unpaid toggle.
 `lessonRules` predicates (`canDelete`, `deleteDisabledReason`). Guards are UX only; handle `403`
 (disable the action and explain) and `404` ("not found or not accessible") where they happen.
 
+**Payments: actions from the capability, display from the data.** Mark paid / unpaid, Add
+prepaid, the use-prepaid box and the Payment filter / column follow `canManageStudentPayments`
+(the super-admin and the organization's admin). What is shown follows the response:
+`studentPayment: null` and `null` balance counts render nothing, never "unpaid" (D-040).
+
 **Forms.** react-hook-form + `zodResolver`; schemas come from `src/lib/schemas.ts` and mirror
 API.md §1.7. Use `<Field>` for label / hint / error wiring and `applyServerErrors()` to map
 `fieldErrors` onto fields; the remaining message goes into `<FormError>`. Multi-step creates
@@ -138,13 +143,18 @@ current password). The super-admin's Freelance section (D-037) runs on `/freelan
 list is searched on the server (`q` debounced with `useDebouncedValue`, the only list that does
 not filter the loaded page), Disable / Re-enable are explicit confirmed actions, Delete asks for
 the email and explains the cascade, and the teacher workspace shows a 404 page for any other id.
-`src/api/schema.d.ts` is **hand-edited** to that contract until the backend change
-lands: regenerate it with `npm run api:types` and fix `types.ts` first. Shared detail pages read
+`src/api/schema.d.ts` is generated from the backend (`npm run api:types`, last run against the
+payment change: `Lesson.studentPayment`, nullable balance counts, `toSchedule`); after a backend
+change regenerate it and fix `types.ts` first. Shared detail pages read
 their scope with `useWorkspaceScope()` (`kind: 'org' | 'freelance'`). Lessons live in
-`src/features/lessons`: `LessonLedger` takes a `FixedScope` and is mounted three times; every
+`src/features/lessons`: `LessonLedger` takes a `FixedScope` and is mounted for the platform, each
+organization (both workspace mounts) and each freelance teacher; every
 filter is a URL param (`lessonFiltersFromParams`); names for id-only rows come from
-`useLessonNames`; transitions and their disabled reasons are `lessonRules` in
-`src/lib/permissions.ts`; the paid toggle is the only optimistic update. Tests: Vitest + MSW over
+`useLessonNames`; links to lesson pages come from `useLessonPaths()` (the super-admin's
+`/platform/lessons/…`, an org admin's `/org/:orgId/lessons/…`, D-040); transitions and their
+disabled reasons are `lessonRules` in `src/lib/permissions.ts`; the paid toggle is the only
+optimistic update. Org admins have the Lessons tab and lesson detail and record their
+organization's payments (D-040). Tests: Vitest + MSW over
 the real route tree (`src/test/render.tsx`), Playwright in `e2e/` (API sign-in fixture, live
 smoke flow, phone checks, screenshots + axe). Open follow-ups are the **B** items in
 `docs/BACKEND_GAPS.md` (G17 refresh grace window, G18 nullable PATCH fields, G19 names on lesson

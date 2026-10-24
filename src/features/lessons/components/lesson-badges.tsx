@@ -26,17 +26,21 @@ const STATUS: Record<
 export function LessonStatusBadge({
   lesson,
 }: {
-  lesson: Pick<Lesson, 'status' | 'scheduledAt' | 'paid'>
+  lesson: Pick<Lesson, 'status' | 'scheduledAt' | 'studentPayment'>
 }) {
   const display = lessonRules.displayStatus(lesson)
   const meta = STATUS[display]
-  const label = display === 'credit' && lesson.paid ? 'Prepaid credit' : meta.label
+  const label = display === 'credit' && lesson.studentPayment?.paid ? 'Prepaid credit' : meta.label
   return <StatusBadge value={lesson.status} label={label} tone={meta.tone} icon={meta.icon} />
 }
 
-/** Paid / unpaid, separate from the lifecycle. Unpaid charged lessons read as "due". */
-export function PaidBadge({ lesson }: { lesson: Pick<Lesson, 'status' | 'paid'> }) {
-  if (lesson.paid) {
+/**
+ * Paid / unpaid, separate from the lifecycle. Unpaid charged lessons read as "due". Renders
+ * nothing when the payment is not shown to the caller (`studentPayment: null`): never "unpaid".
+ */
+export function PaidBadge({ lesson }: { lesson: Pick<Lesson, 'status' | 'studentPayment'> }) {
+  if (!lesson.studentPayment) return null
+  if (lesson.studentPayment.paid) {
     return (
       <ToneBadge tone="success" icon={BadgeCheck}>
         Paid

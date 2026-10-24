@@ -3,15 +3,18 @@ import { CalendarDays, List, Plus } from 'lucide-react'
 import { useNavigate } from 'react-router'
 import { lessonKeys, lessonsApi } from '@/api/lessons'
 import type { Lesson } from '@/api/types'
+import { useMe } from '@/auth/session'
 import { columnHelper, DataTable } from '@/components/data/data-table'
 import { EmptyState } from '@/components/data/empty-state'
 import { ErrorState } from '@/components/data/error-state'
 import { Pagination } from '@/components/data/pagination'
 import { Button } from '@/components/ui/button'
 import { formatDateTime, shortId } from '@/lib/format'
+import { deriveCapabilities } from '@/lib/permissions'
 import { useListParams } from '@/lib/use-list-params'
 import { cn } from '@/lib/utils'
 import { useLessonNames, type LessonNames } from '../hooks/use-lesson-names'
+import { useLessonPaths } from '../lesson-paths'
 import { CreateLessonSheet } from './create-lesson-sheet'
 import { LessonAgenda } from './lesson-agenda'
 import { LessonStatusBadge, PaidBadge } from './lesson-badges'
@@ -20,7 +23,7 @@ import { LessonFilters, type FixedScope } from './lesson-filters'
 
 const col = columnHelper<Lesson>()
 
-function columns(names: LessonNames, fixed: FixedScope) {
+function columns(names: LessonNames, fixed: FixedScope, showPayment: boolean) {
   return [
     col.accessor('scheduledAt', {
       header: 'When',
@@ -36,10 +39,16 @@ function columns(names: LessonNames, fixed: FixedScope) {
       header: 'Status',
       cell: (info) => <LessonStatusBadge lesson={info.row.original} />,
     }),
-    col.accessor('paidAt', {
-      header: 'Payment',
-      cell: (info) => <PaidBadge lesson={info.row.original} />,
-    }),
+    ...(showPayment
+      ? [
+          // The column id doubles as the server sort key (`sort=paidAt`, payment managers only).
+          col.accessor((lesson) => lesson.studentPayment?.paidAt ?? null, {
+            id: 'paidAt',
+            header: 'Payment',
+            cell: (info) => <PaidBadge lesson={info.row.original} />,
+          }),
+        ]
+      : []),
     col.display({
       id: 'student',
       header: 'Student',
@@ -102,6 +111,8 @@ function columns(names: LessonNames, fixed: FixedScope) {
  */
 export function LessonLedger({ fixed }: { fixed: FixedScope }) {
   const navigate = useNavigate()
+  const paths = useLessonPaths()
+  const { canManageStudentPayments } = deriveCapabilities(useMe(), fixed.organizationId)
   const params = useListParams({ sort: 'scheduledAt,asc' })
   const filters = lessonFiltersFromParams(params, fixed)
   const view = params.filter('view') === 'agenda' ? 'agenda' : 'table'
@@ -153,13 +164,13 @@ export function LessonLedger({ fixed }: { fixed: FixedScope }) {
         </div>
         {create}
       </div>
-      <LessonFilters params={params} fixed={fixed} />
+      <LessonFilters params={params} fixed={fixed} showPayment={canManageStudentPayments} />
       {query.isError ? (
         <ErrorState error={query.error} onRetry={() => void query.refetch()} />
       ) : view === 'table' ? (
         <DataTable
           caption="Lessons"
-          columns={columns(names, fixed)}
+          columns={columns(names, fixed, canManageStudentPayments)}
           data={lessons}
           total={query.data?.totalElements ?? 0}
           page={params.page}
@@ -169,7 +180,7 @@ export function LessonLedger({ fixed }: { fixed: FixedScope }) {
           sort={params.sort}
           onSortChange={params.setSort}
           getRowId={(l) => l.id}
-          rowHref={(l) => `/platform/lessons/${l.id}`}
+          rowHref={(l) => paths.detail(l.id)}
           isLoading={query.isPending}
           isFetching={query.isFetching}
           renderMobileRow={(l) => (
@@ -225,7 +236,7 @@ export function LessonLedger({ fixed }: { fixed: FixedScope }) {
         open={params.filter('new') === '1'}
         onOpenChange={(open) => params.setFlag('new', open ? 1 : null)}
         fixed={fixed}
-        onCreated={(id) => navigate(`/platform/lessons/${id}`)}
+        onCreated={(id) => navigate(paths.detail(id))}
       />
     </div>
   )

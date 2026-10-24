@@ -15,9 +15,10 @@ import { toast } from 'sonner'
 import { errorMessage } from '@/api/errors'
 import { lessonKeys, lessonsApi } from '@/api/lessons'
 import { studentKeys, studentsApi } from '@/api/students'
-import type { LessonDetail } from '@/api/types'
+import type { LessonDetail, StudentPayment } from '@/api/types'
 import type { RouteHandle } from '@/app/route-handle'
 import { PageSkeleton } from '@/app/shell/app-shell'
+import { useMe } from '@/auth/session'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { ErrorState } from '@/components/data/error-state'
 import { DetailHeader } from '@/components/detail/detail-header'
@@ -32,23 +33,31 @@ import {
 import { RowActions } from '@/components/row-actions'
 import { Button } from '@/components/ui/button'
 import { enumLabel, formatDateTime, shortId } from '@/lib/format'
-import { lessonRules } from '@/lib/permissions'
+import { deriveCapabilities, lessonRules } from '@/lib/permissions'
 import { usePageTitle } from '@/lib/use-page-title'
 import { AddPrepaidSheet } from './components/add-prepaid-sheet'
+import { BalanceFields } from './components/balance-fields'
 import { CloseLessonSheet } from './components/close-lesson-sheet'
 import { JournalSheet } from './components/journal-sheet'
 import { LessonStatusBadge, PaidBadge } from './components/lesson-badges'
 import { LessonCrumb } from './components/lesson-crumb'
 import { ScheduleLessonSheet } from './components/schedule-lesson-sheet'
 import { useLessonNames } from './hooks/use-lesson-names'
+import { useLessonPaths } from './lesson-paths'
 
 export const handle: RouteHandle = { crumb: (params) => <LessonCrumb lessonId={params.lessonId} /> }
 
-/** `GET /lessons/{id}` with every field, the homework and materials, the student's balances and every supported action. */
+/**
+ * `GET /lessons/{id}` with every field, the homework and materials, the student's balances and
+ * every supported action. Mounted at `/platform/lessons/:lessonId` for the super-admin and at
+ * `/org/:orgId/lessons/:lessonId` for an org admin (D-040).
+ */
 export function Component() {
   const { lessonId = '' } = useParams<{ lessonId: string }>()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const me = useMe()
+  const paths = useLessonPaths()
   const [scheduling, setScheduling] = useState(false)
   const [closing, setClosing] = useState(false)
   const [editingJournal, setEditingJournal] = useState(false)
@@ -91,7 +100,7 @@ export function Component() {
       if (previous) {
         queryClient.setQueryData<LessonDetail>(lessonKeys.detail(lessonId), {
           ...previous,
-          lesson: { ...previous.lesson, paid, paidAt: paid ? new Date().toISOString() : null },
+          lesson: { ...previous.lesson, studentPayment: expectedPayment(paid, me.id) },
         })
       }
       return { previous }
@@ -109,7 +118,7 @@ export function Component() {
     onSuccess: async () => {
       await invalidate()
       toast.success('Lesson deleted')
-      navigate('/platform/lessons')
+      navigate(paths.ledger)
     },
   })
 
@@ -117,13 +126,13 @@ export function Component() {
   if (detailQuery.isError || !lesson)
     return <ErrorState error={detailQuery.error} onRetry={() => void detailQuery.refetch()} />
   const detail = detailQuery.data
+  const payment = lesson.studentPayment
+  const { canManageStudentPayments } = deriveCapabilities(me, lesson.organizationId)
   const teacher = names.teacher(lesson.teacherId)
   const student = names.student(lesson.studentId)
   const course = names.course(lesson.courseId)
   const organization = names.organization(lesson.organizationId)
-  const orgBase = lesson.organizationId
-    ? `/platform/orgs/${lesson.organizationId}`
-    : `/platform/freelance/${lesson.teacherId}`
+  const orgBase = paths.workspace(lesson)
   const teacherHref = lesson.organizationId ? `${orgBase}/teachers/${lesson.teacherId}` : orgBase
   const studentHref = `${orgBase}/students/${lesson.studentId}`
   const courseHref = lesson.courseId ? `${orgBase}/courses/${lesson.courseId}` : null
@@ -131,7 +140,7 @@ export function Component() {
   return (
     <div className="flex flex-col gap-5">
       <DetailHeader
-        backTo="/platform/lessons"
+        backTo={paths.ledger}
         backLabel="Lessons"
         title={
           lesson.scheduledAt
@@ -164,15 +173,17 @@ export function Component() {
                 </a>
               </Button>
             ) : null}
-            <Button
-              variant={lesson.paid ? 'outline' : 'default'}
-              onClick={() => setPaid.mutate(!lesson.paid)}
-              disabled={setPaid.isPending}
-              aria-pressed={lesson.paid}
-            >
-              {lesson.paid ? <CircleDollarSign aria-hidden /> : <BadgeCheck aria-hidden />}
-              {lesson.paid ? 'Mark unpaid' : 'Mark paid'}
-            </Button>
+            {canManageStudentPayments && payment ? (
+              <Button
+                variant={payment.paid ? 'outline' : 'default'}
+                onClick={() => setPaid.mutate(!payment.paid)}
+                disabled={setPaid.isPending}
+                aria-pressed={payment.paid}
+              >
+                {payment.paid ? <CircleDollarSign aria-hidden /> : <BadgeCheck aria-hidden />}
+                {payment.paid ? 'Mark unpaid' : 'Mark paid'}
+              </Button>
+            ) : null}
             <RowActions
               label="More actions"
               actions={[
@@ -194,12 +205,16 @@ export function Component() {
                   onSelect: () => setEditingJournal(true),
                   disabledReason: lessonRules.journalDisabledReason(lesson),
                 },
-                {
-                  label: 'Add prepaid lessons for this student',
-                  icon: Ticket,
-                  separatorBefore: true,
-                  onSelect: () => setAddingPrepaid(true),
-                },
+                ...(canManageStudentPayments
+                  ? [
+                      {
+                        label: 'Add prepaid lessons for this student',
+                        icon: Ticket,
+                        separatorBefore: true,
+                        onSelect: () => setAddingPrepaid(true),
+                      },
+                    ]
+                  : []),
                 {
                   label: 'Delete lesson',
                   icon: Trash2,
@@ -224,7 +239,7 @@ export function Component() {
               lesson.status === 'PENDING'
                 ? lesson.scheduledAt
                   ? 'Upcoming: pending with a date.'
-                  : lesson.paid
+                  : payment?.paid
                     ? 'A prepaid credit: paid, pending, no date yet.'
                     : 'Pending without a date.'
                 : undefined
@@ -235,12 +250,16 @@ export function Component() {
           <DetailField label="Scheduled at">
             <TimeValue value={lesson.scheduledAt} />
           </DetailField>
-          <DetailField label="Payment">
-            <PaidBadge lesson={lesson} />
-          </DetailField>
-          <DetailField label="Paid at">
-            <TimeValue value={lesson.paidAt} />
-          </DetailField>
+          {payment ? (
+            <>
+              <DetailField label="Payment">
+                <PaidBadge lesson={lesson} />
+              </DetailField>
+              <DetailField label="Paid at">
+                <TimeValue value={payment.paidAt} />
+              </DetailField>
+            </>
+          ) : null}
           <DetailField label="Teacher">
             <EntityValue
               to={teacherHref}
@@ -302,7 +321,7 @@ export function Component() {
           >
             {lesson.rolledOverFromLessonId ? (
               <EntityValue
-                to={`/platform/lessons/${lesson.rolledOverFromLessonId}`}
+                to={paths.detail(lesson.rolledOverFromLessonId)}
                 label="Canceled lesson"
                 id={lesson.rolledOverFromLessonId}
               />
@@ -316,7 +335,7 @@ export function Component() {
           >
             {detail.rolledOverToLessonId ? (
               <EntityValue
-                to={`/platform/lessons/${detail.rolledOverToLessonId}`}
+                to={paths.detail(detail.rolledOverToLessonId)}
                 label="Prepaid credit"
                 id={detail.rolledOverToLessonId}
               />
@@ -336,10 +355,12 @@ export function Component() {
             title="Student balances"
             description="With this teacher."
             actions={
-              <Button variant="outline" size="sm" onClick={() => setAddingPrepaid(true)}>
-                <Ticket aria-hidden />
-                Add prepaid
-              </Button>
+              canManageStudentPayments ? (
+                <Button variant="outline" size="sm" onClick={() => setAddingPrepaid(true)}>
+                  <Ticket aria-hidden />
+                  Add prepaid
+                </Button>
+              ) : null
             }
           >
             {summary.isPending ? (
@@ -348,24 +369,10 @@ export function Component() {
               <DetailField label="Error">Could not load balances.</DetailField>
             ) : (
               <>
-                <DetailField label="Prepaid left">
-                  <span className="text-lg font-semibold tabular-nums">
-                    {summary.data.prepaidRemaining}
-                  </span>
-                </DetailField>
-                <DetailField label="Unpaid due">
-                  <span className="text-lg font-semibold tabular-nums">
-                    {summary.data.unpaidDue}
-                  </span>
-                </DetailField>
-                <DetailField label="Upcoming unpaid">
-                  <span className="text-lg font-semibold tabular-nums">
-                    {summary.data.upcomingUnpaid}
-                  </span>
-                </DetailField>
+                <BalanceFields summary={summary.data} />
                 <DetailField label="All lessons">
                   <Link
-                    to={`/platform/lessons?org=${lesson.organizationId ?? 'freelance'}&teacherId=${lesson.teacherId}&studentId=${lesson.studentId}`}
+                    to={paths.ledgerOf(lesson)}
                     className="font-medium text-primary underline-offset-4 hover:underline"
                   >
                     Open the ledger for this student
@@ -435,13 +442,15 @@ export function Component() {
       <ScheduleLessonSheet lesson={lesson} open={scheduling} onOpenChange={setScheduling} />
       <CloseLessonSheet lesson={lesson} open={closing} onOpenChange={setClosing} />
       <JournalSheet lesson={lesson} open={editingJournal} onOpenChange={setEditingJournal} />
-      <AddPrepaidSheet
-        studentId={lesson.studentId}
-        studentName={student?.name ?? 'this student'}
-        teacher={{ id: lesson.teacherId, name: teacher?.name }}
-        open={addingPrepaid}
-        onOpenChange={setAddingPrepaid}
-      />
+      {canManageStudentPayments ? (
+        <AddPrepaidSheet
+          studentId={lesson.studentId}
+          studentName={student?.name ?? 'this student'}
+          teacher={{ id: lesson.teacherId, name: teacher?.name }}
+          open={addingPrepaid}
+          onOpenChange={setAddingPrepaid}
+        />
+      ) : null}
       <ConfirmDialog
         open={deleting}
         onOpenChange={setDeleting}
@@ -461,4 +470,11 @@ export function Component() {
       />
     </div>
   )
+}
+
+/** The payment the server is about to answer with, shown optimistically (rolled back on error). */
+function expectedPayment(paid: boolean, recorderId: string): StudentPayment {
+  return paid
+    ? { paid: true, paidAt: new Date().toISOString(), recordedById: recorderId }
+    : { paid: false, paidAt: null, recordedById: null }
 }

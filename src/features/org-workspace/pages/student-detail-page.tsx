@@ -28,6 +28,8 @@ import { enumLabel, formatDate, formatDateTime } from '@/lib/format'
 import { usePageTitle } from '@/lib/use-page-title'
 import { StudentCrumb } from '../components/crumbs'
 import { AddPrepaidSheet } from '@/features/lessons/components/add-prepaid-sheet'
+import { BalanceFields } from '@/features/lessons/components/balance-fields'
+import { useLessonPaths } from '@/features/lessons/lesson-paths'
 import { EditStudentSheet } from '../components/edit-student-sheet'
 import { useWorkspaceScope } from '../use-org-workspace'
 
@@ -48,6 +50,7 @@ export function Component() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { basePath, capabilities } = scope
+  const lessonPaths = useLessonPaths()
   const orgId = scope.kind === 'org' ? scope.orgId : null
   const teacherFilter = scope.kind === 'freelance' ? scope.teacherId : null
   const [editing, setEditing] = useState(false)
@@ -245,7 +248,7 @@ export function Component() {
             title="Lesson balances"
             description={teacherFilter ? 'With this teacher.' : 'Across every teacher you can see.'}
             actions={
-              capabilities.canManageLessons ? (
+              capabilities.canManageStudentPayments ? (
                 <Button variant="outline" size="sm" onClick={() => setAddingPrepaid(true)}>
                   <Ticket aria-hidden />
                   Add prepaid
@@ -259,24 +262,7 @@ export function Component() {
               <DetailField label="Error">Could not load balances.</DetailField>
             ) : (
               <>
-                <DetailField
-                  label="Prepaid left"
-                  hint="Paid lessons still pending (scheduled or not)."
-                >
-                  <span className="text-lg font-semibold tabular-nums">
-                    {summary.data.prepaidRemaining}
-                  </span>
-                </DetailField>
-                <DetailField label="Unpaid due" hint="Held or late-canceled lessons not paid yet.">
-                  <span className="text-lg font-semibold tabular-nums">
-                    {summary.data.unpaidDue}
-                  </span>
-                </DetailField>
-                <DetailField label="Upcoming unpaid" hint="Dated pending lessons without payment.">
-                  <span className="text-lg font-semibold tabular-nums">
-                    {summary.data.upcomingUnpaid}
-                  </span>
-                </DetailField>
+                <BalanceFields summary={summary.data} />
                 {capabilities.canManageLessons ? (
                   <DetailField label="Lessons">
                     <Link
@@ -292,7 +278,7 @@ export function Component() {
                   {summary.data.nextLesson ? (
                     capabilities.canManageLessons ? (
                       <Link
-                        to={`/platform/lessons/${summary.data.nextLesson.id}`}
+                        to={lessonPaths.detail(summary.data.nextLesson.id)}
                         className="font-medium text-primary underline-offset-4 hover:underline"
                       >
                         {formatDateTime(summary.data.nextLesson.scheduledAt)}
@@ -349,7 +335,7 @@ export function Component() {
         open={editing}
         onOpenChange={setEditing}
       />
-      {capabilities.canManageLessons ? (
+      {capabilities.canManageStudentPayments ? (
         <AddPrepaidSheet
           studentId={studentId}
           studentName={student.name}

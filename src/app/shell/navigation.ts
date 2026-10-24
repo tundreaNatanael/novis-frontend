@@ -51,6 +51,7 @@ export function navigationFor(me: User): NavSection[] {
         { label: 'Students', to: `${base}/students`, icon: GraduationCap },
         { label: 'Courses', to: `${base}/courses`, icon: BookOpen },
         { label: 'Invites', to: `${base}/invites`, icon: Mail },
+        { label: 'Lessons', to: `${base}/lessons`, icon: CalendarDays },
       ],
     },
   ]

@@ -4,6 +4,7 @@ import type { Lesson } from '@/api/types'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatTime, shortId } from '@/lib/format'
 import type { LessonNames } from '../hooks/use-lesson-names'
+import { useLessonPaths } from '../lesson-paths'
 import { LessonStatusBadge, PaidBadge } from './lesson-badges'
 
 interface LessonAgendaProps {
@@ -14,6 +15,7 @@ interface LessonAgendaProps {
 
 /** The current page grouped by local day, undated lessons last; the stave rail marks the timeline. */
 export function LessonAgenda({ lessons, names, isLoading }: LessonAgendaProps) {
+  const paths = useLessonPaths()
   if (isLoading) {
     return (
       <div className="flex flex-col gap-3" role="status" aria-label="Loading lessons">
@@ -51,7 +53,7 @@ export function LessonAgenda({ lessons, names, isLoading }: LessonAgendaProps) {
                 return (
                   <li key={lesson.id}>
                     <Link
-                      to={`/platform/lessons/${lesson.id}`}
+                      to={paths.detail(lesson.id)}
                       className="flex min-h-14 flex-col gap-1 rounded-lg border border-border bg-card p-3 hover:border-primary/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:flex-row sm:items-center sm:gap-4"
                     >
                       <span className="w-14 shrink-0 font-mono text-sm text-foreground tabular-nums">

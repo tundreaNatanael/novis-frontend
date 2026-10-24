@@ -8,8 +8,8 @@ import type { Invite, Lesson, MembershipRole, User, UserOrganization } from '@/a
  * One account holds one role in one place: the super-admin (platform only), an ADMIN or TEACHER
  * of exactly one organization, a freelance teacher (no organization) or a student. Only the
  * super-admin and an ADMIN of an active organization use the console. Admin accounts and
- * freelance teachers are managed by the super-admin only; org admins never manage
- * organizations or lessons here either.
+ * freelance teachers are managed by the super-admin only; org admins manage their organization's
+ * lessons and are the ones who record its students' payments (teachers never do, D-040).
  */
 export interface Capabilities {
   isSuperAdmin: boolean
@@ -27,6 +27,12 @@ export interface Capabilities {
   canReassignCourse: boolean
   canManageInvites: boolean
   canManageLessons: boolean
+  /**
+   * Mark lessons paid / unpaid, add prepaid lessons, book past the student's credits and filter by
+   * payment: the super-admin and the organization's admin (the API answers `403` / `400` to anyone
+   * else). Payment data on screen still follows the response: `studentPayment: null` shows nothing.
+   */
+  canManageStudentPayments: boolean
   canManageFreelance: boolean
   canSearchUsers: boolean
   canEditStatus: boolean
@@ -134,7 +140,8 @@ export function deriveCapabilities(
     canManageCourses: isOrgAdmin,
     canReassignCourse: isOrgAdmin,
     canManageInvites: isOrgAdmin,
-    canManageLessons: superAdmin,
+    canManageLessons: isOrgAdmin,
+    canManageStudentPayments: isOrgAdmin,
     canManageFreelance: superAdmin,
     canSearchUsers: superAdmin,
     canEditStatus: superAdmin,
@@ -181,12 +188,13 @@ export const lessonRules = {
   canEditJournal: (lesson: Pick<Lesson, 'status'>) => lesson.status !== 'PENDING',
   journalDisabledReason: (lesson: Pick<Lesson, 'status'>) =>
     lesson.status === 'PENDING' ? 'The journal is written when the lesson is closed.' : null,
-  canDelete: (lesson: Pick<Lesson, 'status' | 'paid'>) =>
-    lesson.status === 'PENDING' && !lesson.paid,
-  deleteDisabledReason: (lesson: Pick<Lesson, 'status' | 'paid'>) => {
+  /** Without payment data (`studentPayment: null`) a pending lesson is left to the server's `409`. */
+  canDelete: (lesson: Pick<Lesson, 'status' | 'studentPayment'>) =>
+    lesson.status === 'PENDING' && !lesson.studentPayment?.paid,
+  deleteDisabledReason: (lesson: Pick<Lesson, 'status' | 'studentPayment'>) => {
     if (lesson.status !== 'PENDING')
       return 'Closed lessons are kept as history and cannot be deleted.'
-    if (lesson.paid)
+    if (lesson.studentPayment?.paid)
       return 'Paid lessons cannot be deleted. Mark it unpaid first if it was never paid.'
     return null
   },

@@ -83,12 +83,25 @@ export type Course = Nullable<
 >
 export type Enrollment = Strict<S['EnrollmentResponse']>
 export type StudentEnrollment = Nullable<Strict<S['StudentEnrollmentResponse']>, 'organizationId'>
+/**
+ * Whether the student paid (API.md §3 `StudentPayment`). Only payment managers receive it: the
+ * organization's admin, the super-admin, a freelance teacher for their own lessons.
+ */
+export type StudentPayment = Nullable<
+  Strict<S['StudentPaymentResponse']>,
+  'paidAt' | 'recordedById'
+>
+/**
+ * One lesson. `studentPayment` (and `rolledOverFromLessonId`, which only a paid cancellation
+ * sets) is `null` when the caller does not manage the lesson's payments — never read that as
+ * "unpaid".
+ */
 export type Lesson = Nullable<
-  Strict<S['LessonResponse']>,
+  Omit<Strict<S['LessonResponse']>, 'studentPayment'> & { studentPayment: StudentPayment },
   | 'courseId'
   | 'organizationId'
   | 'scheduledAt'
-  | 'paidAt'
+  | 'studentPayment'
   | 'journal'
   | 'meetingUrl'
   | 'closedAt'
@@ -107,12 +120,18 @@ export interface LessonDetail {
   lesson: Lesson
   homework: Homework[]
   materials: Material[]
+  /** The credit a paid cancellation produced; `null` for callers who do not manage payments. */
   rolledOverToLessonId: string | null
 }
+/**
+ * A student's lesson counts. The three payment counts are `null` unless the caller manages
+ * payments; `toSchedule` (pending lessons without a date, paid or not) is always set.
+ */
 export interface LessonSummary {
-  prepaidRemaining: number
-  unpaidDue: number
-  upcomingUnpaid: number
+  prepaidRemaining: number | null
+  unpaidDue: number | null
+  upcomingUnpaid: number | null
+  toSchedule: number
   nextLesson: Lesson | null
 }
 export interface PrepaidLessons {

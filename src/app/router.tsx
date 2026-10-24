@@ -36,6 +36,7 @@ function orgWorkspaceRoutes(mount: 'platform' | 'org'): RouteObject[] {
       lazy: () => import('@/features/org-workspace/pages/course-detail-page'),
     },
     { path: 'invites', lazy: () => import('@/features/org-workspace/pages/invites-page') },
+    { path: 'lessons', lazy: () => import('@/features/org-workspace/pages/org-lessons-page') },
   ]
   if (mount === 'platform') {
     routes.push(
@@ -44,8 +45,14 @@ function orgWorkspaceRoutes(mount: 'platform' | 'org'): RouteObject[] {
         path: 'admins/:userId',
         lazy: () => import('@/features/org-workspace/pages/staff-detail-page'),
       },
-      { path: 'lessons', lazy: () => import('@/features/org-workspace/pages/org-lessons-page') },
     )
+  } else {
+    // The super-admin's lesson detail stays at /platform/lessons/:lessonId (D-009); an org
+    // admin's lives in their workspace (D-040).
+    routes.push({
+      path: 'lessons/:lessonId',
+      lazy: () => import('@/features/lessons/lesson-detail-page'),
+    })
   }
   return routes
 }

@@ -414,10 +414,14 @@ account. The console copy says exactly that.
 | Schedule / reschedule / unschedule, change meeting link | `PATCH /lessons/{id}/schedule`                  | `PENDING`                                                                            | `409`                                               |
 | Close                                                   | `POST /lessons/{id}/close`                      | `PENDING` **and** `scheduledAt != null`; status ∈ `PRESENT, CANCELED, CANCELED_LATE` | `409` / `400`                                       |
 | Edit journal                                            | `PATCH /lessons/{id}/journal`                   | closed (not `PENDING`)                                                               | `409`                                               |
-| Mark paid / unpaid                                      | `PATCH /lessons/{id}/payment`                   | any state                                                                            | —                                                   |
+| Mark paid / unpaid                                      | `PATCH /lessons/{id}/payment`                   | any state; payment managers only (org admin, super-admin)                            | `403` for the lesson's org teacher                  |
 | Delete                                                  | `DELETE /lessons/{id}`                          | `PENDING` **and** unpaid                                                             | `409 "Only pending, unpaid lessons can be deleted"` |
-| Prepaid credits                                         | `POST /students/{id}/lessons/prepaid`           | parties valid, `count` 1–50                                                          | `400`                                               |
-| Balances                                                | `GET /students/{id}/lessons/summary?teacherId=` | student visible                                                                      | `404`                                               |
+| Prepaid credits                                         | `POST /students/{id}/lessons/prepaid`           | parties valid, `count` 1–50; payment managers only                                   | `400` / `403`                                       |
+| Balances                                                | `GET /students/{id}/lessons/summary?teacherId=` | student visible; payment counts `null` for non-managers, `toSchedule` always         | `404`                                               |
+
+Since the backend's payment change (D-040) only payment managers record or see a student's
+payment; the console's users (the super-admin and org admins) always are, and display still
+follows the data (`studentPayment: null` shows nothing).
 
 Not supported: changing a lesson's **teacher, student or course** (the course changes only implicitly
 when a generic credit is consumed), **reopening** or changing the status of a closed lesson,

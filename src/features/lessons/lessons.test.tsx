@@ -7,8 +7,10 @@ import {
   lesson,
   lessonDetail,
   member,
+  orgAdmin,
   organization,
   page,
+  paid,
   student,
   summary,
   superAdmin,
@@ -43,15 +45,12 @@ describe('lessons ledger', () => {
       http.get(api('/courses'), () => HttpResponse.json(page([course()]))),
       http.post(api('/lessons'), async ({ request }) => {
         posted.push((await request.json()) as Record<string, unknown>)
-        return HttpResponse.json(
-          lessonDetail({ id: 'l-new', paid: true, paidAt: '2026-10-14T10:00:00Z' }),
-          { status: 201 },
-        )
+        return HttpResponse.json(lessonDetail({ id: 'l-new', studentPayment: paid() }), {
+          status: 201,
+        })
       }),
       http.get(api('/lessons/l-new'), () =>
-        HttpResponse.json(
-          lessonDetail({ id: 'l-new', paid: true, paidAt: '2026-10-14T10:00:00Z' }),
-        ),
+        HttpResponse.json(lessonDetail({ id: 'l-new', studentPayment: paid() })),
       ),
       http.get(api('/students/s-1/lessons/summary'), () => HttpResponse.json(summary)),
     )
@@ -99,10 +98,7 @@ describe('lessons ledger', () => {
     server.use(
       http.get(api('/lessons'), () =>
         HttpResponse.json(
-          page([
-            lesson(),
-            lesson({ id: 'l-2', scheduledAt: null, paid: true, paidAt: '2026-10-14T10:00:00Z' }),
-          ]),
+          page([lesson(), lesson({ id: 'l-2', scheduledAt: null, studentPayment: paid() })]),
         ),
       ),
     )
@@ -121,7 +117,7 @@ describe('lesson detail', () => {
   })
 
   it('closes a pending dated lesson with a journal and reports a rollover', async () => {
-    let detail: LessonDetail = lessonDetail({ paid: true, paidAt: '2026-10-14T10:00:00Z' })
+    let detail: LessonDetail = lessonDetail({ studentPayment: paid() })
     const posted: Record<string, unknown>[] = []
     server.use(
       http.get(api('/lessons/l-1'), () => HttpResponse.json(detail)),
@@ -131,8 +127,7 @@ describe('lesson detail', () => {
         detail = lessonDetail(
           {
             status: 'CANCELED',
-            paid: true,
-            paidAt: '2026-10-14T10:00:00Z',
+            studentPayment: paid(),
             closedAt: '2026-10-20T16:00:00Z',
           },
           { rolledOverToLessonId: 'l-credit' },
@@ -207,8 +202,7 @@ describe('lesson detail', () => {
         current = lessonDetail({
           status: 'PRESENT',
           closedAt: '2026-10-20T16:00:00Z',
-          paid: true,
-          paidAt: '2026-10-21T10:00:00Z',
+          studentPayment: paid('2026-10-21T10:00:00Z'),
         })
         return HttpResponse.json(current.lesson)
       }),
@@ -285,5 +279,120 @@ describe('lesson detail', () => {
 
     expect(await screen.findByText('5 prepaid lessons added')).toBeInTheDocument()
     expect(posted).toEqual([{ count: 5, teacherId: 'u-1' }])
+  })
+})
+
+describe('lessons for an organization admin', () => {
+  beforeEach(() => {
+    signedInAs(orgAdmin('org-1'))
+    nameLookups()
+    server.use(
+      http.get(api('/orgs/org-1/members'), () => HttpResponse.json(page([member()]))),
+      http.get(api('/students'), () => HttpResponse.json(page([student()]))),
+      http.get(api('/courses'), () => HttpResponse.json(page([course()]))),
+      http.get(api('/students/s-1/lessons/summary'), () => HttpResponse.json(summary)),
+    )
+  })
+
+  it('lists the organization’s lessons with their payment and opens them inside /org', async () => {
+    const queries: URLSearchParams[] = []
+    server.use(
+      http.get(api('/lessons'), ({ request }) => {
+        queries.push(new URL(request.url).searchParams)
+        return HttpResponse.json(page([lesson({ studentPayment: paid() })]))
+      }),
+      http.get(api('/lessons/l-1'), () => HttpResponse.json(lessonDetail())),
+    )
+    const { router, user: actor } = renderApp('/org/org-1/lessons')
+
+    const table = await screen.findByRole('table', { name: 'Lessons' })
+    expect(await within(table).findByText('Kid Student')).toBeInTheDocument()
+    expect(within(table).getByText('Paid')).toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: /Payment/ })).toBeInTheDocument()
+    expect(queries[0]?.get('organizationId')).toBe('org-1')
+
+    await actor.click(within(table).getByText('Kid Student'))
+    await waitFor(() => expect(router.state.location.pathname).toBe('/org/org-1/lessons/l-1'))
+    expect(await screen.findByRole('heading', { level: 2, name: /^Lesson on/ })).toBeInTheDocument()
+  })
+
+  it('records payments and prepaid lessons from the lesson detail, linking within the organization', async () => {
+    const patched: Record<string, unknown>[] = []
+    const prepaid: Record<string, unknown>[] = []
+    let current = lessonDetail({ status: 'PRESENT', closedAt: '2026-10-20T16:00:00Z' })
+    server.use(
+      http.get(api('/lessons/l-1'), () => HttpResponse.json(current)),
+      http.patch(api('/lessons/l-1/payment'), async ({ request }) => {
+        patched.push((await request.json()) as Record<string, unknown>)
+        current = lessonDetail({
+          status: 'PRESENT',
+          closedAt: '2026-10-20T16:00:00Z',
+          studentPayment: paid('2026-10-21T10:00:00Z'),
+        })
+        return HttpResponse.json(current.lesson)
+      }),
+      http.post(api('/students/s-1/lessons/prepaid'), async ({ request }) => {
+        prepaid.push((await request.json()) as Record<string, unknown>)
+        return HttpResponse.json(
+          { created: 2, lessons: [], summary: { ...summary, prepaidRemaining: 4 } },
+          { status: 201 },
+        )
+      }),
+    )
+    const { user: actor } = renderApp('/org/org-1/lessons/l-1')
+
+    await screen.findByRole('heading', { level: 2, name: /^Lesson on/ })
+    // The back link, the tab and the sidebar entry all lead to the organization's ledger.
+    for (const link of screen.getAllByRole('link', { name: 'Lessons' })) {
+      expect(link).toHaveAttribute('href', '/org/org-1/lessons')
+    }
+    expect(await screen.findByRole('link', { name: /Ana Pop/ })).toHaveAttribute(
+      'href',
+      '/org/org-1/teachers/u-1',
+    )
+    expect(screen.getByText('To schedule')).toBeInTheDocument()
+
+    await actor.click(screen.getByRole('button', { name: 'Mark paid' }))
+    expect(await screen.findByText('Lesson marked paid')).toBeInTheDocument()
+    expect(patched).toEqual([{ paid: true }])
+
+    await actor.click(screen.getByRole('button', { name: 'Add prepaid' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Add prepaid lessons' })
+    const count = within(dialog).getByLabelText(/Number of lessons/)
+    await actor.clear(count)
+    await actor.type(count, '2')
+    await actor.click(within(dialog).getByRole('button', { name: 'Add prepaid lessons' }))
+    expect(await screen.findByText('2 prepaid lessons added')).toBeInTheDocument()
+    expect(prepaid).toEqual([{ count: 2, teacherId: 'u-1' }])
+  })
+
+  it('shows no payment, and no payment actions, when the API sends none', async () => {
+    server.use(
+      http.get(api('/lessons/l-1'), () =>
+        HttpResponse.json(
+          lessonDetail({
+            status: 'PRESENT',
+            closedAt: '2026-10-20T16:00:00Z',
+            studentPayment: null,
+          }),
+        ),
+      ),
+      http.get(api('/students/s-1/lessons/summary'), () =>
+        HttpResponse.json({
+          ...summary,
+          prepaidRemaining: null,
+          unpaidDue: null,
+          upcomingUnpaid: null,
+        }),
+      ),
+    )
+    renderApp('/org/org-1/lessons/l-1')
+
+    await screen.findByRole('heading', { level: 2, name: /^Lesson on/ })
+    expect(await screen.findByText('To schedule')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Mark (un)?paid/ })).not.toBeInTheDocument()
+    expect(screen.queryByText(/Unpaid/)).not.toBeInTheDocument()
+    expect(screen.queryByText('Paid at')).not.toBeInTheDocument()
+    expect(screen.queryByText('Prepaid left')).not.toBeInTheDocument()
   })
 })
