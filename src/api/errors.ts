@@ -32,6 +32,9 @@ export type ApiErrorCode =
   | 'INVITE_PASSWORD_MISMATCH'
   | 'INVITE_ACCOUNT_DISABLED'
   | 'INVITE_ORGANIZATION_INACTIVE'
+  // A booking or a new slot overlaps another lesson of the teacher or the student (409); the
+  // same request with `allowOverlap: true` books it anyway.
+  | 'SCHEDULE_CONFLICT'
 
 /** The error body every Novis endpoint returns (API.md §1.6). */
 export interface FieldError {
@@ -114,14 +117,16 @@ export function isApiError(error: unknown): error is ApiError {
 }
 
 /**
- * `409` codes of the one-role-per-account rule (API.md §1.6). Same-place duplicates stay
- * `CONFLICT` and keep the sentence of the form that sent them.
+ * `409` codes with their own sentence (API.md §1.6): the one-role-per-account rule and an
+ * overlapping lesson. Same-place duplicates stay `CONFLICT` and keep the sentence of the form that
+ * sent them.
  */
 export const CONFLICT_COPY = {
   ROLE_CONFLICT: 'This email already belongs to an account with a role elsewhere in Novis.',
   INVITE_PENDING: 'This email already has a pending invitation elsewhere.',
   ACCOUNT_WITHOUT_ROLE:
     'This email already belongs to an account without a role. Invite it by email instead; the person accepts with their current password and keeps their name.',
+  SCHEDULE_CONFLICT: 'This time overlaps another lesson of the teacher or the student.',
 } satisfies Partial<Record<ApiErrorCode, string>>
 
 /** A sentence for toasts and inline errors; never apologizes, always says what happened. */
@@ -143,6 +148,8 @@ export function errorMessage(error: unknown): string {
         return CONFLICT_COPY.INVITE_PENDING
       case 'ACCOUNT_WITHOUT_ROLE':
         return CONFLICT_COPY.ACCOUNT_WITHOUT_ROLE
+      case 'SCHEDULE_CONFLICT':
+        return CONFLICT_COPY.SCHEDULE_CONFLICT
       default:
         return error.message || `Request failed (${error.status}).`
     }

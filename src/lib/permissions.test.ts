@@ -95,7 +95,10 @@ describe('deriveCapabilities', () => {
     expect(caps.canManageAdmins).toBe(true)
     expect(caps.canManageLessons).toBe(true)
     expect(caps.canManageStudentPayments).toBe(true)
+    expect(caps.canManageTeacherPayouts).toBe(true)
+    expect(caps.canManageHomework).toBe(true)
     expect(deriveCapabilities(superAdmin).canManageStudentPayments).toBe(true)
+    expect(deriveCapabilities(superAdmin).canManageHomework).toBe(true)
     expect(caps.canManageFreelance).toBe(true)
     expect(caps.canEditStatus).toBe(true)
     expect(caps.canEditEmail(teacherOnly)).toBe(true)
@@ -116,6 +119,8 @@ describe('deriveCapabilities', () => {
     expect(inOwnOrg.canManageAdmins).toBe(false)
     expect(inOwnOrg.canManageLessons).toBe(true)
     expect(inOwnOrg.canManageStudentPayments).toBe(true)
+    expect(inOwnOrg.canManageTeacherPayouts).toBe(true)
+    expect(inOwnOrg.canManageHomework).toBe(true)
     expect(inOwnOrg.canManageFreelance).toBe(false)
     expect(inOwnOrg.canEditStatus).toBe(false)
     expect(inOwnOrg.canEditEmail(teacherOnly)).toBe(false)
@@ -130,6 +135,16 @@ describe('deriveCapabilities', () => {
     expect(elsewhere.canManageTeachers).toBe(false)
     expect(elsewhere.canManageLessons).toBe(false)
     expect(elsewhere.canManageStudentPayments).toBe(false)
+    expect(elsewhere.canManageTeacherPayouts).toBe(false)
+    expect(elsewhere.canManageHomework).toBe(false)
+  })
+
+  it('leaves teacher payouts to the organization’s admins and the super-admin', () => {
+    expect(deriveCapabilities(otherAdmin, org).canManageTeacherPayouts).toBe(true)
+    expect(deriveCapabilities(teacherOnly, org).canManageTeacherPayouts).toBe(false)
+    expect(deriveCapabilities(teacherElsewhere, org).canManageTeacherPayouts).toBe(false)
+    expect(deriveCapabilities(roleless, org).canManageTeacherPayouts).toBe(false)
+    expect(deriveCapabilities(freelancer, org).canManageTeacherPayouts).toBe(false)
   })
 
   it('leaves other admins, other organizations and freelance teachers to the super-admin', () => {

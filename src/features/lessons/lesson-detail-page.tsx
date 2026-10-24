@@ -32,14 +32,22 @@ import {
 } from '@/components/detail/detail-panel'
 import { RowActions } from '@/components/row-actions'
 import { Button } from '@/components/ui/button'
-import { enumLabel, formatDateTime, shortId } from '@/lib/format'
+import { HomeworkPanel } from '@/features/homework/components/homework-panel'
+import {
+  enumLabel,
+  formatDateTime,
+  formatDateTimeRange,
+  formatDuration,
+  formatTimeRange,
+  shortId,
+} from '@/lib/format'
 import { deriveCapabilities, lessonRules } from '@/lib/permissions'
 import { usePageTitle } from '@/lib/use-page-title'
 import { AddPrepaidSheet } from './components/add-prepaid-sheet'
 import { BalanceFields } from './components/balance-fields'
 import { CloseLessonSheet } from './components/close-lesson-sheet'
 import { JournalSheet } from './components/journal-sheet'
-import { LessonStatusBadge, PaidBadge } from './components/lesson-badges'
+import { LessonStatusBadge, PaidBadge, TeacherPayoutBadge } from './components/lesson-badges'
 import { LessonCrumb } from './components/lesson-crumb'
 import { ScheduleLessonSheet } from './components/schedule-lesson-sheet'
 import { useLessonNames } from './hooks/use-lesson-names'
@@ -48,8 +56,9 @@ import { useLessonPaths } from './lesson-paths'
 export const handle: RouteHandle = { crumb: (params) => <LessonCrumb lessonId={params.lessonId} /> }
 
 /**
- * `GET /lessons/{id}` with every field, the homework and materials, the student's balances and
- * every supported action. Mounted at `/platform/lessons/:lessonId` for the super-admin and at
+ * `GET /lessons/{id}` with every field and the materials, the homework that refers to the lesson
+ * (`GET /homework?lessonId=`, with Assign, Edit and Delete), the student's balances and every
+ * supported action. Mounted at `/platform/lessons/:lessonId` for the super-admin and at
  * `/org/:orgId/lessons/:lessonId` for an org admin (D-040).
  */
 export function Component() {
@@ -79,7 +88,7 @@ export function Component() {
   usePageTitle(
     lesson
       ? lesson.scheduledAt
-        ? `Lesson · ${formatDateTime(lesson.scheduledAt)}`
+        ? `Lesson · ${formatDateTimeRange(lesson.scheduledAt, lesson.durationMinutes)}`
         : 'Unscheduled lesson'
       : undefined,
   )
@@ -127,7 +136,10 @@ export function Component() {
     return <ErrorState error={detailQuery.error} onRetry={() => void detailQuery.refetch()} />
   const detail = detailQuery.data
   const payment = lesson.studentPayment
-  const { canManageStudentPayments } = deriveCapabilities(me, lesson.organizationId)
+  const { canManageStudentPayments, canManageHomework } = deriveCapabilities(
+    me,
+    lesson.organizationId,
+  )
   const teacher = names.teacher(lesson.teacherId)
   const student = names.student(lesson.studentId)
   const course = names.course(lesson.courseId)
@@ -144,7 +156,7 @@ export function Component() {
         backLabel="Lessons"
         title={
           lesson.scheduledAt
-            ? `Lesson on ${formatDateTime(lesson.scheduledAt)}`
+            ? `Lesson on ${formatDateTimeRange(lesson.scheduledAt, lesson.durationMinutes)}`
             : 'Unscheduled lesson'
         }
         badge={
@@ -250,6 +262,23 @@ export function Component() {
           <DetailField label="Scheduled at">
             <TimeValue value={lesson.scheduledAt} />
           </DetailField>
+          <DetailField label="Length">
+            {formatDuration(lesson.durationMinutes)}
+            {lesson.scheduledAt ? (
+              <span className="text-muted-foreground tabular-nums">
+                {' '}
+                · {formatTimeRange(lesson.scheduledAt, lesson.durationMinutes)}
+              </span>
+            ) : null}
+          </DetailField>
+          {lesson.seriesId ? (
+            <DetailField
+              label="Series"
+              hint="Booked together with other lessons of a weekly series."
+            >
+              <IdValue value={lesson.seriesId} />
+            </DetailField>
+          ) : null}
           {payment ? (
             <>
               <DetailField label="Payment">
@@ -259,6 +288,22 @@ export function Component() {
                 <TimeValue value={payment.paidAt} />
               </DetailField>
             </>
+          ) : null}
+          {lesson.organizationId ? (
+            <DetailField
+              label="Teacher payout"
+              hint="What the organization paid the teacher for this lesson — not the student’s payment."
+            >
+              {lesson.teacherPayout ? (
+                <TeacherPayoutBadge lesson={lesson} />
+              ) : lesson.status === 'PRESENT' || lesson.status === 'CANCELED_LATE' ? (
+                'Not paid out yet'
+              ) : (
+                <span className="text-muted-foreground">
+                  Only held and late-canceled lessons are paid out
+                </span>
+              )}
+            </DetailField>
           ) : null}
           <DetailField label="Teacher">
             <EntityValue
@@ -381,35 +426,27 @@ export function Component() {
               </>
             )}
           </DetailPanel>
-          <DetailPanel title="Homework" description="Handed out in this lesson.">
-            {detail.homework.length === 0 ? (
-              <DetailField label="None">No homework handed out in this lesson.</DetailField>
-            ) : (
-              detail.homework.map((hw) => (
-                <DetailField key={hw.id} label="Homework">
-                  {hw.notes ? <p className="mb-1 whitespace-pre-wrap">{hw.notes}</p> : null}
-                  {hw.items.length > 0 ? (
-                    <ul className="flex flex-col gap-1">
-                      {hw.items.map((item) => (
-                        <li key={item.id} className="flex items-start gap-2 text-sm">
-                          <span
-                            aria-hidden
-                            className={item.done ? 'text-success' : 'text-muted-foreground'}
-                          >
-                            {item.done ? '☑' : '☐'}
-                          </span>
-                          <span className={item.done ? 'text-muted-foreground line-through' : ''}>
-                            {item.text}
-                            <span className="sr-only">{item.done ? ' (done)' : ' (open)'}</span>
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : null}
-                </DetailField>
-              ))
-            )}
-          </DetailPanel>
+          <HomeworkPanel
+            description="Assigned for this lesson, open first."
+            filters={{ lessonId }}
+            emptyText="No homework for this lesson yet."
+            manage={
+              canManageHomework
+                ? {
+                    studentId: lesson.studentId,
+                    studentName: student?.name ?? 'this student',
+                    teacher: { id: lesson.teacherId, name: teacher?.name },
+                    lesson: {
+                      id: lesson.id,
+                      label: lesson.scheduledAt
+                        ? formatDateTime(lesson.scheduledAt)
+                        : 'no date yet',
+                      courseId: lesson.courseId,
+                    },
+                  }
+                : undefined
+            }
+          />
           <DetailPanel title="Materials" description="Attached to this lesson.">
             {detail.materials.length === 0 ? (
               <DetailField label="None">No materials attached to this lesson.</DetailField>
@@ -460,8 +497,9 @@ export function Component() {
         description={
           <>
             <p>
-              Removes this pending, unpaid lesson. Homework handed out in it is kept and unlinked;
-              materials that also belong to a course are kept; lesson-only materials are removed.
+              Removes this pending, unpaid lesson. Homework for it is kept, without the link to the
+              lesson; materials that also belong to a course are kept; lesson-only materials are
+              removed.
             </p>
             <p>Closed or paid lessons are history and cannot be deleted.</p>
           </>

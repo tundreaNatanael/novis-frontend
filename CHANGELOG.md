@@ -7,6 +7,16 @@ All notable changes to the Novis admin console. The format follows
 
 ### Breaking
 
+- Lessons have a length and may not overlap (backend scheduling change, D-045): `Lesson` gained
+  `durationMinutes` and `seriesId`, `Course` gained `defaultDurationMinutes`, and `POST /lessons` /
+  `PATCH /lessons/{id}/schedule` answer `409 SCHEDULE_CONFLICT` when the time overlaps another
+  lesson of the teacher or the student (new `ApiErrorCode`). `src/api/schema.d.ts` was regenerated
+  (`npm run api:types`).
+- Homework stands on its own (backend `POST /homework`, D-041): closing a lesson no longer sends
+  `homework` (the API answers `400` if it does), and `LessonDetail.homework[]` is gone. The
+  `Homework` type gained `title`, `dueAt`, `completedAt` and the labels `teacherName`,
+  `studentName`, `courseTitle`, `lessonScheduledAt`. `src/api/schema.d.ts` was regenerated
+  (`npm run api:types`).
 - Payments belong to payment managers (backend payment change, D-040): `Lesson.paid` / `paidAt`
   were replaced by `studentPayment: { paid, paidAt, recordedById } | null`, and the balance counts
   of `LessonSummary` are nullable next to the new `toSchedule`. `src/api/schema.d.ts` was
@@ -17,8 +27,84 @@ All notable changes to the Novis admin console. The format follows
   (`{ id, name, slug, status, membershipId }` or `null`). `src/api/schema.d.ts` was edited by
   hand to the contract; regenerate it with `npm run api:types` once the backend runs the change.
 
+### Added
+
+- **Teacher payouts** (backend teacher payouts, D-047): a **Payouts** panel on a teacher's page in
+  both workspace mounts, for the new `canManageTeacherPayouts` capability (the super-admin and the
+  organization's admin). It shows what the organization owes the teacher ("Owed: N lessons", the
+  held and late-canceled lessons no payout covers, `GET /orgs/{orgId}/teachers/{teacherId}/payable-lessons`),
+  a table of those lessons with checkboxes (50 per page, the selection survives paging, at most 500) and **Pay everything up to…**, which counts the lessons up to the picked day as it changes.
+  The **Record payout** sheet takes the day the organization paid (today at the latest) and a note
+  (`POST /orgs/{orgId}/teacher-payouts` with `lessonIds`, or `upTo` = the start of the next local
+  day); a `409` (paid meanwhile) shows the server's sentence and refreshes the lists. **History**
+  (`GET /orgs/{orgId}/teacher-payouts?teacherId=`, latest first, "Show voided") lists each payout's
+  day, lessons, note and who recorded it, opens its lessons (`GET /teacher-payouts/{id}`) and voids
+  it after a reason and typing `void` (`POST /teacher-payouts/{id}/void`); a voided payout shows
+  who voided it and why, and frees its lessons. New `src/api/teacher-payouts.ts` and
+  `src/features/teacher-payouts/`. Never the students' payments.
+- Lesson detail shows a **Teacher payout** field on organization lessons: "Paid to the teacher on
+  <day>" (`Lesson.teacherPayout`), "Not paid out yet" for a held or late-canceled lesson, or why
+  the lesson is not paid out.
+- **Lesson length** in **New lesson** and **Reschedule lesson**: a "Length (minutes)" field
+  (15–240). In New lesson it follows the chosen course's default (else 60) until edited; in
+  Reschedule it starts at the lesson's length and is sent only when it changed.
+- **Overlapping lessons are confirmed** (D-045): a `409 SCHEDULE_CONFLICT` opens "This time is
+  taken" with **Create anyway** / **Move anyway** / **Schedule anyway**, which sends the same request
+  again with `allowOverlap: true`; Cancel goes back to the form as typed.
+- **Default lesson length** on courses: a field in the course form (empty = none; emptying a set
+  length sends `defaultDurationMinutes: null`) and a row on course detail.
+- Lessons show **start–end times**: the ledger's When column and phone rows, the agenda, the lesson
+  page title and header, a Length row (plus Series when a weekly series booked it) on lesson
+  detail, and the next lesson on student detail (`formatTimeRange`, `formatDateTimeRange`,
+  `formatDuration`).
+- A **Homework** panel on lesson detail (`GET /homework?lessonId=`) and on student detail
+  (`GET /homework?studentId=`, plus `teacherId` in a freelance workspace): open first, then by due
+  date, with an Open / Overdue / Done badge, due date, teacher, course, lesson date, progress, notes
+  and checklist.
+- **Assign homework** (`POST /homework`, new `src/api/homework.ts` and
+  `src/features/homework/`): teacher (fixed on a lesson or in a freelance workspace, picked from the
+  organization's teachers otherwise), title, notes, due date (sent as the end of that local day),
+  course (the student's active enrollments with that teacher, preselected from the lesson) and a
+  checklist of at least one line. Gated by the new `canManageHomework` capability.
+- **Edit homework** (each Homework row's ⋯ menu, `PATCH /homework/{id}`): the Assign sheet in an
+  edit mode for title, notes, due date and checklist lines; the teacher, course and lesson stay as
+  assigned. Only what changed is sent, and nothing at all when nothing changed. An emptied title
+  clears it; an emptied due date (or **Clear**) removes it with `dueAt: null`. The API
+  replaces the whole checklist with new item ids, so it is sent only when its lines changed, and
+  then each kept line carries the tick the student has right before saving (`GET /homework/{id}`
+  re-read); new lines start open (D-042).
+- **Delete homework** (the same menu, `DELETE /homework/{id}`) after a confirmation naming the
+  homework, the student and the ticks so far. On either action a `404` explains that the homework
+  is gone or out of reach and refreshes the list, and a `403` disables that row's actions with the
+  reason. Both follow `canManageHomework` (the panel's `assign` prop is now `manage`).
+
 ### Changed
 
+- `src/api/schema.d.ts` regenerated (`npm run api:types`) after the teacher payouts and the teacher
+  calendar: `Lesson` gained `teacherPayout` (`LessonTeacherPayout | null`, typed in `types.ts`),
+  and some generated operation names moved (`create_2` → `create_3`…); nothing in the console
+  refers to them.
+- The teacher calendar (`GET /teacher/calendar`, `CalendarLessonResponse`) is in `schema.d.ts` but
+  not called: it is for teachers only (admins and the super-admin get `403`), and the console keeps
+  the lesson ledger and agenda (D-046).
+- The checkbox shows a dash, not a tick, when it is indeterminate (some rows of a page selected).
+- Rescheduling removes an emptied meeting link (backend `PATCH /lessons/{id}/schedule` now removes
+  `meetingUrl` sent as `null`; gap G18 closed for the lesson link): the schedule sheet sends
+  `meetingUrl: null` for a link it emptied, still leaves out an untouched one, and its hint no
+  longer says the current link is kept. `ScheduleLessonRequest` takes `null` for `meetingUrl`
+  (D-044).
+- Edit course removes an emptied description or default meeting link (backend
+  `PATCH /courses/{id}` now removes a field sent as `null`; gap G18 closed): the sheet sends `null`
+  for a field it emptied and leaves out one that was and stays empty, and the link hint no longer
+  says the current link is kept. `UpdateCourseRequest` takes `null` for `description` and
+  `defaultMeetingUrl` (D-043). The backend also stores a blank description as `null`, on create
+  too, so a course created with an empty description now has none instead of `""`.
+- Edit homework can remove a due date (backend `PATCH /homework/{id}` now removes a field sent as
+  `null`; gap G18 closed for homework): emptying the field, or its new **Clear** button, sends
+  `dueAt: null`, and the field is no longer required once set. `UpdateHomeworkRequest` takes `null`
+  for `lessonId`, `title`, `notes` and `dueAt` (D-042 update).
+- The close sheet asks for the outcome and the journal only (D-030 updated); the lesson's delete
+  confirmation says homework is kept without the link.
 - Payment actions (Mark paid / unpaid, Add prepaid, the use-prepaid box, the Payment filter and
   column) follow the new `canManageStudentPayments` capability; payment display follows the data:
   `PaidBadge`, the Payment / Paid at fields and the balance counts render nothing when the API

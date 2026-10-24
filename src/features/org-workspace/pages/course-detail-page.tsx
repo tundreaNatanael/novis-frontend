@@ -35,7 +35,7 @@ import {
 import { RowActions } from '@/components/row-actions'
 import { StatusBadge } from '@/components/status-badge'
 import { Button } from '@/components/ui/button'
-import { formatDate } from '@/lib/format'
+import { formatDate, formatDuration } from '@/lib/format'
 import { useListParams } from '@/lib/use-list-params'
 import { usePageTitle } from '@/lib/use-page-title'
 import { CourseFormSheet } from '../components/course-form-sheet'
@@ -228,6 +228,16 @@ export function Component() {
               </a>
             ) : (
               <span className="text-muted-foreground">—</span>
+            )}
+          </DetailField>
+          <DetailField
+            label="Default lesson length"
+            hint="Given to new lessons of this course booked without their own length."
+          >
+            {course.defaultDurationMinutes ? (
+              formatDuration(course.defaultDurationMinutes)
+            ) : (
+              <span className="text-muted-foreground">None (lessons last 60 min)</span>
             )}
           </DetailField>
           <DetailField label="Created">

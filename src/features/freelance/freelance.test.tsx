@@ -403,6 +403,11 @@ describe('freelance teachers', () => {
         HttpResponse.json(studentUser({ id: 's-f', name: 'Bo', organization: null })),
       ),
       http.get(api('/students/s-f/lessons/summary'), () => HttpResponse.json(summary)),
+      http.get(api('/homework'), ({ request }) => {
+        // The freelance workspace shows this teacher's homework for the student.
+        expect(new URL(request.url).searchParams.get('teacherId')).toBe('f-1')
+        return HttpResponse.json(page([]))
+      }),
       http.get(api('/students/s-f/enrollments'), () =>
         HttpResponse.json(
           page([

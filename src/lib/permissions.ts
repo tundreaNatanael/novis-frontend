@@ -33,6 +33,17 @@ export interface Capabilities {
    * else). Payment data on screen still follows the response: `studentPayment: null` shows nothing.
    */
   canManageStudentPayments: boolean
+  /**
+   * List what the organization owes a teacher, record payouts to them and void one: the super-admin
+   * and the organization's admin (API.md §9.6). Teacher payouts are what the school paid its
+   * teachers, never the students' payments; the API answers `403` / `404` to anyone else.
+   */
+  canManageTeacherPayouts: boolean
+  /**
+   * Assign homework for a teacher of the organization (the super-admin: any teacher), naming them,
+   * and edit or delete the organization's homework (the server answers `404` for anything else).
+   */
+  canManageHomework: boolean
   canManageFreelance: boolean
   canSearchUsers: boolean
   canEditStatus: boolean
@@ -142,6 +153,8 @@ export function deriveCapabilities(
     canManageInvites: isOrgAdmin,
     canManageLessons: isOrgAdmin,
     canManageStudentPayments: isOrgAdmin,
+    canManageTeacherPayouts: isOrgAdmin,
+    canManageHomework: isOrgAdmin,
     canManageFreelance: superAdmin,
     canSearchUsers: superAdmin,
     canEditStatus: superAdmin,

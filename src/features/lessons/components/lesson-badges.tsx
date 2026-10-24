@@ -4,11 +4,13 @@ import {
   CheckCircle2,
   CircleDollarSign,
   Clock,
+  HandCoins,
   Ticket,
   XCircle,
 } from 'lucide-react'
 import type { Lesson } from '@/api/types'
 import { StatusBadge, ToneBadge } from '@/components/status-badge'
+import { formatDate } from '@/lib/format'
 import { lessonRules, type LessonDisplayStatus } from '@/lib/permissions'
 
 const STATUS: Record<
@@ -51,6 +53,19 @@ export function PaidBadge({ lesson }: { lesson: Pick<Lesson, 'status' | 'student
   return (
     <ToneBadge tone={due ? 'danger' : 'neutral'} icon={CircleDollarSign}>
       {due ? 'Unpaid · due' : 'Unpaid'}
+    </ToneBadge>
+  )
+}
+
+/**
+ * The teacher payout that covers the lesson (API.md §9.6): the organization paid the teacher for
+ * it. Never the student's payment; renders nothing while no live payout covers the lesson.
+ */
+export function TeacherPayoutBadge({ lesson }: { lesson: Pick<Lesson, 'teacherPayout'> }) {
+  if (!lesson.teacherPayout) return null
+  return (
+    <ToneBadge tone="success" icon={HandCoins}>
+      Paid to the teacher on {formatDate(lesson.teacherPayout.paidOn)}
     </ToneBadge>
   )
 }

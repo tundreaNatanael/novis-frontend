@@ -1,4 +1,4 @@
-import { format, formatDistanceToNow, isValid, parseISO } from 'date-fns'
+import { addMinutes, format, formatDistanceToNow, isValid, parseISO } from 'date-fns'
 
 /** Local date and time, e.g. "12 Oct 2026, 14:03". */
 export function formatDateTime(iso: string | null | undefined): string {
@@ -16,6 +16,26 @@ export function formatDate(iso: string | null | undefined): string {
 export function formatTime(iso: string | null | undefined): string {
   const date = parse(iso)
   return date ? format(date, 'HH:mm') : '—'
+}
+
+/** A lesson's local start and end time, e.g. "14:00–15:00"; "—" without a start. */
+export function formatTimeRange(iso: string | null | undefined, minutes: number): string {
+  const date = parse(iso)
+  return date ? `${format(date, 'HH:mm')}–${format(addMinutes(date, minutes), 'HH:mm')}` : '—'
+}
+
+/** A lesson's local date with its start and end time, e.g. "12 Oct 2026, 14:00–15:00". */
+export function formatDateTimeRange(iso: string | null | undefined, minutes: number): string {
+  const date = parse(iso)
+  return date ? `${format(date, 'd MMM yyyy')}, ${formatTimeRange(iso, minutes)}` : '—'
+}
+
+/** A length in minutes: "45 min", "1 h", "1 h 30 min". */
+export function formatDuration(minutes: number): string {
+  const hours = Math.floor(minutes / 60)
+  const rest = minutes % 60
+  if (hours === 0) return `${rest} min`
+  return rest === 0 ? `${hours} h` : `${hours} h ${rest} min`
 }
 
 /** "in 3 days" / "2 hours ago". */
@@ -45,6 +65,22 @@ export function toDateTimeLocal(iso: string | null | undefined): string {
 export function fromDateTimeLocal(value: string): string | null {
   if (!value) return null
   const date = new Date(value)
+  return isValid(date) ? date.toISOString() : null
+}
+
+/** The `date` input value (local day) for an ISO instant, or `''` without one. */
+export function toDateInput(iso: string | null | undefined): string {
+  const date = parse(iso)
+  return date ? format(date, 'yyyy-MM-dd') : ''
+}
+
+/**
+ * ISO UTC instant for the last second of a `date` input's local day, or `null` when empty:
+ * homework due on a day is overdue from the next day on.
+ */
+export function endOfLocalDay(value: string): string | null {
+  if (!value) return null
+  const date = new Date(`${value}T23:59:59`)
   return isValid(date) ? date.toISOString() : null
 }
 

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
+import { isApiError } from '@/api/errors'
 import { lessonKeys, lessonsApi } from '@/api/lessons'
 import { studentKeys } from '@/api/students'
 import type { Lesson } from '@/api/types'
@@ -14,13 +15,39 @@ import { applyServerErrors } from '@/components/form/server-errors'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { fromDateTimeLocal, toDateTimeLocal } from '@/lib/format'
-import { optionalHttpsUrl } from '@/lib/schemas'
+import { lessonDurationSchema, optionalHttpsUrl } from '@/lib/schemas'
+import { OverlapConfirmDialog } from './overlap-confirm-dialog'
 
 const schema = z.object({
   scheduledAt: z.string().min(1, 'Choose a date and time'),
+  durationMinutes: lessonDurationSchema,
   meetingUrl: optionalHttpsUrl,
 })
-type FormValues = z.infer<typeof schema>
+type FormInput = z.input<typeof schema>
+type FormValues = z.output<typeof schema>
+
+/**
+ * The link part of the `PATCH /lessons/{id}/schedule` body: left out while unchanged, so a save
+ * never overwrites a link changed elsewhere meanwhile; the typed link when it changed; `null` when
+ * the lesson's link was emptied (the API removes it).
+ */
+function linkChange(value: string, current: string | null) {
+  if (value === (current ?? '')) return {}
+  return { meetingUrl: value || null }
+}
+
+/** The length goes out only when it changed (an omitted length stays; it is never `null`). */
+function lengthChange(value: number, current: number) {
+  return value === current ? {} : { durationMinutes: value }
+}
+
+function defaultsFor(lesson: Lesson): FormInput {
+  return {
+    scheduledAt: toDateTimeLocal(lesson.scheduledAt),
+    durationMinutes: lesson.durationMinutes,
+    meetingUrl: lesson.meetingUrl ?? '',
+  }
+}
 
 interface Props {
   lesson: Lesson
@@ -28,25 +55,26 @@ interface Props {
   onOpenChange: (open: boolean) => void
 }
 
-/** `PATCH /lessons/{id}/schedule`: set or move the date and the meeting link; `scheduledAt: null` unschedules. Pending lessons only. */
+/**
+ * `PATCH /lessons/{id}/schedule`: set or move the date, change the length, change or remove the
+ * meeting link; `scheduledAt: null` unschedules. Pending lessons only. A new slot that overlaps
+ * another lesson of the teacher or the student (`409 SCHEDULE_CONFLICT`) is confirmed, then sent
+ * again with `allowOverlap`.
+ */
 export function ScheduleLessonSheet({ lesson, open, onOpenChange }: Props) {
   const queryClient = useQueryClient()
   const [formError, setFormError] = useState<string | null>(null)
-  const form = useForm<FormValues>({
+  const [overlapping, setOverlapping] = useState<FormValues | null>(null)
+  const form = useForm<FormInput, unknown, FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: {
-      scheduledAt: toDateTimeLocal(lesson.scheduledAt),
-      meetingUrl: lesson.meetingUrl ?? '',
-    },
+    defaultValues: defaultsFor(lesson),
   })
 
   useEffect(() => {
     if (open) {
-      form.reset({
-        scheduledAt: toDateTimeLocal(lesson.scheduledAt),
-        meetingUrl: lesson.meetingUrl ?? '',
-      })
+      form.reset(defaultsFor(lesson))
       setFormError(null)
+      setOverlapping(null)
     }
   }, [open, lesson, form])
 
@@ -61,20 +89,29 @@ export function ScheduleLessonSheet({ lesson, open, onOpenChange }: Props) {
     ])
 
   const mutation = useMutation({
-    mutationFn: (values: FormValues) =>
+    mutationFn: ({ values, allowOverlap }: { values: FormValues; allowOverlap: boolean }) =>
       lessonsApi.schedule(lesson.id, {
         scheduledAt: fromDateTimeLocal(values.scheduledAt),
-        ...(values.meetingUrl !== (lesson.meetingUrl ?? '') && values.meetingUrl
-          ? { meetingUrl: values.meetingUrl }
-          : {}),
+        ...lengthChange(values.durationMinutes, lesson.durationMinutes),
+        ...linkChange(values.meetingUrl, lesson.meetingUrl),
+        ...(allowOverlap ? { allowOverlap: true } : {}),
       }),
     onSuccess: async () => {
       await invalidate()
       toast.success(lesson.scheduledAt ? 'Lesson rescheduled' : 'Lesson scheduled')
       onOpenChange(false)
     },
-    onError: (error) =>
-      setFormError(applyServerErrors(error, form.setError, ['scheduledAt', 'meetingUrl'])),
+    onError: (error, { values, allowOverlap }) => {
+      // A resend that allows the overlap reports its error in the confirmation.
+      if (allowOverlap) return
+      if (isApiError(error) && error.is('SCHEDULE_CONFLICT')) {
+        setOverlapping(values)
+        return
+      }
+      setFormError(
+        applyServerErrors(error, form.setError, ['scheduledAt', 'durationMinutes', 'meetingUrl']),
+      )
+    },
   })
   const unschedule = useMutation({
     mutationFn: () => lessonsApi.schedule(lesson.id, { scheduledAt: null }),
@@ -87,56 +124,92 @@ export function ScheduleLessonSheet({ lesson, open, onOpenChange }: Props) {
   })
 
   return (
-    <FormSheet
-      open={open}
-      onOpenChange={onOpenChange}
-      title={lesson.scheduledAt ? 'Reschedule lesson' : 'Schedule lesson'}
-      description="Only pending lessons can be scheduled or moved. An unscheduled paid lesson is a prepaid credit waiting for a date."
-      submitLabel={lesson.scheduledAt ? 'Move lesson' : 'Schedule lesson'}
-      isSubmitting={mutation.isPending || unschedule.isPending}
-      onSubmit={form.handleSubmit((values) => {
-        setFormError(null)
-        mutation.mutate(values)
-      })}
-      footerStart={
-        lesson.scheduledAt ? (
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => unschedule.mutate()}
-            disabled={unschedule.isPending}
-          >
-            Unschedule
-          </Button>
-        ) : null
-      }
-    >
-      <FormError message={formError} />
-      <Field
-        label="Date and time"
-        required
-        hint="Your local time; past dates are allowed."
-        error={form.formState.errors.scheduledAt?.message}
+    <>
+      <FormSheet
+        open={open}
+        onOpenChange={onOpenChange}
+        title={lesson.scheduledAt ? 'Reschedule lesson' : 'Schedule lesson'}
+        description="Only pending lessons can be scheduled or moved. An unscheduled paid lesson is a prepaid credit waiting for a date."
+        submitLabel={lesson.scheduledAt ? 'Move lesson' : 'Schedule lesson'}
+        isSubmitting={mutation.isPending || unschedule.isPending}
+        onSubmit={form.handleSubmit((values) => {
+          setFormError(null)
+          mutation.mutate({ values, allowOverlap: false })
+        })}
+        footerStart={
+          lesson.scheduledAt ? (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => unschedule.mutate()}
+              disabled={unschedule.isPending}
+            >
+              Unschedule
+            </Button>
+          ) : null
+        }
       >
-        {(a11y) => (
-          <Input {...a11y} type="datetime-local" autoFocus {...form.register('scheduledAt')} />
-        )}
-      </Field>
-      <Field
-        label="Meeting link"
-        hint="Absolute https:// link. Leave as is to keep the current one."
-        error={form.formState.errors.meetingUrl?.message}
-      >
-        {(a11y) => (
-          <Input
-            {...a11y}
-            type="url"
-            inputMode="url"
-            placeholder="https://meet.example.com/room"
-            {...form.register('meetingUrl')}
-          />
-        )}
-      </Field>
-    </FormSheet>
+        <FormError message={formError} />
+        <Field
+          label="Date and time"
+          required
+          hint="Your local time; past dates are allowed."
+          error={form.formState.errors.scheduledAt?.message}
+        >
+          {(a11y) => (
+            <Input {...a11y} type="datetime-local" autoFocus {...form.register('scheduledAt')} />
+          )}
+        </Field>
+        <Field
+          label="Length (minutes)"
+          required
+          hint="15–240 minutes."
+          error={form.formState.errors.durationMinutes?.message}
+        >
+          {(a11y) => (
+            <Input
+              {...a11y}
+              type="number"
+              inputMode="numeric"
+              min={15}
+              max={240}
+              step={5}
+              {...form.register('durationMinutes')}
+            />
+          )}
+        </Field>
+        <Field
+          label="Meeting link"
+          hint={
+            lesson.meetingUrl
+              ? 'An absolute https:// link. Empty it to remove the link.'
+              : 'Optional absolute https:// link.'
+          }
+          error={form.formState.errors.meetingUrl?.message}
+        >
+          {(a11y) => (
+            <Input
+              {...a11y}
+              type="url"
+              inputMode="url"
+              placeholder="https://meet.example.com/room"
+              {...form.register('meetingUrl')}
+            />
+          )}
+        </Field>
+      </FormSheet>
+      <OverlapConfirmDialog
+        open={overlapping !== null}
+        onOpenChange={(next) => {
+          if (!next) setOverlapping(null)
+        }}
+        confirmLabel={lesson.scheduledAt ? 'Move anyway' : 'Schedule anyway'}
+        onConfirm={() =>
+          overlapping
+            ? mutation.mutateAsync({ values: overlapping, allowOverlap: true })
+            : undefined
+        }
+      />
+    </>
   )
 }

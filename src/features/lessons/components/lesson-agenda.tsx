@@ -2,7 +2,7 @@ import { format, parseISO } from 'date-fns'
 import { Link } from 'react-router'
 import type { Lesson } from '@/api/types'
 import { Skeleton } from '@/components/ui/skeleton'
-import { formatTime, shortId } from '@/lib/format'
+import { formatTimeRange, shortId } from '@/lib/format'
 import type { LessonNames } from '../hooks/use-lesson-names'
 import { useLessonPaths } from '../lesson-paths'
 import { LessonStatusBadge, PaidBadge } from './lesson-badges'
@@ -56,8 +56,10 @@ export function LessonAgenda({ lessons, names, isLoading }: LessonAgendaProps) {
                       to={paths.detail(lesson.id)}
                       className="flex min-h-14 flex-col gap-1 rounded-lg border border-border bg-card p-3 hover:border-primary/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:flex-row sm:items-center sm:gap-4"
                     >
-                      <span className="w-14 shrink-0 font-mono text-sm text-foreground tabular-nums">
-                        {lesson.scheduledAt ? formatTime(lesson.scheduledAt) : '—'}
+                      <span className="w-24 shrink-0 font-mono text-sm text-foreground tabular-nums">
+                        {lesson.scheduledAt
+                          ? formatTimeRange(lesson.scheduledAt, lesson.durationMinutes)
+                          : '—'}
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate font-medium text-card-foreground">

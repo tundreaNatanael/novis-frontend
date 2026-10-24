@@ -15,7 +15,13 @@ import { applyServerErrors } from '@/components/form/server-errors'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { longTextSchema, optionalHttpsUrl, titleSchema, uuidSchema } from '@/lib/schemas'
+import {
+  longTextSchema,
+  optionalHttpsUrl,
+  optionalLessonDurationSchema,
+  titleSchema,
+  uuidSchema,
+} from '@/lib/schemas'
 import { memberName, useOrgTeachers } from '../hooks/use-org-lookups'
 import { useWorkspaceScope } from '../use-org-workspace'
 
@@ -25,8 +31,26 @@ const schema = z.object({
   teacherId: uuidSchema,
   status: z.enum(['ACTIVE', 'ARCHIVED']),
   defaultMeetingUrl: optionalHttpsUrl,
+  defaultDurationMinutes: optionalLessonDurationSchema,
 })
-type FormValues = z.infer<typeof schema>
+type FormInput = z.input<typeof schema>
+type FormValues = z.output<typeof schema>
+
+/**
+ * An optional field of the edit form for `PATCH /courses/{id}`: the typed value, `null` when a
+ * value was emptied (the API removes it), left out when it was and stays empty, so a save never
+ * removes a value added elsewhere meanwhile.
+ */
+function removable(value: string, current: string | null) {
+  if (value) return value
+  return current ? null : undefined
+}
+
+/** `removable` for the default lesson length (`null` once the field is emptied). */
+function removableLength(value: number | null, current: number | null) {
+  if (value !== null) return value
+  return current !== null ? null : undefined
+}
 
 interface CourseFormSheetProps {
   open: boolean
@@ -52,14 +76,18 @@ export function CourseFormSheet({
   const queryClient = useQueryClient()
   const [formError, setFormError] = useState<string | null>(null)
   const teachers = useOrgTeachers(orgId ?? '', open && scope.kind === 'org')
-  const defaults = (): FormValues => ({
+  const defaults = (): FormInput => ({
     title: course?.title ?? '',
     description: course?.description ?? '',
     teacherId: course?.teacherId ?? teacherId ?? fixedTeacherId ?? '',
     status: course?.status ?? 'ACTIVE',
     defaultMeetingUrl: course?.defaultMeetingUrl ?? '',
+    defaultDurationMinutes: course?.defaultDurationMinutes?.toString() ?? '',
   })
-  const form = useForm<FormValues>({ resolver: zodResolver(schema), defaultValues: defaults() })
+  const form = useForm<FormInput, unknown, FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: defaults(),
+  })
 
   useEffect(() => {
     if (open) {
@@ -71,19 +99,25 @@ export function CourseFormSheet({
 
   const mutation = useMutation({
     mutationFn: (values: FormValues) => {
-      const body = {
-        title: values.title,
-        description: values.description,
-        ...(values.defaultMeetingUrl ? { defaultMeetingUrl: values.defaultMeetingUrl } : {}),
-      }
       if (!course)
         return coursesApi.create({
-          ...body,
+          title: values.title,
+          description: values.description,
+          ...(values.defaultMeetingUrl ? { defaultMeetingUrl: values.defaultMeetingUrl } : {}),
+          ...(values.defaultDurationMinutes !== null
+            ? { defaultDurationMinutes: values.defaultDurationMinutes }
+            : {}),
           teacherId: values.teacherId,
           ...(orgId ? { organizationId: orgId } : {}),
         })
       return coursesApi.update(course.id, {
-        ...body,
+        title: values.title,
+        description: removable(values.description, course.description),
+        defaultMeetingUrl: removable(values.defaultMeetingUrl, course.defaultMeetingUrl),
+        defaultDurationMinutes: removableLength(
+          values.defaultDurationMinutes,
+          course.defaultDurationMinutes,
+        ),
         status: values.status,
         ...(values.teacherId !== course.teacherId ? { teacherId: values.teacherId } : {}),
       })
@@ -105,6 +139,7 @@ export function CourseFormSheet({
           'teacherId',
           'status',
           'defaultMeetingUrl',
+          'defaultDurationMinutes',
         ]),
       ),
   })
@@ -198,7 +233,7 @@ export function CourseFormSheet({
         label="Default meeting link"
         hint={
           course?.defaultMeetingUrl
-            ? 'An absolute https:// link, copied into new lessons. Leave as is to keep the current link.'
+            ? 'An absolute https:// link, copied into new lessons. Empty it to remove the link; lessons that already have it keep it.'
             : 'Optional absolute https:// link, copied into new lessons of this course.'
         }
         error={form.formState.errors.defaultMeetingUrl?.message}
@@ -210,6 +245,28 @@ export function CourseFormSheet({
             inputMode="url"
             placeholder="https://meet.example.com/room"
             {...form.register('defaultMeetingUrl')}
+          />
+        )}
+      </Field>
+      <Field
+        label="Default lesson length (minutes)"
+        hint={
+          course?.defaultDurationMinutes
+            ? '15–240 minutes, given to new lessons of this course. Empty it to go back to 60; booked lessons keep their length.'
+            : 'Optional, 15–240 minutes. New lessons of this course get it unless they name their own; otherwise they last 60 minutes.'
+        }
+        error={form.formState.errors.defaultDurationMinutes?.message}
+      >
+        {(a11y) => (
+          <Input
+            {...a11y}
+            type="number"
+            inputMode="numeric"
+            min={15}
+            max={240}
+            step={5}
+            placeholder="60"
+            {...form.register('defaultDurationMinutes')}
           />
         )}
       </Field>

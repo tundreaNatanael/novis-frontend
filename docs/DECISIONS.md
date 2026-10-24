@@ -229,6 +229,9 @@ scope and teacher filters hidden). Every filter, the view (`?view=agenda`) and t
 anything was typed, `homework { notes, items }`.
 **Context.** The server discards journal and homework on an on-time cancellation (API.md §9.4);
 asking for text it will throw away would be a form that pretends.
+**Update (D-041).** The sheet sends `{ status }` plus the trimmed journal for charged outcomes
+only: closing a lesson no longer hands out homework (the API answers `400` to a `homework` field).
+Homework is assigned from the lesson's Homework panel.
 
 ## D-031 · 2026-10-16 · Paid toggle allowed on every status
 
@@ -365,3 +368,159 @@ is the super-admin's area behind `RequireSuperAdmin`.
 **Consequences.** An org admin's lesson detail renders under the workspace header and tabs, like
 the other detail pages there, so its breadcrumb is organization › lesson. Each role has exactly one
 detail URL per lesson.
+
+## D-041 · 2026-10-24 · Homework panels with their own Assign sheet
+
+**Decision.** Homework is listed in a **Homework** panel on lesson detail (`GET /homework?lessonId=`)
+and student detail (`GET /homework?studentId=`, plus `teacherId` in a freelance workspace), open
+first, then by due date. One **Assign homework** sheet (`POST /homework`) serves both: from a lesson
+the teacher and the lesson are fixed and the lesson's course is preselected; from a student the
+teacher comes from a picker of the organization's teachers (fixed in a freelance workspace).
+Console users are admins, so the sheet always sends `teacherId`. The course select lists only the
+student's ACTIVE enrollments in that teacher's active courses (anything else is a `400`) and has an
+explicit "No course" option (a Radix select cannot go back to empty); a preselected course the
+student left falls back to it. The due date is a day, sent as the last second of that local day,
+so "overdue" (open and past `dueAt`, computed on the client) starts the next day.
+**Context.** The backend made homework its own resource: one teacher, one student, course and
+lesson as optional references, `completedAt` maintained by the server. The close sheet lost its
+homework fields (D-030).
+**Alternatives.** Keeping homework inside the close sheet — rejected, the API refuses it. A course
+picker of all the teacher's courses — rejected, picking one the student is not enrolled in fails.
+**Consequences.** `canManageHomework` (the super-admin and the organization's admin) gates the
+button; the student page shows the teacher on each row, the lesson page does not repeat the lesson.
+Editing and deleting homework stay API-only for now.
+**Update (D-042).** Each row now has Edit homework and Delete homework.
+
+## D-042 · 2026-10-24 · Editing homework: the lines are the teacher's, the ticks the student's
+
+**Decision.** Each Homework row gets a ⋯ menu with **Edit homework** and **Delete homework**,
+behind the same `canManageHomework` as Assign. Edit is the Assign sheet in an edit mode: title,
+notes, due date and the checklist lines. The teacher and course are named in its description, not
+offered (`PATCH` cannot change them), and `lessonId` is never sent (the sheet has no lesson picker).
+Only the fields that changed go out, so an untouched field never overwrites a change made
+elsewhere; with no change the sheet closes without a request. An emptied title clears it (the API
+clears a blank title); a due date can be moved but not removed, so once set the field is required
+and emptying it is refused with that sentence. `PATCH` replaces the whole checklist, gives every
+item a new id and takes `done` as sent. So each line shows the student's tick read-only, the
+checklist goes out only when its lines changed, and then the sheet first re-reads the homework
+(`GET /homework/{id}`) and sends every kept line with the tick it has at that moment (matched by
+item id); a new line starts open. Delete asks first and names the homework, the student and the
+ticks so far. A `404` (gone, or out of the caller's reach) explains and refreshes the list; a `403`
+disables that row's Edit and Delete with the reason.
+**Context.** The API had `PATCH` / `DELETE /homework/{id}` all along (D-041 left them API-only).
+A student ticks lines on their phone while an admin may be editing; a save built from the ticks the
+sheet opened with would silently undo those.
+**Alternatives.** Sending the checklist on every save — rejected: a title change would rewrite every
+item id and tick. Ticks as the sheet opened — rejected, it loses ticks made meanwhile. Ticking or
+unticking in the editor — not built: the ticks are the student's. A lesson picker — not built.
+**Consequences.** One extra `GET` per save that rewrites the checklist; the window for a lost tick
+shrinks to that round trip. Two admins rewriting the same checklist at once: the last save wins.
+
+**Update (gap G18, homework fixed).** `PATCH /homework/{id}` now removes a field sent as `null`, so
+the due date is optional in edit mode too: emptying it, or its **Clear** button (a native date
+input is hard to empty by hand), sends `dueAt: null`. A lesson picker is still not built, although
+the API could now unlink the lesson (`lessonId: null`).
+
+## D-043 · 2026-10-24 · Editing a course removes an emptied description or link with `null`
+
+**Decision.** The Edit course sheet sends `description: null` / `defaultMeetingUrl: null` for a
+field that had a value and was emptied, so the API removes it; a field that was and stays empty is
+left out, and a filled one goes out as typed (title and status as before, the teacher only when it
+changed). The link hint now says that emptying the field removes the link and that lessons which
+already have it keep it. Creating a course is unchanged.
+**Context.** Gap G18, course part: `PATCH /courses/{id}` treated `null` like an omitted field, so the
+sheet kept the current link when the field was emptied and said so. The backend now removes a field
+sent as `null` (`title`, `status` or `teacherId` sent as `null` is a `400`; the sheet never sends it).
+**Alternatives.** `null` for every empty field — rejected: a save would also remove a link someone
+added after the sheet opened. A **Clear** button like the due date's (D-042) — not needed, a text
+field empties by hand.
+**Consequences.** Description and link can be removed from the console. The backend stores a blank
+description as `null` (on create too), so a course created with an empty description has none;
+courses saved earlier keep their `""` (shown as none) until edited.
+
+## D-044 · 2026-10-24 · Rescheduling removes an emptied meeting link with `null`
+
+**Decision.** The schedule sheet (lesson detail → ⋯ → Reschedule or unschedule) sends
+`meetingUrl: null` when the lesson had a link and the field was emptied, so the API removes it. The
+link goes out only when it changed: an untouched link, or an empty field on a lesson without one, is
+left out; a changed one goes out as typed. The date always goes out, because the API reads a
+missing `scheduledAt` as "unschedule". The hint says that emptying the field removes the link (on a
+lesson that has one). Unschedule still sends `{ scheduledAt: null }` alone, so the lesson keeps its
+link.
+**Context.** Gap G18, lesson part: `PATCH /lessons/{id}/schedule` ignored `meetingUrl: null`, so the
+sheet could change a link but not remove it, and its hint said "Leave as is to keep the current
+one". The backend now removes the link sent as `null`; the course's default link is not touched.
+**Alternatives.** Sending the link on every save, as the course sheet does (D-043) — rejected for
+this sheet, which already left an unchanged link out, so a save never overwrites a link changed
+elsewhere meanwhile. A **Clear** button — not needed, a text field empties by hand.
+**Consequences.** A lesson's link can be removed from the console; the student's "Join lesson"
+button goes with it.
+
+## D-045 · 2026-10-24 · Lesson length and overlapping lessons: confirm, then book anyway
+
+**Decision.** New lesson and the schedule sheet have a **Length (minutes)** field (15–240). In New
+lesson it follows the chosen course's `defaultDurationMinutes` (else 60) until it is edited by hand;
+in the schedule sheet it starts at the lesson's length and goes out only when it changed, like the
+link (D-044). When the API answers `409 SCHEDULE_CONFLICT` (the time overlaps another lesson of the
+teacher or the student), a confirmation, "This time is taken", offers **Create anyway** / **Move
+anyway** / **Schedule anyway**, which sends the same request again with `allowOverlap: true`;
+Cancel goes back to the form as typed. The course form gets a **Default lesson length** (empty =
+none; emptying a set one sends `null`, as D-043 does for the link), and lessons show start–end
+times wherever they showed a start time. Weekly series (`POST /lessons/series`) are not built here:
+the console books one lesson at a time and only shows a lesson's series id.
+**Context.** The backend's scheduling change gave every lesson a length, refuses overlaps per
+teacher and per student unless the request sets `allowOverlap`, and added weekly series with a dry
+run, which the task builds in the mobile app (teachers plan there); for the console the series was
+optional ("mention it, don't build it").
+**Alternatives.** Checking the slot before submitting (a dry run for one lesson) — rejected: the
+check would race with other bookings anyway, and the 409 already says the same. A "Book anyway"
+checkbox in the form — rejected: it would invite booking over lessons by default; the confirmation
+appears only when there is an overlap. Showing which lesson is in the way — not possible: the `409`
+carries no lesson, and the API never names another teacher's lesson.
+**Consequences.** An admin can book or move a lesson over another one knowingly; the overlap stays
+visible in the agenda as two lessons at the same time. Lessons booked before lengths existed show
+60 minutes.
+
+## D-046 · 2026-10-24 · The teacher calendar is the mobile app's
+
+**Decision.** The console does not call `GET /teacher/calendar` and gets no calendar screen; its
+lessons stay in the ledger and the agenda (D-040), filtered by teacher and date as before.
+**Context.** The backend added a read model for the mobile app's new Calendar tab (API.md §12): a
+teacher's dated lessons in a window, with the student's name and the course's title and without
+payment data. It answers teachers only — organization admins and the super-admin get `403` — and
+the console has no teacher users.
+**Alternatives.** A week view in the console built on it — not possible for the console's users
+(`403`), and `GET /lessons` already gives admins every lesson in their reach. Asking the backend to
+open it to admins — rejected for now: it would repeat `GET /lessons` with other payment rules.
+**Consequences.** `schema.d.ts` carries the route and `CalendarLessonResponse`, unused. Names on
+lesson rows (gap G19) are still resolved in the console, since the calendar's names reach teachers
+only.
+
+## D-047 · 2026-10-24 · Teacher payouts: a panel on the teacher's page
+
+**Decision.** Teacher payouts live in a **Payouts** panel at the bottom of a teacher's page (both
+workspace mounts), behind `canManageTeacherPayouts` (the super-admin and the organization's
+admin). The panel starts from what the organization owes: "Owed: N lessons" is the payable list's
+`totalElements`, and the payable lessons (held or canceled late, in no live payout, oldest first,
+50 per page) have checkboxes whose selection survives paging (at most 500, the API's limit).
+**Record payout** opens a sheet for the ticked lessons; **Pay everything up to…** opens the same
+sheet with a day instead and counts what it covers as the day changes (`size=1`, `totalElements`).
+The day is turned into `upTo` = the start of the next local day, so the whole picked day is paid.
+The sheet asks for the day the organization paid (today at the latest, as the API refuses a later
+one) and an optional note; there is no amount field, the note carries it. The history lists live
+payouts latest first ("Show voided" adds the voided ones with who voided them and why); a row opens
+its lessons and voids the payout after a reason and typing `void`. Lesson detail shows the
+lesson's payout in its own "Teacher payout" field, next to but apart from the student's payment.
+**Context.** The backend added teacher payouts (API.md §9.6): batches of charged lessons the school
+paid a teacher for, voided rather than deleted, counted in lessons. The task asked for the owed
+count, a payable table with checkboxes or "Pay everything up to…", a Record payout sheet and a
+history with a type-to-confirm void.
+**Alternatives.** A payouts page of its own per organization — rejected: payouts are always about
+one teacher, and the teacher's page is where an admin looks for them. Typing the payout's date to
+confirm a void — rejected for `void`: two payouts may share a day, and the verb says what happens.
+Showing a voided payout's lessons — not possible: voiding frees them, and the payout keeps only
+their count.
+**Consequences.** A teacher who left the organization has no page for its admin (gap G21), so
+their history is paid out from the super-admin's console or through the API. A `409` (someone paid
+some of the lessons meanwhile) shows the server's sentence and refreshes the lists rather than
+retrying.

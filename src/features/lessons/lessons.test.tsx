@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import { http, HttpResponse } from 'msw/http'
 import { beforeEach, describe, expect, it } from 'vitest'
-import type { LessonDetail } from '@/api/types'
+import type { LessonDetail, ScheduleLessonRequest } from '@/api/types'
 import {
   course,
   lesson,
@@ -19,7 +19,7 @@ import {
 import { api, apiError, renderApp, signedInAs } from '@/test/render'
 import { server } from '@/test/server'
 
-/** The lookups every lesson screen makes to turn ids into names. */
+/** The lookups every lesson screen makes to turn ids into names (and the lesson's homework, none). */
 function nameLookups() {
   server.use(
     http.get(api('/users/u-1'), () => HttpResponse.json(user())),
@@ -27,6 +27,7 @@ function nameLookups() {
     http.get(api('/courses/c-1'), () => HttpResponse.json(course())),
     http.get(api('/orgs/org-1'), () => HttpResponse.json(organization())),
     http.get(api('/orgs'), () => HttpResponse.json(page([organization()]))),
+    http.get(api('/homework'), () => HttpResponse.json(page([]))),
   )
 }
 
@@ -94,6 +95,100 @@ describe('lessons ledger', () => {
     expect(await screen.findByRole('heading', { level: 2, name: /^Lesson on/ })).toBeInTheDocument()
   })
 
+  it('takes the course’s default length and books an overlapping lesson only after a confirmation', async () => {
+    const posted: Record<string, unknown>[] = []
+    server.use(
+      http.get(api('/lessons'), () => HttpResponse.json(page([lesson()]))),
+      http.get(api('/orgs/org-1/members'), () => HttpResponse.json(page([member()]))),
+      http.get(api('/students'), () => HttpResponse.json(page([student()]))),
+      http.get(api('/courses'), () =>
+        HttpResponse.json(page([course({ defaultDurationMinutes: 45 })])),
+      ),
+      http.post(api('/lessons'), async ({ request }) => {
+        posted.push((await request.json()) as Record<string, unknown>)
+        if (posted.length === 1) {
+          return apiError(
+            409,
+            'SCHEDULE_CONFLICT',
+            'This time overlaps another lesson of the teacher or the student',
+          )
+        }
+        return HttpResponse.json(lessonDetail({ id: 'l-new', durationMinutes: 45 }), {
+          status: 201,
+        })
+      }),
+      http.get(api('/lessons/l-new'), () =>
+        HttpResponse.json(lessonDetail({ id: 'l-new', durationMinutes: 45 })),
+      ),
+      http.get(api('/students/s-1/lessons/summary'), () => HttpResponse.json(summary)),
+    )
+    const { user: actor } = renderApp('/platform/lessons')
+
+    await actor.click(await screen.findByRole('button', { name: 'New lesson' }))
+    await actor.click(await screen.findByRole('combobox', { name: /Organization/ }))
+    await actor.click(await screen.findByRole('option', { name: /Riverside Music School/ }))
+    await actor.click(screen.getByRole('combobox', { name: /Teacher/ }))
+    await actor.click(await screen.findByRole('option', { name: /Ana Pop/ }))
+    await actor.click(screen.getByRole('combobox', { name: /Student/ }))
+    await actor.click(await screen.findByRole('option', { name: /Kid Student/ }))
+    const length = screen.getByLabelText(/^Length/)
+    expect(length).toHaveValue(60)
+    await actor.click(screen.getByRole('combobox', { name: /^Course/ }))
+    await actor.click(await screen.findByRole('option', { name: /Piano/ }))
+    await waitFor(() => expect(length).toHaveValue(45))
+    await actor.type(screen.getByLabelText(/Date and time/), '2026-10-21T15:00')
+    await actor.click(screen.getByRole('button', { name: 'Create lesson' }))
+
+    const confirm = await screen.findByRole('alertdialog', { name: 'This time is taken' })
+    expect(
+      within(confirm).getByText('This time overlaps another lesson of the teacher or the student.'),
+    ).toBeInTheDocument()
+    await actor.click(within(confirm).getByRole('button', { name: 'Create anyway' }))
+
+    expect(await screen.findByText('Lesson created')).toBeInTheDocument()
+    expect(posted).toHaveLength(2)
+    expect(posted[0]).toMatchObject({ courseId: 'c-1', durationMinutes: 45 })
+    expect(posted[0]).not.toHaveProperty('allowOverlap')
+    expect(posted[1]).toEqual({ ...posted[0], allowOverlap: true })
+  })
+
+  it('keeps a length typed by hand when the course changes', async () => {
+    const posted: Record<string, unknown>[] = []
+    server.use(
+      http.get(api('/lessons'), () => HttpResponse.json(page([]))),
+      http.get(api('/orgs/org-1/members'), () => HttpResponse.json(page([member()]))),
+      http.get(api('/students'), () => HttpResponse.json(page([student()]))),
+      http.get(api('/courses'), () =>
+        HttpResponse.json(page([course({ defaultDurationMinutes: 45 })])),
+      ),
+      http.post(api('/lessons'), async ({ request }) => {
+        posted.push((await request.json()) as Record<string, unknown>)
+        return HttpResponse.json(lessonDetail({ id: 'l-new' }), { status: 201 })
+      }),
+      http.get(api('/lessons/l-new'), () => HttpResponse.json(lessonDetail({ id: 'l-new' }))),
+      http.get(api('/students/s-1/lessons/summary'), () => HttpResponse.json(summary)),
+    )
+    const { user: actor } = renderApp('/platform/lessons')
+
+    await actor.click(await screen.findByRole('button', { name: 'New lesson' }))
+    await actor.click(await screen.findByRole('combobox', { name: /Organization/ }))
+    await actor.click(await screen.findByRole('option', { name: /Riverside Music School/ }))
+    await actor.click(screen.getByRole('combobox', { name: /Teacher/ }))
+    await actor.click(await screen.findByRole('option', { name: /Ana Pop/ }))
+    await actor.click(screen.getByRole('combobox', { name: /Student/ }))
+    await actor.click(await screen.findByRole('option', { name: /Kid Student/ }))
+    const length = screen.getByLabelText(/^Length/)
+    await actor.clear(length)
+    await actor.type(length, '30')
+    await actor.click(screen.getByRole('combobox', { name: /^Course/ }))
+    await actor.click(await screen.findByRole('option', { name: /Piano/ }))
+    expect(length).toHaveValue(30)
+    await actor.click(screen.getByRole('button', { name: 'Create lesson' }))
+
+    expect(await screen.findByText('Lesson created')).toBeInTheDocument()
+    expect(posted[0]).toMatchObject({ courseId: 'c-1', durationMinutes: 30 })
+  })
+
   it('shows the agenda grouped by day', async () => {
     server.use(
       http.get(api('/lessons'), () =>
@@ -157,7 +252,7 @@ describe('lesson detail', () => {
     )
   })
 
-  it('sends the journal and homework when the lesson was held', async () => {
+  it('sends only the journal when the lesson was held: homework is assigned on its own', async () => {
     const posted: Record<string, unknown>[] = []
     server.use(
       http.get(api('/lessons/l-1'), () => HttpResponse.json(lessonDetail())),
@@ -173,19 +268,120 @@ describe('lesson detail', () => {
     await actor.click(screen.getByRole('button', { name: 'More actions' }))
     await actor.click(await screen.findByRole('menuitem', { name: 'Close lesson' }))
     const dialog = await screen.findByRole('dialog', { name: 'Close lesson' })
+    expect(within(dialog).queryByText('Checklist')).not.toBeInTheDocument()
     await actor.type(within(dialog).getByLabelText(/^Journal/), 'Scales')
-    await actor.type(within(dialog).getByLabelText(/^Notes/), 'Practise daily')
-    await actor.click(within(dialog).getByRole('button', { name: 'Add item' }))
-    await actor.type(within(dialog).getByLabelText('Checklist item 1'), 'C major scale')
     await actor.click(within(dialog).getByRole('button', { name: 'Close lesson' }))
 
     expect(await screen.findByText('Lesson closed as held')).toBeInTheDocument()
-    expect(posted).toEqual([
-      {
-        status: 'PRESENT',
-        journal: 'Scales',
-        homework: { notes: 'Practise daily', items: ['C major scale'] },
-      },
+    expect(posted).toEqual([{ status: 'PRESENT', journal: 'Scales' }])
+  })
+
+  it('reschedules with the meeting link left out, removed with null or replaced, and unschedules', async () => {
+    let current = lesson({ meetingUrl: 'https://meet.example.com/room' })
+    const patched: ScheduleLessonRequest[] = []
+    server.use(
+      http.get(api('/lessons/l-1'), () => HttpResponse.json(lessonDetail(current))),
+      http.patch(api('/lessons/l-1/schedule'), async ({ request }) => {
+        const body = (await request.json()) as ScheduleLessonRequest
+        patched.push(body)
+        // Like the API: an omitted link stays, null removes it.
+        const { meetingUrl = current.meetingUrl } = body
+        current = lesson({ scheduledAt: body.scheduledAt, meetingUrl })
+        return HttpResponse.json(current)
+      }),
+    )
+    const { user: actor } = renderApp('/platform/lessons/l-1')
+    const openSheet = async () => {
+      await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+      await actor.click(await screen.findByRole('button', { name: 'More actions' }))
+      await actor.click(await screen.findByRole('menuitem', { name: /Reschedule or unschedule/ }))
+      return screen.findByRole('dialog', { name: 'Reschedule lesson' })
+    }
+    const date = '2026-10-20T15:00:00.000Z'
+
+    // Untouched, the link stays out of the body.
+    let dialog = await openSheet()
+    expect(
+      within(dialog).getByText('An absolute https:// link. Empty it to remove the link.'),
+    ).toBeInTheDocument()
+    await actor.click(within(dialog).getByRole('button', { name: 'Move lesson' }))
+    expect(await screen.findByText('Lesson rescheduled')).toBeInTheDocument()
+    await waitFor(() => expect(patched).toEqual([{ scheduledAt: date }]))
+
+    // Emptied, it goes out as null and the API removes it.
+    dialog = await openSheet()
+    await actor.clear(within(dialog).getByLabelText(/Meeting link/))
+    await actor.click(within(dialog).getByRole('button', { name: 'Move lesson' }))
+    await waitFor(() => expect(patched).toHaveLength(2))
+    expect(patched[1]).toEqual({ scheduledAt: date, meetingUrl: null })
+
+    // Without a link, a typed one goes out as typed.
+    dialog = await openSheet()
+    expect(within(dialog).getByText('Optional absolute https:// link.')).toBeInTheDocument()
+    await actor.type(within(dialog).getByLabelText(/Meeting link/), 'https://meet.example.com/new')
+    await actor.click(within(dialog).getByRole('button', { name: 'Move lesson' }))
+    await waitFor(() => expect(patched).toHaveLength(3))
+    expect(patched[2]).toEqual({ scheduledAt: date, meetingUrl: 'https://meet.example.com/new' })
+
+    // Unscheduling sends the date alone: the link stays.
+    dialog = await openSheet()
+    await actor.click(within(dialog).getByRole('button', { name: 'Unschedule' }))
+    expect(await screen.findByText('Lesson unscheduled')).toBeInTheDocument()
+    expect(patched[3]).toEqual({ scheduledAt: null })
+  })
+
+  it('shows the length and moves the lesson onto another one only after a confirmation', async () => {
+    let current = lesson()
+    const patched: ScheduleLessonRequest[] = []
+    server.use(
+      http.get(api('/lessons/l-1'), () => HttpResponse.json(lessonDetail(current))),
+      http.patch(api('/lessons/l-1/schedule'), async ({ request }) => {
+        const body = (await request.json()) as ScheduleLessonRequest
+        patched.push(body)
+        if (!body.allowOverlap) {
+          return apiError(
+            409,
+            'SCHEDULE_CONFLICT',
+            'This time overlaps another lesson of the teacher or the student',
+          )
+        }
+        current = lesson({
+          scheduledAt: body.scheduledAt,
+          durationMinutes: body.durationMinutes ?? current.durationMinutes,
+        })
+        return HttpResponse.json(current)
+      }),
+    )
+    const { user: actor } = renderApp('/platform/lessons/l-1')
+
+    await screen.findByRole('heading', { level: 2, name: /^Lesson on .*\d{2}:\d{2}–\d{2}:\d{2}$/ })
+    expect(screen.getByText('Length', { selector: 'dt' }).nextElementSibling).toHaveTextContent(
+      /^1 h · \d{2}:\d{2}–\d{2}:\d{2}$/,
+    )
+    await actor.click(screen.getByRole('button', { name: 'More actions' }))
+    await actor.click(await screen.findByRole('menuitem', { name: /Reschedule or unschedule/ }))
+    const dialog = await screen.findByRole('dialog', { name: 'Reschedule lesson' })
+    const length = within(dialog).getByLabelText(/^Length/)
+    expect(length).toHaveValue(60)
+    await actor.clear(length)
+    await actor.type(length, '90')
+    await actor.click(within(dialog).getByRole('button', { name: 'Move lesson' }))
+
+    // Going back keeps the sheet as it was typed.
+    let confirm = await screen.findByRole('alertdialog', { name: 'This time is taken' })
+    await actor.click(within(confirm).getByRole('button', { name: 'Cancel' }))
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument())
+    expect(within(dialog).getByLabelText(/^Length/)).toHaveValue(90)
+    await actor.click(within(dialog).getByRole('button', { name: 'Move lesson' }))
+    confirm = await screen.findByRole('alertdialog', { name: 'This time is taken' })
+    await actor.click(within(confirm).getByRole('button', { name: 'Move anyway' }))
+
+    expect(await screen.findByText('Lesson rescheduled')).toBeInTheDocument()
+    const date = '2026-10-20T15:00:00.000Z'
+    expect(patched).toEqual([
+      { scheduledAt: date, durationMinutes: 90 },
+      { scheduledAt: date, durationMinutes: 90 },
+      { scheduledAt: date, durationMinutes: 90, allowOverlap: true },
     ])
   })
 

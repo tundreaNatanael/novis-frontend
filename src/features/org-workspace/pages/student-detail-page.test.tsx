@@ -16,6 +16,7 @@ describe('student detail', () => {
       http.get(api('/users/s-1'), () => HttpResponse.json(studentUser())),
       http.get(api('/students/s-1/lessons/summary'), () => HttpResponse.json(summary)),
       http.get(api('/students/s-1/enrollments'), () => HttpResponse.json(page([]))),
+      http.get(api('/homework'), () => HttpResponse.json(page([]))),
       http.delete(api('/memberships/:id'), ({ params }) => {
         removed.push(String(params.id))
         return new HttpResponse(null, { status: 204 })

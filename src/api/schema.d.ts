@@ -4,6 +4,22 @@
  */
 
 export interface paths {
+    "/teacher-payouts/{id}/void": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["voidPayout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/students": {
         parameters: {
             query?: never;
@@ -46,6 +62,22 @@ export interface paths {
         get: operations["list_1"];
         put?: never;
         post: operations["create_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/teacher-payouts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_2"];
+        put?: never;
+        post: operations["create_2"];
         delete?: never;
         options?: never;
         head?: never;
@@ -109,7 +141,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["create_2"];
+        post: operations["create_3"];
         delete?: never;
         options?: never;
         head?: never;
@@ -155,9 +187,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_2"];
+        get: operations["list_3"];
         put?: never;
-        post: operations["create_3"];
+        post: operations["create_4"];
         delete?: never;
         options?: never;
         head?: never;
@@ -174,6 +206,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["close"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/lessons/series": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["createSeries"];
         delete?: never;
         options?: never;
         head?: never;
@@ -212,6 +260,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/homework": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listHomework"];
+        put?: never;
+        post: operations["create_5"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/freelance-teachers": {
         parameters: {
             query?: never;
@@ -219,9 +283,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_3"];
+        get: operations["list_4"];
         put?: never;
-        post: operations["create_4"];
+        post: operations["create_6"];
         delete?: never;
         options?: never;
         head?: never;
@@ -235,25 +299,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_4"];
+        get: operations["list_5"];
         put?: never;
-        post: operations["create_5"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/courses/{courseId}/homework": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["listForCourse"];
-        put?: never;
-        post: operations["create_6"];
+        post: operations["create_7"];
         delete?: never;
         options?: never;
         head?: never;
@@ -267,7 +315,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_5"];
+        get: operations["list_6"];
         put?: never;
         post: operations["enroll"];
         delete?: never;
@@ -571,7 +619,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_6"];
+        get: operations["list_7"];
         put?: never;
         post?: never;
         delete?: never;
@@ -603,7 +651,87 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_7"];
+        get: operations["list_8"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/teacher/payouts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listMine"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/teacher/payouts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getMine"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/teacher/earnings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["earnings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/teacher/calendar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["calendar"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/teacher-payouts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_6"];
         put?: never;
         post?: never;
         delete?: never;
@@ -635,7 +763,23 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_8"];
+        get: operations["list_9"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/teachers/{teacherId}/payable-lessons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["payableLessons"];
         put?: never;
         post?: never;
         delete?: never;
@@ -667,7 +811,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_9"];
+        get: operations["list_10"];
         put?: never;
         post?: never;
         delete?: never;
@@ -683,7 +827,23 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_10"];
+        get: operations["list_11"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/homework": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listMyHomework"];
         put?: never;
         post?: never;
         delete?: never;
@@ -731,7 +891,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_6"];
+        get: operations["get_7"];
         put?: never;
         post?: never;
         delete: operations["delete_6"];
@@ -741,6 +901,22 @@ export interface paths {
         trace?: never;
     };
     "/courses/{courseId}/materials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listForCourse"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/courses/{courseId}/homework": {
         parameters: {
             query?: never;
             header?: never;
@@ -840,6 +1016,56 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        VoidTeacherPayoutRequest: {
+            reason: string;
+        };
+        PayoutLessonResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: date-time */
+            scheduledAt?: string;
+            /** Format: int32 */
+            durationMinutes?: number;
+            /** @enum {string} */
+            status?: "PENDING" | "PRESENT" | "CANCELED" | "CANCELED_LATE";
+            /** Format: uuid */
+            studentId?: string;
+            studentName?: string;
+            /** Format: uuid */
+            courseId?: string;
+            courseTitle?: string;
+        };
+        TeacherPayoutDetailResponse: {
+            payout?: components["schemas"]["TeacherPayoutResponse"];
+            lessons?: components["schemas"]["PayoutLessonResponse"][];
+        };
+        TeacherPayoutResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            organizationId?: string;
+            /** Format: uuid */
+            teacherId?: string;
+            teacherName?: string;
+            /** Format: date */
+            paidOn?: string;
+            /** Format: int32 */
+            lessonCount?: number;
+            note?: string;
+            /** Format: uuid */
+            recordedById?: string;
+            recordedByName?: string;
+            /** Format: date-time */
+            voidedAt?: string;
+            /** Format: uuid */
+            voidedById?: string;
+            voidedByName?: string;
+            voidReason?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
         CreateStudentRequest: {
             name: string;
             /** Format: email */
@@ -882,7 +1108,12 @@ export interface components {
             status?: "PENDING" | "PRESENT" | "CANCELED" | "CANCELED_LATE";
             /** Format: date-time */
             scheduledAt?: string;
+            /** Format: int32 */
+            durationMinutes?: number;
+            /** Format: uuid */
+            seriesId?: string;
             studentPayment?: components["schemas"]["StudentPaymentResponse"];
+            teacherPayout?: components["schemas"]["LessonTeacherPayoutResponse"];
             journal?: string;
             meetingUrl?: string;
             /** Format: date-time */
@@ -904,6 +1135,12 @@ export interface components {
             /** Format: int64 */
             toSchedule?: number;
             nextLesson?: components["schemas"]["LessonResponse"];
+        };
+        LessonTeacherPayoutResponse: {
+            /** Format: uuid */
+            payoutId?: string;
+            /** Format: date */
+            paidOn?: string;
         };
         PrepaidLessonsResponse: {
             /** Format: int32 */
@@ -933,6 +1170,16 @@ export interface components {
             createdAt?: string;
             /** Format: date-time */
             updatedAt?: string;
+        };
+        CreateTeacherPayoutRequest: {
+            /** Format: uuid */
+            teacherId: string;
+            lessonIds?: string[];
+            /** Format: date-time */
+            upTo?: string;
+            /** Format: date */
+            paidOn: string;
+            note?: string;
         };
         CreateStaffRequest: {
             /** Format: email */
@@ -1043,8 +1290,79 @@ export interface components {
             courseId?: string;
             /** Format: date-time */
             scheduledAt?: string;
+            /** Format: int32 */
+            durationMinutes?: number;
             meetingUrl?: string;
             usePrepaid?: boolean;
+            allowOverlap?: boolean;
+        };
+        LessonDetailResponse: {
+            lesson?: components["schemas"]["LessonResponse"];
+            materials?: components["schemas"]["MaterialResponse"][];
+            /** Format: uuid */
+            rolledOverToLessonId?: string;
+        };
+        CloseLessonRequest: {
+            /** @enum {string} */
+            status: "PENDING" | "PRESENT" | "CANCELED" | "CANCELED_LATE";
+            journal?: string;
+        };
+        CreateLessonSeriesRequest: {
+            /** Format: uuid */
+            studentId: string;
+            /** Format: uuid */
+            teacherId?: string;
+            /** Format: uuid */
+            courseId?: string;
+            /** Format: date-time */
+            firstAt: string;
+            timeZone: string;
+            /** Format: int32 */
+            intervalWeeks: number;
+            /** Format: int32 */
+            count: number;
+            /** Format: int32 */
+            durationMinutes?: number;
+            meetingUrl?: string;
+            allowOverlap?: boolean;
+            dryRun?: boolean;
+        };
+        LessonSeriesPlanResponse: {
+            occurrences?: components["schemas"]["SeriesOccurrenceResponse"][];
+        };
+        SeriesOccurrenceResponse: {
+            /** Format: date-time */
+            scheduledAt?: string;
+            conflict?: boolean;
+            /** Format: uuid */
+            conflictWithLessonId?: string;
+        };
+        LessonSeriesResponse: {
+            /** Format: uuid */
+            seriesId?: string;
+            lessons?: components["schemas"]["LessonResponse"][];
+        };
+        CreateFreelanceTeacherInviteRequest: {
+            /** Format: email */
+            email: string;
+        };
+        CreateHomeworkItemRequest: {
+            text: string;
+        };
+        CreateHomeworkRequest: {
+            /** Format: uuid */
+            studentId: string;
+            /** Format: uuid */
+            teacherId?: string;
+            /** Format: uuid */
+            courseId?: string;
+            /** Format: uuid */
+            lessonId?: string;
+            title?: string;
+            notes?: string;
+            /** Format: date-time */
+            dueAt?: string;
+            items: components["schemas"]["CreateHomeworkItemRequest"][];
         };
         HomeworkItemResponse: {
             /** Format: uuid */
@@ -1059,41 +1377,30 @@ export interface components {
             id?: string;
             /** Format: uuid */
             teacherId?: string;
+            teacherName?: string;
             /** Format: uuid */
             studentId?: string;
+            studentName?: string;
             /** Format: uuid */
             courseId?: string;
+            courseTitle?: string;
             /** Format: uuid */
             lessonId?: string;
+            /** Format: date-time */
+            lessonScheduledAt?: string;
             /** Format: uuid */
             organizationId?: string;
+            title?: string;
             notes?: string;
+            /** Format: date-time */
+            dueAt?: string;
+            /** Format: date-time */
+            completedAt?: string;
             items?: components["schemas"]["HomeworkItemResponse"][];
             /** Format: date-time */
             createdAt?: string;
             /** Format: date-time */
             updatedAt?: string;
-        };
-        LessonDetailResponse: {
-            lesson?: components["schemas"]["LessonResponse"];
-            homework?: components["schemas"]["HomeworkResponse"][];
-            materials?: components["schemas"]["MaterialResponse"][];
-            /** Format: uuid */
-            rolledOverToLessonId?: string;
-        };
-        CloseLessonRequest: {
-            /** @enum {string} */
-            status: "PENDING" | "PRESENT" | "CANCELED" | "CANCELED_LATE";
-            journal?: string;
-            homework?: components["schemas"]["CreateLessonHomeworkRequest"];
-        };
-        CreateLessonHomeworkRequest: {
-            notes?: string;
-            items?: string[];
-        };
-        CreateFreelanceTeacherInviteRequest: {
-            /** Format: email */
-            email: string;
         };
         CreateFreelanceTeacherRequest: {
             /** Format: email */
@@ -1133,6 +1440,8 @@ export interface components {
             /** Format: uuid */
             teacherId?: string;
             defaultMeetingUrl?: string;
+            /** Format: int32 */
+            defaultDurationMinutes?: number;
         };
         CourseResponse: {
             /** Format: uuid */
@@ -1146,22 +1455,12 @@ export interface components {
             /** Format: uuid */
             organizationId?: string;
             defaultMeetingUrl?: string;
+            /** Format: int32 */
+            defaultDurationMinutes?: number;
             /** Format: date-time */
             createdAt?: string;
             /** Format: date-time */
             updatedAt?: string;
-        };
-        CreateHomeworkRequest: {
-            /** Format: uuid */
-            studentId: string;
-            /** Format: uuid */
-            lessonId?: string;
-            notes?: string;
-            items?: components["schemas"]["HomeworkItemRequest"][];
-        };
-        HomeworkItemRequest: {
-            text: string;
-            done?: boolean;
         };
         EnrollRequest: {
             /** Format: uuid */
@@ -1248,7 +1547,10 @@ export interface components {
         ScheduleLessonRequest: {
             /** Format: date-time */
             scheduledAt?: string;
+            /** Format: int32 */
+            durationMinutes?: number;
             meetingUrl?: string;
+            allowOverlap?: boolean;
         };
         UpdatePaymentRequest: {
             paid: boolean;
@@ -1256,10 +1558,17 @@ export interface components {
         UpdateJournalRequest: {
             journal: string;
         };
+        HomeworkItemRequest: {
+            text: string;
+            done?: boolean;
+        };
         UpdateHomeworkRequest: {
             /** Format: uuid */
             lessonId?: string;
+            title?: string;
             notes?: string;
+            /** Format: date-time */
+            dueAt?: string;
             items?: components["schemas"]["HomeworkItemRequest"][];
         };
         UpdateHomeworkItemRequest: {
@@ -1281,6 +1590,8 @@ export interface components {
             /** Format: uuid */
             teacherId?: string;
             defaultMeetingUrl?: string;
+            /** Format: int32 */
+            defaultDurationMinutes?: number;
         };
         Pageable: {
             /** Format: int32 */
@@ -1330,6 +1641,51 @@ export interface components {
             toSchedule?: number;
             nextLesson?: components["schemas"]["LessonResponse"];
         };
+        PageResponseTeacherPayoutResponse: {
+            content?: components["schemas"]["TeacherPayoutResponse"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+            last?: boolean;
+        };
+        TeacherEarningsResponse: {
+            /** Format: int64 */
+            taught?: number;
+            /** Format: int64 */
+            paidOut?: number;
+            /** Format: int64 */
+            owed?: number;
+            /** Format: date */
+            lastPaidOn?: string;
+        };
+        CalendarLessonResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            studentId?: string;
+            studentName?: string;
+            /** Format: uuid */
+            courseId?: string;
+            courseTitle?: string;
+            /** Format: date-time */
+            scheduledAt?: string;
+            /** Format: int32 */
+            durationMinutes?: number;
+            /** @enum {string} */
+            status?: "PENDING" | "PRESENT" | "CANCELED" | "CANCELED_LATE";
+            meetingUrl?: string;
+            /** Format: date-time */
+            closedAt?: string;
+            hasJournal?: boolean;
+            paidOut?: boolean;
+            /** Format: uuid */
+            seriesId?: string;
+        };
         PageResponseStudentResponse: {
             content?: components["schemas"]["StudentResponse"][];
             /** Format: int32 */
@@ -1373,6 +1729,18 @@ export interface components {
         };
         PageResponseOrganizationResponse: {
             content?: components["schemas"]["OrganizationResponse"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+            last?: boolean;
+        };
+        PageResponsePayoutLessonResponse: {
+            content?: components["schemas"]["PayoutLessonResponse"][];
             /** Format: int32 */
             page?: number;
             /** Format: int32 */
@@ -1431,6 +1799,18 @@ export interface components {
             totalPages?: number;
             last?: boolean;
         };
+        PageResponseHomeworkResponse: {
+            content?: components["schemas"]["HomeworkResponse"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+            last?: boolean;
+        };
         StudentDashboardResponse: {
             nextLesson?: components["schemas"]["LessonResponse"];
             /** Format: int64 */
@@ -1472,18 +1852,6 @@ export interface components {
             totalPages?: number;
             last?: boolean;
         };
-        PageResponseHomeworkResponse: {
-            content?: components["schemas"]["HomeworkResponse"][];
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int64 */
-            totalElements?: number;
-            /** Format: int32 */
-            totalPages?: number;
-            last?: boolean;
-        };
         PageResponseEnrollmentResponse: {
             content?: components["schemas"]["EnrollmentResponse"][];
             /** Format: int32 */
@@ -1505,6 +1873,32 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    voidPayout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoidTeacherPayoutRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherPayoutDetailResponse"];
+                };
+            };
+        };
+    };
     list: {
         parameters: {
             query: {
@@ -1625,6 +2019,60 @@ export interface operations {
             };
         };
     };
+    list_2: {
+        parameters: {
+            query: {
+                teacherId?: string;
+                from?: string;
+                to?: string;
+                includeVoided?: boolean;
+                pageable: components["schemas"]["Pageable"];
+            };
+            header?: never;
+            path: {
+                orgId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseTeacherPayoutResponse"];
+                };
+            };
+        };
+    };
+    create_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTeacherPayoutRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherPayoutDetailResponse"];
+                };
+            };
+        };
+    };
     createStaff: {
         parameters: {
             query?: never;
@@ -1728,7 +2176,7 @@ export interface operations {
             };
         };
     };
-    create_2: {
+    create_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -1800,7 +2248,7 @@ export interface operations {
             };
         };
     };
-    list_2: {
+    list_3: {
         parameters: {
             query: {
                 studentId?: string;
@@ -1831,7 +2279,7 @@ export interface operations {
             };
         };
     };
-    create_3: {
+    create_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -1877,6 +2325,39 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["LessonDetailResponse"];
+                };
+            };
+        };
+    };
+    createSeries: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateLessonSeriesRequest"];
+            };
+        };
+        responses: {
+            /** @description dryRun: the planned dates and their conflicts */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LessonSeriesPlanResponse"];
+                };
+            };
+            /** @description The booked lessons */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LessonSeriesResponse"];
                 };
             };
         };
@@ -1950,7 +2431,60 @@ export interface operations {
             };
         };
     };
-    list_3: {
+    listHomework: {
+        parameters: {
+            query: {
+                studentId?: string;
+                teacherId?: string;
+                courseId?: string;
+                lessonId?: string;
+                status?: "OPEN" | "DONE";
+                dueFrom?: string;
+                dueTo?: string;
+                pageable: components["schemas"]["Pageable"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseHomeworkResponse"];
+                };
+            };
+        };
+    };
+    create_5: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateHomeworkRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["HomeworkResponse"];
+                };
+            };
+        };
+    };
+    list_4: {
         parameters: {
             query: {
                 q?: string;
@@ -1974,7 +2508,7 @@ export interface operations {
             };
         };
     };
-    create_4: {
+    create_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -1998,7 +2532,7 @@ export interface operations {
             };
         };
     };
-    list_4: {
+    list_5: {
         parameters: {
             query: {
                 organizationId?: string;
@@ -2022,7 +2556,7 @@ export interface operations {
             };
         };
     };
-    create_5: {
+    create_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -2046,58 +2580,7 @@ export interface operations {
             };
         };
     };
-    listForCourse: {
-        parameters: {
-            query: {
-                studentId?: string;
-                pageable: components["schemas"]["Pageable"];
-            };
-            header?: never;
-            path: {
-                courseId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["PageResponseHomeworkResponse"];
-                };
-            };
-        };
-    };
-    create_6: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                courseId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateHomeworkRequest"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["HomeworkResponse"];
-                };
-            };
-        };
-    };
-    list_5: {
+    list_6: {
         parameters: {
             query: {
                 pageable: components["schemas"]["Pageable"];
@@ -2851,7 +3334,7 @@ export interface operations {
             };
         };
     };
-    list_6: {
+    list_7: {
         parameters: {
             query: {
                 freelance?: boolean;
@@ -2895,7 +3378,7 @@ export interface operations {
             };
         };
     };
-    list_7: {
+    list_8: {
         parameters: {
             query: {
                 pageable: components["schemas"]["Pageable"];
@@ -2913,6 +3396,118 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PageResponseRosterStudentResponse"];
+                };
+            };
+        };
+    };
+    listMine: {
+        parameters: {
+            query: {
+                pageable: components["schemas"]["Pageable"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseTeacherPayoutResponse"];
+                };
+            };
+        };
+    };
+    getMine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherPayoutDetailResponse"];
+                };
+            };
+        };
+    };
+    earnings: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherEarningsResponse"];
+                };
+            };
+        };
+    };
+    calendar: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CalendarLessonResponse"][];
+                };
+            };
+        };
+    };
+    get_6: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherPayoutDetailResponse"];
                 };
             };
         };
@@ -2941,7 +3536,7 @@ export interface operations {
             };
         };
     };
-    list_8: {
+    list_9: {
         parameters: {
             query: {
                 pageable: components["schemas"]["Pageable"];
@@ -2961,6 +3556,33 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PageResponseStudentEnrollmentResponse"];
+                };
+            };
+        };
+    };
+    payableLessons: {
+        parameters: {
+            query: {
+                from?: string;
+                to?: string;
+                pageable: components["schemas"]["Pageable"];
+            };
+            header?: never;
+            path: {
+                orgId: string;
+                teacherId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponsePayoutLessonResponse"];
                 };
             };
         };
@@ -2990,7 +3612,7 @@ export interface operations {
             };
         };
     };
-    list_9: {
+    list_10: {
         parameters: {
             query: {
                 pageable: components["schemas"]["Pageable"];
@@ -3012,7 +3634,7 @@ export interface operations {
             };
         };
     };
-    list_10: {
+    list_11: {
         parameters: {
             query: {
                 pageable: components["schemas"]["Pageable"];
@@ -3030,6 +3652,30 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PageResponseLessonDetailResponse"];
+                };
+            };
+        };
+    };
+    listMyHomework: {
+        parameters: {
+            query: {
+                status?: "OPEN" | "DONE";
+                lessonId?: string;
+                pageable: components["schemas"]["Pageable"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseHomeworkResponse"];
                 };
             };
         };
@@ -3076,7 +3722,7 @@ export interface operations {
             };
         };
     };
-    get_6: {
+    get_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -3118,7 +3764,7 @@ export interface operations {
             };
         };
     };
-    listForCourse_1: {
+    listForCourse: {
         parameters: {
             query: {
                 pageable: components["schemas"]["Pageable"];
@@ -3138,6 +3784,31 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PageResponseMaterialResponse"];
+                };
+            };
+        };
+    };
+    listForCourse_1: {
+        parameters: {
+            query: {
+                studentId?: string;
+                pageable: components["schemas"]["Pageable"];
+            };
+            header?: never;
+            path: {
+                courseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseHomeworkResponse"];
                 };
             };
         };

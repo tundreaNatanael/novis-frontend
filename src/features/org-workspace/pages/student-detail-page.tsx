@@ -24,9 +24,10 @@ import {
 import { RowActions } from '@/components/row-actions'
 import { StatusBadge } from '@/components/status-badge'
 import { Button } from '@/components/ui/button'
-import { enumLabel, formatDate, formatDateTime } from '@/lib/format'
+import { enumLabel, formatDate, formatDateTimeRange } from '@/lib/format'
 import { usePageTitle } from '@/lib/use-page-title'
 import { StudentCrumb } from '../components/crumbs'
+import { HomeworkPanel } from '@/features/homework/components/homework-panel'
 import { AddPrepaidSheet } from '@/features/lessons/components/add-prepaid-sheet'
 import { BalanceFields } from '@/features/lessons/components/balance-fields'
 import { useLessonPaths } from '@/features/lessons/lesson-paths'
@@ -42,7 +43,8 @@ const ENROLLMENTS = { page: 0, size: 100, sort: 'enrolledAt,desc' }
 /**
  * Student detail: `GET /students/{id}` + `GET /users/{id}` (the one organization, with the
  * membership id, or none for a freelance teacher's student), balances from
- * `GET /students/{id}/lessons/summary`, courses from `GET /students/{id}/enrollments`.
+ * `GET /students/{id}/lessons/summary`, courses from `GET /students/{id}/enrollments`, homework
+ * from `GET /homework?studentId=` with Assign, Edit and Delete.
  */
 export function Component() {
   const scope = useWorkspaceScope()
@@ -242,6 +244,27 @@ export function Component() {
               ))
             )}
           </DetailPanel>
+          <HomeworkPanel
+            description={
+              scope.kind === 'org'
+                ? 'From the organization’s teachers, open first.'
+                : 'From this teacher, open first.'
+            }
+            filters={teacherFilter ? { studentId, teacherId: teacherFilter } : { studentId }}
+            emptyText="No homework yet."
+            show={{ teacher: scope.kind === 'org', lesson: true }}
+            manage={
+              capabilities.canManageHomework
+                ? {
+                    studentId,
+                    studentName: student.name,
+                    ...(scope.kind === 'freelance'
+                      ? { teacher: { id: scope.teacherId, name: scope.teacher.name } }
+                      : { organizationId: scope.orgId }),
+                  }
+                : undefined
+            }
+          />
         </div>
         <div className="flex flex-col gap-5">
           <DetailPanel
@@ -281,10 +304,16 @@ export function Component() {
                         to={lessonPaths.detail(summary.data.nextLesson.id)}
                         className="font-medium text-primary underline-offset-4 hover:underline"
                       >
-                        {formatDateTime(summary.data.nextLesson.scheduledAt)}
+                        {formatDateTimeRange(
+                          summary.data.nextLesson.scheduledAt,
+                          summary.data.nextLesson.durationMinutes,
+                        )}
                       </Link>
                     ) : (
-                      formatDateTime(summary.data.nextLesson.scheduledAt)
+                      formatDateTimeRange(
+                        summary.data.nextLesson.scheduledAt,
+                        summary.data.nextLesson.durationMinutes,
+                      )
                     )
                   ) : (
                     <span className="text-muted-foreground">None scheduled</span>

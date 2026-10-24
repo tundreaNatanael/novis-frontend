@@ -23,6 +23,7 @@ import {
 import { RowActions } from '@/components/row-actions'
 import { StatusBadge } from '@/components/status-badge'
 import { Button } from '@/components/ui/button'
+import { TeacherPayoutsPanel } from '@/features/teacher-payouts/components/teacher-payouts-panel'
 import { enumLabel } from '@/lib/format'
 import { membershipRoleOf } from '@/lib/permissions'
 import { usePageTitle } from '@/lib/use-page-title'
@@ -38,7 +39,8 @@ const COURSES = { page: 0, size: 100, sort: 'title,asc' }
 
 /**
  * Admin or teacher detail: `GET /users/{id}` (every field, its one organization and membership
- * id), courses they own here.
+ * id), courses they own here and, for a teacher, the Payouts panel (what the organization owes and
+ * paid them, `canManageTeacherPayouts`).
  */
 export function Component() {
   const { orgId, org, basePath, capabilities } = useOrgWorkspace()
@@ -248,6 +250,9 @@ export function Component() {
           ) : null}
         </div>
       </div>
+      {role === 'TEACHER' && capabilities.canManageTeacherPayouts ? (
+        <TeacherPayoutsPanel orgId={orgId} teacher={{ id: user.id, name: user.name }} />
+      ) : null}
       <EditUserSheet
         user={user}
         capabilities={capabilities}

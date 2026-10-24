@@ -1,15 +1,19 @@
 import type {
   Course,
   Enrollment,
+  Homework,
   Lesson,
   LessonDetail,
   LessonSummary,
   Member,
   Organization,
   Page,
+  PayoutLesson,
   Student,
   StudentEnrollment,
   StudentPayment,
+  TeacherPayout,
+  TeacherPayoutDetail,
   User,
   UserOrganization,
 } from '@/api/types'
@@ -154,6 +158,7 @@ export function course(overrides: Partial<Course> = {}): Course {
     teacherId: 'u-1',
     organizationId: 'org-1',
     defaultMeetingUrl: null,
+    defaultDurationMinutes: null,
     createdAt: '2026-10-12T11:00:00Z',
     updatedAt: '2026-10-12T11:00:00Z',
     ...overrides,
@@ -212,7 +217,10 @@ export function lesson(overrides: Partial<Lesson> = {}): Lesson {
     organizationId: 'org-1',
     status: 'PENDING',
     scheduledAt: '2026-10-20T15:00:00Z',
+    durationMinutes: 60,
+    seriesId: null,
     studentPayment: unpaid,
+    teacherPayout: null,
     journal: null,
     meetingUrl: null,
     closedAt: null,
@@ -223,15 +231,87 @@ export function lesson(overrides: Partial<Lesson> = {}): Lesson {
   }
 }
 
+/** A held lesson of `u-1` (Ana Pop) as the payout endpoints list it. */
+export function payoutLesson(overrides: Partial<PayoutLesson> = {}): PayoutLesson {
+  return {
+    id: 'l-held-1',
+    scheduledAt: '2026-10-01T15:00:00Z',
+    durationMinutes: 60,
+    status: 'PRESENT',
+    studentId: 's-1',
+    studentName: 'Kid Student',
+    courseId: 'c-1',
+    courseTitle: 'Piano',
+    ...overrides,
+  }
+}
+
+/** A live payout to `u-1` (Ana Pop) recorded by the organization's admin (`admin-1`). */
+export function teacherPayout(overrides: Partial<TeacherPayout> = {}): TeacherPayout {
+  return {
+    id: 'p-1',
+    organizationId: 'org-1',
+    teacherId: 'u-1',
+    teacherName: 'Ana Pop',
+    paidOn: '2026-10-20',
+    lessonCount: 2,
+    note: '1,200 RON, bank transfer',
+    recordedById: 'admin-1',
+    recordedByName: 'Riverside Admin',
+    voidedAt: null,
+    voidedById: null,
+    voidedByName: null,
+    voidReason: null,
+    createdAt: '2026-10-20T09:00:00Z',
+    updatedAt: '2026-10-20T09:00:00Z',
+    ...overrides,
+  }
+}
+
+export function teacherPayoutDetail(
+  overrides: Partial<TeacherPayout> = {},
+  lessons: PayoutLesson[] = [
+    payoutLesson(),
+    payoutLesson({ id: 'l-held-2', scheduledAt: '2026-10-08T15:00:00Z' }),
+  ],
+): TeacherPayoutDetail {
+  return { payout: teacherPayout(overrides), lessons }
+}
+
 export function lessonDetail(
   overrides: Partial<Lesson> = {},
   extra: Partial<Omit<LessonDetail, 'lesson'>> = {},
 ): LessonDetail {
   return {
     lesson: lesson(overrides),
-    homework: [],
     materials: [],
     rolledOverToLessonId: null,
     ...extra,
+  }
+}
+
+export function homework(overrides: Partial<Homework> = {}): Homework {
+  return {
+    id: 'hw-1',
+    teacherId: 'u-1',
+    teacherName: 'Ana Pop',
+    studentId: 's-1',
+    studentName: 'Kid Student',
+    courseId: null,
+    courseTitle: null,
+    lessonId: null,
+    lessonScheduledAt: null,
+    organizationId: 'org-1',
+    title: 'Weekly practice',
+    notes: null,
+    dueAt: '2026-10-30T21:59:59Z',
+    completedAt: null,
+    items: [
+      { id: 'hi-1', text: 'C major scale', done: true, position: 0 },
+      { id: 'hi-2', text: 'Etude no. 3', done: false, position: 1 },
+    ],
+    createdAt: '2026-10-21T10:00:00Z',
+    updatedAt: '2026-10-21T10:00:00Z',
+    ...overrides,
   }
 }

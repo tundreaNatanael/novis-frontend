@@ -9,7 +9,7 @@ import { EmptyState } from '@/components/data/empty-state'
 import { ErrorState } from '@/components/data/error-state'
 import { Pagination } from '@/components/data/pagination'
 import { Button } from '@/components/ui/button'
-import { formatDateTime, shortId } from '@/lib/format'
+import { formatDateTimeRange, shortId } from '@/lib/format'
 import { deriveCapabilities } from '@/lib/permissions'
 import { useListParams } from '@/lib/use-list-params'
 import { cn } from '@/lib/utils'
@@ -29,11 +29,13 @@ function columns(names: LessonNames, fixed: FixedScope, showPayment: boolean) {
       header: 'When',
       cell: (info) =>
         info.getValue() ? (
-          <span className="text-foreground tabular-nums">{formatDateTime(info.getValue())}</span>
+          <span className="text-foreground tabular-nums">
+            {formatDateTimeRange(info.getValue(), info.row.original.durationMinutes)}
+          </span>
         ) : (
           <span className="text-muted-foreground italic">Not scheduled</span>
         ),
-      meta: { className: 'w-44' },
+      meta: { className: 'w-56' },
     }),
     col.accessor('status', {
       header: 'Status',
@@ -187,7 +189,9 @@ export function LessonLedger({ fixed }: { fixed: FixedScope }) {
             <div className="flex flex-col gap-1">
               <div className="flex items-start justify-between gap-2">
                 <p className="font-medium text-foreground tabular-nums">
-                  {l.scheduledAt ? formatDateTime(l.scheduledAt) : 'Not scheduled'}
+                  {l.scheduledAt
+                    ? formatDateTimeRange(l.scheduledAt, l.durationMinutes)
+                    : 'Not scheduled'}
                 </p>
                 <LessonStatusBadge lesson={l} />
               </div>

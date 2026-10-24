@@ -33,6 +33,10 @@ export type EnrollmentStatus = NonNullable<S['EnrollmentResponse']['status']>
 export type LessonStatus = NonNullable<S['LessonResponse']['status']>
 export type LessonOutcome = Exclude<LessonStatus, 'PENDING'>
 export type MaterialType = NonNullable<S['MaterialResponse']['type']>
+/** `?status=` of the homework lists: OPEN = not every item done yet, DONE = completed. */
+export type HomeworkStatus = NonNullable<
+  NonNullable<operations['listHomework']['parameters']['query']>['status']
+>
 /** `?status=` of the invite lists: PENDING = unused and unexpired, EXPIRED = unused and expired. */
 export type InviteStatus = NonNullable<
   NonNullable<operations['listOrganizationInvites']['parameters']['query']>['status']
@@ -77,9 +81,10 @@ export type Organization = Strict<S['OrganizationResponse']>
 export type Invite = Nullable<Strict<S['InviteResponse']>, 'organizationId' | 'usedAt'>
 export type Member = Strict<S['MemberResponse']>
 export type Student = Strict<S['StudentResponse']>
+/** `defaultDurationMinutes`: the length new lessons of the course get when booked without one; `null` = 60. */
 export type Course = Nullable<
   Strict<S['CourseResponse']>,
-  'description' | 'organizationId' | 'defaultMeetingUrl'
+  'description' | 'organizationId' | 'defaultMeetingUrl' | 'defaultDurationMinutes'
 >
 export type Enrollment = Strict<S['EnrollmentResponse']>
 export type StudentEnrollment = Nullable<Strict<S['StudentEnrollmentResponse']>, 'organizationId'>
@@ -92,25 +97,49 @@ export type StudentPayment = Nullable<
   'paidAt' | 'recordedById'
 >
 /**
+ * The live payout in which the school paid the teacher for a lesson (API.md §9.6) — the teacher
+ * payout, never the student's payment. `paidOn` is a calendar day (`2026-10-20`, no time zone).
+ */
+export type LessonTeacherPayout = Strict<S['LessonTeacherPayoutResponse']>
+/**
  * One lesson. `studentPayment` (and `rolledOverFromLessonId`, which only a paid cancellation
  * sets) is `null` when the caller does not manage the lesson's payments — never read that as
- * "unpaid".
+ * "unpaid". `teacherPayout` is `null` when no live payout covers the lesson (and for freelance
+ * lessons). A dated lesson runs from `scheduledAt` for `durationMinutes`; `seriesId` groups the
+ * lessons one weekly series booked.
  */
 export type Lesson = Nullable<
-  Omit<Strict<S['LessonResponse']>, 'studentPayment'> & { studentPayment: StudentPayment },
+  Omit<Strict<S['LessonResponse']>, 'studentPayment' | 'teacherPayout'> & {
+    studentPayment: StudentPayment
+    teacherPayout: LessonTeacherPayout
+  },
   | 'courseId'
   | 'organizationId'
   | 'scheduledAt'
+  | 'seriesId'
   | 'studentPayment'
+  | 'teacherPayout'
   | 'journal'
   | 'meetingUrl'
   | 'closedAt'
   | 'rolledOverFromLessonId'
 >
 export type HomeworkItem = Strict<S['HomeworkItemResponse']>
+/**
+ * One teacher's homework for one student (API.md §11); course and lesson are optional references
+ * with their labels. `completedAt` is set once every item is done; open and past `dueAt` = overdue.
+ */
 export type Homework = Nullable<
   Omit<Strict<S['HomeworkResponse']>, 'items'> & { items: HomeworkItem[] },
-  'courseId' | 'lessonId' | 'organizationId' | 'notes'
+  | 'courseId'
+  | 'courseTitle'
+  | 'lessonId'
+  | 'lessonScheduledAt'
+  | 'organizationId'
+  | 'title'
+  | 'notes'
+  | 'dueAt'
+  | 'completedAt'
 >
 export type Material = Nullable<
   Strict<S['MaterialResponse']>,
@@ -118,7 +147,6 @@ export type Material = Nullable<
 >
 export interface LessonDetail {
   lesson: Lesson
-  homework: Homework[]
   materials: Material[]
   /** The credit a paid cancellation produced; `null` for callers who do not manage payments. */
   rolledOverToLessonId: string | null
@@ -138,6 +166,22 @@ export interface PrepaidLessons {
   created: number
   lessons: Lesson[]
   summary: LessonSummary
+}
+/** A charged lesson as payouts list it: one a payout covers, or one still payable to the teacher. */
+export type PayoutLesson = Nullable<Strict<S['PayoutLessonResponse']>, 'courseId' | 'courseTitle'>
+/**
+ * What a school paid one of its teachers for a batch of lessons on a day (API.md §9.6), counted in
+ * lessons, never in money. A voided payout stays as history with its `lessonCount`; its lessons are
+ * payable again.
+ */
+export type TeacherPayout = Nullable<
+  Strict<S['TeacherPayoutResponse']>,
+  'note' | 'voidedAt' | 'voidedById' | 'voidedByName' | 'voidReason'
+>
+export interface TeacherPayoutDetail {
+  payout: TeacherPayout
+  /** By date; empty once the payout is voided. */
+  lessons: PayoutLesson[]
 }
 
 // --- request bodies -------------------------------------------------------------------------
@@ -213,17 +257,25 @@ export interface UpdateStudentRequest {
 }
 export interface CreateCourseRequest {
   title: string
+  /** A blank one is stored as none. */
   description?: string
   organizationId?: string
   teacherId?: string
   defaultMeetingUrl?: string
+  /** 15–240 minutes. */
+  defaultDurationMinutes?: number
 }
+/** An omitted field stays. Title, status and teacher are never `null` (the API answers `400`). */
 export interface UpdateCourseRequest {
   title?: string
-  description?: string
+  /** `null` removes it, and so does a blank one. */
+  description?: string | null
   status?: CourseStatus
   teacherId?: string
-  defaultMeetingUrl?: string
+  /** `null` removes it; lessons that already copied it keep it. */
+  defaultMeetingUrl?: string | null
+  /** `null` removes it (new lessons then last 60 minutes); lessons already booked keep theirs. */
+  defaultDurationMinutes?: number | null
 }
 export interface EnrollRequest {
   studentId: string
@@ -233,18 +285,26 @@ export interface CreateLessonRequest {
   teacherId?: string
   courseId?: string
   scheduledAt?: string
+  /** 15–240; left out, the course's default length, else 60. */
+  durationMinutes?: number
   meetingUrl?: string
   usePrepaid?: boolean
+  /** Book even if the time overlaps another lesson of the teacher or the student (else `409 SCHEDULE_CONFLICT`). */
+  allowOverlap?: boolean
 }
 export interface ScheduleLessonRequest {
-  /** `null` unschedules. */
+  /** `null` unschedules, and so does leaving it out: send the date even to change only the link. */
   scheduledAt: string | null
-  meetingUrl?: string
+  /** Left out, the lesson keeps its length; never `null` (the API answers `400`). */
+  durationMinutes?: number
+  /** `null` removes the lesson's link; left out, the lesson keeps it. */
+  meetingUrl?: string | null
+  /** Move even if the new slot overlaps another lesson (else `409 SCHEDULE_CONFLICT`). */
+  allowOverlap?: boolean
 }
 export interface CloseLessonRequest {
   status: LessonOutcome
   journal?: string
-  homework?: { notes?: string; items?: string[] }
 }
 export interface UpdateJournalRequest {
   journal: string
@@ -256,6 +316,49 @@ export interface AddPrepaidLessonsRequest {
   count: number
   teacherId?: string
   courseId?: string
+}
+/** `POST /orgs/{orgId}/teacher-payouts`: exactly one of `lessonIds` and `upTo` (API.md §9.6). */
+export interface CreateTeacherPayoutRequest {
+  teacherId: string
+  /** 1–500 lessons payable to the teacher. */
+  lessonIds?: string[]
+  /** ISO instant: every payable lesson dated before it. The console sends the start of the day after the picked one. */
+  upTo?: string
+  /** `yyyy-MM-dd`, the day the school paid; at most today. */
+  paidOn: string
+  /** ≤ 4000 characters; blank = none. */
+  note?: string
+}
+export interface VoidTeacherPayoutRequest {
+  /** 1–4000 characters. */
+  reason: string
+}
+export interface CreateHomeworkRequest {
+  studentId: string
+  /** Admins and the super-admin name the teacher. */
+  teacherId?: string
+  courseId?: string
+  lessonId?: string
+  title?: string
+  notes?: string
+  /** ISO instant; the console sends the end of the chosen day. */
+  dueAt?: string
+  /** 1–100 lines; they start open. */
+  items: { text: string }[]
+}
+/** Omitted fields stay. The console never sends `lessonId` (the sheet has no lesson picker). */
+/** Omitted fields stay; an explicit `null` removes one (API.md §11). */
+export interface UpdateHomeworkRequest {
+  /** `null` unlinks the lesson. The console never sends it (no lesson picker). */
+  lessonId?: string | null
+  /** `null` or blank clears it. */
+  title?: string | null
+  /** `null` or blank clears them. */
+  notes?: string | null
+  /** Moves the due date; `null` removes it. */
+  dueAt?: string | null
+  /** Replaces the whole checklist (every item gets a new id); `done` is taken as sent. Never `null`. */
+  items?: { text: string; done: boolean }[]
 }
 
 // --- list filters -----------------------------------------------------------------------------
@@ -280,6 +383,32 @@ export interface StudentFilters {
 export interface CourseFilters {
   organizationId?: string
   teacherId?: string
+}
+export interface HomeworkFilters {
+  studentId?: string
+  teacherId?: string
+  courseId?: string
+  lessonId?: string
+  status?: HomeworkStatus
+  /** ISO instant, inclusive. */
+  dueFrom?: string
+  /** ISO instant, exclusive. */
+  dueTo?: string
+}
+export interface PayableLessonFilters {
+  /** ISO instant, inclusive. */
+  from?: string
+  /** ISO instant, exclusive. */
+  to?: string
+}
+export interface TeacherPayoutFilters {
+  teacherId?: string
+  /** `yyyy-MM-dd`, inclusive, on `paidOn`. */
+  from?: string
+  /** `yyyy-MM-dd`, inclusive, on `paidOn`. */
+  to?: string
+  /** Omitted or `false`: live payouts only. */
+  includeVoided?: boolean
 }
 export interface LessonFilters {
   studentId?: string

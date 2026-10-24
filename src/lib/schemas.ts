@@ -27,6 +27,27 @@ export const titleSchema = z
 
 export const longTextSchema = z.string().trim().max(4000, 'At most 4000 characters')
 
+/** An optional title: empty means none. */
+export const optionalTitleSchema = z.string().trim().max(200, 'Titles are at most 200 characters')
+
+/**
+ * A homework checklist being typed: 1–100 lines of up to 2000 characters; blank lines are dropped.
+ * A line being edited carries the `itemId` and `done` it was loaded with (not `id`: that name is
+ * `useFieldArray`'s own key).
+ */
+export const checklistSchema = z
+  .array(
+    z.object({
+      text: z.string().trim().max(2000, 'At most 2000 characters'),
+      itemId: z.string().optional(),
+      done: z.boolean().optional(),
+    }),
+  )
+  .max(100, 'At most 100 items')
+  .refine((items) => items.some((item) => item.text.trim().length > 0), {
+    message: 'Add at least one checklist item',
+  })
+
 export const slugSchema = z
   .string()
   .trim()
@@ -56,6 +77,23 @@ export const prepaidCountSchema = z.coerce
   .int('Enter a whole number')
   .min(1, 'At least 1 lesson')
   .max(50, 'At most 50 lessons at a time')
+
+/** A lesson's length in whole minutes (API.md §1.7: 15–240). */
+export const lessonDurationSchema = z.coerce
+  .number('Enter the length in minutes')
+  .int('Enter whole minutes')
+  .min(15, 'At least 15 minutes')
+  .max(240, 'At most 240 minutes')
+
+/** A course's default lesson length being typed: empty means none (lessons then last 60 minutes). */
+export const optionalLessonDurationSchema = z
+  .string()
+  .trim()
+  .refine((value) => value === '' || /^\d+$/.test(value), { message: 'Enter whole minutes' })
+  .transform((value) => (value === '' ? null : Number(value)))
+  .refine((value) => value === null || (value >= 15 && value <= 240), {
+    message: 'Between 15 and 240 minutes',
+  })
 
 export const uuidSchema = z.uuid('Choose an option')
 

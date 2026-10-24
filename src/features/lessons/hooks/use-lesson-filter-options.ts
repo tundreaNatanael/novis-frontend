@@ -76,12 +76,14 @@ export function useLessonFilterOptions(args: {
       ),
     enabled: enabled && (!!args.teacherId || !!orgId),
     staleTime: 60_000,
-    select: (page): SelectOption[] =>
-      page.content.map((c) => ({
+    select: (page) => ({
+      options: page.content.map((c): SelectOption => ({
         value: c.id,
         label: c.title,
         description: c.status === 'ARCHIVED' ? 'Archived' : undefined,
       })),
+      lengths: new Map(page.content.map((c) => [c.id, c.defaultDurationMinutes])),
+    }),
   })
 
   const scopeOptions: SelectOption[] = [
@@ -97,7 +99,9 @@ export function useLessonFilterOptions(args: {
     students: students.data ?? [],
     studentsLoading: (!!args.teacherId || !!orgId) && students.isPending,
     studentsEnabled: !!args.teacherId || !!orgId,
-    courses: courses.data ?? [],
+    courses: courses.data?.options ?? [],
+    /** A listed course's default lesson length; `null` when it has none or is not listed. */
+    courseLength: (courseId: string) => courses.data?.lengths.get(courseId) ?? null,
     coursesLoading: (!!args.teacherId || !!orgId) && courses.isPending,
     coursesEnabled: !!args.teacherId || !!orgId,
   }

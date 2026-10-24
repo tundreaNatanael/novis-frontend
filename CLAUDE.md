@@ -36,7 +36,7 @@ Dev login: `admin@novis.local` / `ChangeMe123!` (throttled 5/min per email — s
 src/app         providers (queryClient.ts, theme.tsx, app.tsx), router.tsx, route-handle.ts, shell/ (sidebar, top bar, drawer, breadcrumbs, ⌘K)
 src/api         client.ts · errors.ts · types.ts · schema.d.ts (generated) · paging.ts · <resource>.ts (api + query keys)
 src/auth        tokenStore.ts · session.tsx (SessionProvider, useSession, useMe) · guards.tsx
-src/features    auth/ account/ platform/ org-workspace/ freelance/ lessons/ — pages are route modules
+src/features    auth/ account/ platform/ org-workspace/ freelance/ lessons/ homework/ teacher-payouts/ — pages are route modules (homework/ and teacher-payouts/ hold panels and sheets those pages share)
 src/components  ui/ (shadcn, re-themed) · form/ (Field, FormError, applyServerErrors) · page-header, brand-mark, …
 src/lib         permissions.ts (capabilities + lessonRules) · format.ts · schemas.ts · use-*.ts hooks
 src/test        setup.ts (jest-dom, MSW lifecycle, cleanup) · server.ts
@@ -52,7 +52,9 @@ bearer header, JSON, `ApiError` (`status`, `code`, `message`, `fieldErrors`) and
 `INVALID_REFRESH_TOKEN` / `ACCOUNT_UNAVAILABLE` / `INVALID_TOKEN` → `expireSession()`. Never
 send roles or organization ids as authorization input; the server derives them. Copy is chosen by
 `error.is(code)` (typed by `ApiErrorCode`), never by matching `message` text (D-038); shared
-sentences live in `errorMessage`.
+sentences live in `errorMessage`. A `409 SCHEDULE_CONFLICT` (an overlapping lesson) is not an error
+to show but a question: `OverlapConfirmDialog` asks, and confirming resends the same request with
+`allowOverlap: true` (D-045).
 
 **Types.** `src/api/schema.d.ts` is generated and never edited. `src/api/types.ts` is the typed
 overlay: it makes response fields required (springdoc emits no `required`) and re-adds `| null`
@@ -72,7 +74,10 @@ The only optimistic update is the lesson paid / unpaid toggle.
 **Payments: actions from the capability, display from the data.** Mark paid / unpaid, Add
 prepaid, the use-prepaid box and the Payment filter / column follow `canManageStudentPayments`
 (the super-admin and the organization's admin). What is shown follows the response:
-`studentPayment: null` and `null` balance counts render nothing, never "unpaid" (D-040).
+`studentPayment: null` and `null` balance counts render nothing, never "unpaid" (D-040). Teacher
+payouts (what the organization paid its teachers) are a different thing with a different word: the
+Payouts panel follows `canManageTeacherPayouts`, and `Lesson.teacherPayout` shows in its own field
+(D-047). Never call a teacher payout a "payment" in copy.
 
 **Forms.** react-hook-form + `zodResolver`; schemas come from `src/lib/schemas.ts` and mirror
 API.md §1.7. Use `<Field>` for label / hint / error wiring and `applyServerErrors()` to map
@@ -144,8 +149,20 @@ list is searched on the server (`q` debounced with `useDebouncedValue`, the only
 not filter the loaded page), Disable / Re-enable are explicit confirmed actions, Delete asks for
 the email and explains the cascade, and the teacher workspace shows a 404 page for any other id.
 `src/api/schema.d.ts` is generated from the backend (`npm run api:types`, last run against the
-payment change: `Lesson.studentPayment`, nullable balance counts, `toSchedule`); after a backend
-change regenerate it and fix `types.ts` first. Shared detail pages read
+teacher payouts and the teacher calendar: `Lesson.teacherPayout`, the payout routes and
+`GET /teacher/calendar`); after a backend change regenerate it and fix `types.ts`
+first. Lessons have a length (New lesson follows the course's default until edited, the schedule
+sheet sends it when changed) and show start–end times (`formatTimeRange` /
+`formatDateTimeRange`); an overlap is confirmed and booked anyway on request (D-045); weekly series
+are the mobile app's. Homework (D-041) is a
+**Homework** panel on lesson and student detail (`src/features/homework`) with one **Assign
+homework** sheet: teacher fixed on a lesson or picked, course from the student's active
+enrollments with that teacher, due date sent as the end of the local day; the close sheet is
+outcome + journal only (D-030). Each row's ⋯ menu edits the homework (the same sheet in edit
+mode, D-042: only changed fields go out, an emptied due date goes out as `null`, the lines are the
+teacher's and the ticks the student's, re-read with `GET /homework/{id}` before the checklist is
+replaced; the pure helpers are in `homework-state.ts`) and deletes it after a confirmation; a
+`404` refreshes the list, a `403` disables that row's actions. Shared detail pages read
 their scope with `useWorkspaceScope()` (`kind: 'org' | 'freelance'`). Lessons live in
 `src/features/lessons`: `LessonLedger` takes a `FixedScope` and is mounted for the platform, each
 organization (both workspace mounts) and each freelance teacher; every
@@ -154,11 +171,16 @@ filter is a URL param (`lessonFiltersFromParams`); names for id-only rows come f
 `/platform/lessons/…`, an org admin's `/org/:orgId/lessons/…`, D-040); transitions and their
 disabled reasons are `lessonRules` in `src/lib/permissions.ts`; the paid toggle is the only
 optimistic update. Org admins have the Lessons tab and lesson detail and record their
-organization's payments (D-040). Tests: Vitest + MSW over
+organization's payments (D-040). **Teacher payouts** (D-047) are a Payouts panel on a teacher's
+page (`src/features/teacher-payouts`, `src/api/teacher-payouts.ts`, `canManageTeacherPayouts`): the
+owed count and payable lessons with checkboxes (the selection survives paging) or "Pay everything
+up to…" (`upTo` = the start of the next local day), one Record payout sheet, and the history with
+"Show voided" and a type-`void` Void dialog; the pure helpers are in `payout-state.ts`. Lesson
+detail shows `teacherPayout` in its own field. Tests: Vitest + MSW over
 the real route tree (`src/test/render.tsx`), Playwright in `e2e/` (API sign-in fixture, live
 smoke flow, phone checks, screenshots + axe). Open follow-ups are the **B** items in
-`docs/BACKEND_GAPS.md` (G17 refresh grace window, G18 nullable PATCH fields, G19 names on lesson
-rows) and the README's Known limitations.
+`docs/BACKEND_GAPS.md` (G17 refresh grace window, G19 names on lesson rows, G21 a teacher who left
+has no page for the organization's admin) and the README's Known limitations.
 
 ## Don'ts
 
