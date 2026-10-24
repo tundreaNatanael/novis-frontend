@@ -8,7 +8,7 @@ import { enrollmentKeys, enrollmentsApi } from '@/api/enrollments'
 import { errorMessage, isApiError } from '@/api/errors'
 import { memberKeys } from '@/api/members'
 import { studentKeys, studentsApi } from '@/api/students'
-import type { Course, Student } from '@/api/types'
+import type { Course, Student, StudentCreated } from '@/api/types'
 import { Field } from '@/components/form/field'
 import { FormError } from '@/components/form/form-error'
 import { FormSheet } from '@/components/form/form-sheet'
@@ -38,7 +38,9 @@ interface AddStudentSheetProps {
 /**
  * Creates a student (`POST /students`, no password: students sign in with their email) and
  * enrols them in a course (`POST /courses/{courseId}/enrollments`). The API requires a name
- * (gap G3). A failed enrollment is reported and can be retried or skipped.
+ * (gap G3). Siblings may share one email: the same name under a known email is the same child
+ * (linked), another name a new profile next to it (`profileCreated`, D-049). A failed enrollment
+ * is reported and can be retried or skipped.
  */
 export function AddStudentSheet({ open, onOpenChange, onCreated }: AddStudentSheetProps) {
   const scope = useWorkspaceScope()
@@ -46,7 +48,7 @@ export function AddStudentSheet({ open, onOpenChange, onCreated }: AddStudentShe
   const scopeName = scope.kind === 'org' ? scope.org.name : scope.teacher.name
   const queryClient = useQueryClient()
   const [formError, setFormError] = useState<string | null>(null)
-  const [student, setStudent] = useState<Student | null>(null)
+  const [student, setStudent] = useState<StudentCreated | null>(null)
   const [enrollError, setEnrollError] = useState<string | null>(null)
   const [running, setRunning] = useState(false)
   const orgCourses = useOrgCourses(orgId ?? '', open && scope.kind === 'org')
@@ -136,7 +138,9 @@ export function AddStudentSheet({ open, onOpenChange, onCreated }: AddStudentShe
           ...(orgId ? [queryClient.invalidateQueries({ queryKey: memberKeys.org(orgId) })] : []),
           queryClient.invalidateQueries({ queryKey: studentKeys.all }),
         ])
-        toast.success('Student created')
+        toast.success(
+          created.profileCreated ? `New profile created for ${created.name}` : 'Student created',
+        )
       }
       if (values.courseId) await enrol(created, values.courseId)
       else finish(created)
@@ -154,7 +158,9 @@ export function AddStudentSheet({ open, onOpenChange, onCreated }: AddStudentShe
         {
           label: `Student created: ${student.email}`,
           state: 'done',
-          detail: 'Students sign in with their email only; no password.',
+          detail: student.profileCreated
+            ? 'Students sign in with their email only; no password. Siblings on this email each pick their name at sign-in.'
+            : 'Linked the existing student of this name on this email. Students sign in with their email only; no password.',
         },
         {
           label: 'Enrol in the course',
@@ -199,8 +205,8 @@ export function AddStudentSheet({ open, onOpenChange, onCreated }: AddStudentShe
           required
           hint={
             scope.kind === 'org'
-              ? 'An existing student of this organization with this email is linked. A student of another school or teacher cannot be added.'
-              : 'An existing student of this teacher with this email is linked. A student of a school or another teacher cannot be added.'
+              ? 'Siblings can share one email: each name on it is its own profile. The same name links the existing student of this organization; the same name at another school or teacher cannot be added.'
+              : 'Siblings can share one email: each name on it is its own profile. The same name links this teacher’s existing student; the same name at a school or another teacher cannot be added.'
           }
           error={form.formState.errors.email?.message}
         >

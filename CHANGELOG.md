@@ -7,6 +7,12 @@ All notable changes to the Novis admin console. The format follows
 
 ### Breaking
 
+- Student profiles on one email (backend `student_logins`, D-049): `POST /students` answers
+  `StudentCreated` = `Student` + `profileCreated`, `PATCH /students/{id}` with a staff email answers
+  `409 ROLE_CONFLICT` (was `CONFLICT`) and its `email` moves one profile only, and
+  `POST /auth/student-login` answers `{ tokens, profileSelection }` (the console does not call it).
+  `src/api/schema.d.ts` was regenerated (`npm run api:types`).
+
 - Lessons have a length and may not overlap (backend scheduling change, D-045): `Lesson` gained
   `durationMinutes` and `seriesId`, `Course` gained `defaultDurationMinutes`, and `POST /lessons` /
   `PATCH /lessons/{id}/schedule` answer `409 SCHEDULE_CONFLICT` when the time overlaps another
@@ -29,6 +35,13 @@ All notable changes to the Novis admin console. The format follows
 
 ### Added
 
+- **Siblings on one email** (D-049): the student page shows **Other profiles on this email**, the
+  siblings who sign in with the same address inside this organization (or with this freelance
+  teacher), each linked to their page, from `GET /students/{id}/profiles`; the server already keeps
+  siblings elsewhere out, so the panel never hints at them. Add student explains that siblings can
+  share one email (each name on it is its own profile; the same name links the existing student)
+  and the toast reads "New profile created for <name>" when the API created one; Edit student's
+  email hint says a change moves only this profile.
 - **Finance** (backend finance reports, API.md §9.7, D-048): a **Finance** tab in the organization
   workspace (both mounts, and the org admin's sidebar) for the new `canViewFinance` capability (the
   super-admin and the organization's admin). Counted in lessons, never money. A period picker

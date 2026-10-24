@@ -11,6 +11,7 @@ import type {
   Page,
   PayoutLesson,
   Student,
+  StudentCreated,
   StudentEnrollment,
   StudentFinanceRow,
   StudentPayment,
@@ -150,6 +151,11 @@ export function student(overrides: Partial<Student> = {}): Student {
     createdAt: '2026-10-13T10:00:00Z',
     ...overrides,
   }
+}
+
+/** The `POST /students` answer: a student plus whether a new profile was created (D-049). */
+export function studentCreated(overrides: Partial<StudentCreated> = {}): StudentCreated {
+  return { ...student(), profileCreated: true, ...overrides }
 }
 
 export function course(overrides: Partial<Course> = {}): Course {

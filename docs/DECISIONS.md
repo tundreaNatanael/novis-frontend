@@ -557,3 +557,28 @@ table (the API has `teacherId`) — not asked for, left out.
 **Consequences.** The numbers are only as fresh as the last visit or period change. An org admin
 cannot open a former teacher's page from the tab (G21), nor a student who left. Custom days in the
 wrong order show a field error and no request.
+
+## D-049 · 2026-10-24 · Student profiles on one email: shown only inside the workspace
+
+**Decision.** A student is one *profile* of the email it signs in with (backend V12): siblings
+share an address, each with their own name, place and status, and each stays a full `Student`
+row in the console. The student page gains **Other profiles on this email** from
+`GET /students/{id}/profiles`, which the server limits to the profiles the caller may see — an
+organization admin sees the siblings of their own organization, a freelance workspace those with
+that teacher — so the console renders what comes back and never counts or names siblings elsewhere.
+Add student keeps its one form: the hint says siblings can share one email and that the same name
+links the existing student, and the success toast follows the API's `profileCreated` ("New profile
+created for <name>" or "Student created"). Edit student's email hint says a change moves this
+profile only. `POST /students` is typed `StudentCreated`.
+**Context.** The backend task made one email hold several student profiles for a parent with two
+children, with the privacy rule that staff never learn about a sibling at another school. The
+console had to show the toast and hint and list the login's other profiles inside the admin's
+organization.
+**Alternatives.** A "Family" page grouping students by email — rejected: there is no family
+entity, and an email's profiles may lie outside the organization. Filtering siblings in the browser
+by comparing emails in the member list — rejected: the server's visibility is the rule, and a list
+page would need every member to do it. A separate "linked" badge in the members table — not asked
+for; the email column already shows the shared address.
+**Consequences.** Two siblings in one school are two rows with one email in the members table and
+the student lists, by design. A sibling who leaves the organization vanishes from the panel without
+a trace. The panel refetches with every student invalidation (`studentKeys.all`).

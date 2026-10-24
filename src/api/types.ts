@@ -80,7 +80,10 @@ export type User = Nullable<
 export type Organization = Strict<S['OrganizationResponse']>
 export type Invite = Nullable<Strict<S['InviteResponse']>, 'organizationId' | 'usedAt'>
 export type Member = Strict<S['MemberResponse']>
+/** One profile of a student login: siblings sharing the email are separate students with the same `email`. */
 export type Student = Strict<S['StudentResponse']>
+/** `POST /students`: the student plus whether a new profile was created or the email's profile of that name linked. */
+export type StudentCreated = Strict<S['StudentCreatedResponse']>
 /** `defaultDurationMinutes`: the length new lessons of the course get when booked without one; `null` = 60. */
 export type Course = Nullable<
   Strict<S['CourseResponse']>,

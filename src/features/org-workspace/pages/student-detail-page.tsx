@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { BookOpen, CalendarDays, Pencil, Ticket, Trash2, UserMinus } from 'lucide-react'
+import { BookOpen, CalendarDays, Pencil, Ticket, Trash2, UserMinus, Users } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { toast } from 'sonner'
@@ -44,7 +44,8 @@ const ENROLLMENTS = { page: 0, size: 100, sort: 'enrolledAt,desc' }
  * Student detail: `GET /students/{id}` + `GET /users/{id}` (the one organization, with the
  * membership id, or none for a freelance teacher's student), balances from
  * `GET /students/{id}/lessons/summary`, courses from `GET /students/{id}/enrollments`, homework
- * from `GET /homework?studentId=` with Assign, Edit and Delete.
+ * from `GET /homework?studentId=` with Assign, Edit and Delete, and the siblings sharing the email
+ * inside this workspace from `GET /students/{id}/profiles` (the server filters by reach, D-049).
  */
 export function Component() {
   const scope = useWorkspaceScope()
@@ -77,6 +78,10 @@ export function Component() {
   const enrollments = useQuery({
     queryKey: studentKeys.enrollments(studentId, ENROLLMENTS),
     queryFn: ({ signal }) => studentsApi.enrollments(studentId, ENROLLMENTS, signal),
+  })
+  const profiles = useQuery({
+    queryKey: studentKeys.profiles(studentId),
+    queryFn: ({ signal }) => studentsApi.profiles(studentId, signal),
   })
   usePageTitle(studentQuery.data?.name)
 
@@ -354,6 +359,40 @@ export function Component() {
                   <span className="ml-2 text-xs text-muted-foreground">(archived)</span>
                 ) : null}
               </DetailField>
+            )}
+          </DetailPanel>
+          <DetailPanel
+            title="Other profiles on this email"
+            description={
+              scope.kind === 'org'
+                ? 'Siblings who sign in with the same email and learn in this organization.'
+                : 'Siblings who sign in with the same email and learn with this teacher.'
+            }
+          >
+            {profiles.isPending ? (
+              <DetailField label="Loading">…</DetailField>
+            ) : profiles.isError ? (
+              <DetailField label="Error">Could not load the other profiles.</DetailField>
+            ) : profiles.data.length === 0 ? (
+              <DetailField label="None">
+                <span className="inline-flex items-center gap-1 text-muted-foreground">
+                  <Users className="size-3.5" aria-hidden />
+                  {scope.kind === 'org'
+                    ? 'No other profile in this organization.'
+                    : 'No other profile with this teacher.'}
+                </span>
+              </DetailField>
+            ) : (
+              profiles.data.map((profile) => (
+                <DetailField key={profile.id} label={enumLabel(profile.status)}>
+                  <Link
+                    to={`${basePath}/students/${profile.id}`}
+                    className="font-medium text-primary underline-offset-4 hover:underline"
+                  >
+                    {profile.name}
+                  </Link>
+                </DetailField>
+              ))
             )}
           </DetailPanel>
         </div>

@@ -149,9 +149,12 @@ list is searched on the server (`q` debounced with `useDebouncedValue`, the only
 not filter the loaded page), Disable / Re-enable are explicit confirmed actions, Delete asks for
 the email and explains the cascade, and the teacher workspace shows a 404 page for any other id.
 `src/api/schema.d.ts` is generated from the backend (`npm run api:types`, last run against the
-teacher payouts and the teacher calendar: `Lesson.teacherPayout`, the payout routes and
-`GET /teacher/calendar`); after a backend change regenerate it and fix `types.ts`
-first. Lessons have a length (New lesson follows the course's default until edited, the schedule
+student profiles on one email: `StudentCreatedResponse`, `StudentLoginResponse`,
+`GET /students/{id}/profiles`, `GET /me/profiles`, the select / switch auth routes); after a
+backend change regenerate it and fix `types.ts` first. **Siblings on one email** (D-049): a
+student is one profile of its email; the student page lists the other profiles inside the
+workspace from `GET /students/{id}/profiles` (the server filters by reach), Add student's toast
+follows `profileCreated`, and `PATCH /students/{id}` `email` moves one profile only. Lessons have a length (New lesson follows the course's default until edited, the schedule
 sheet sends it when changed) and show start–end times (`formatTimeRange` /
 `formatDateTimeRange`); an overlap is confirmed and booked anyway on request (D-045); weekly series
 are the mobile app's. Homework (D-041) is a

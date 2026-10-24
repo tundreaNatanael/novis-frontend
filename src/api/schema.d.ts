@@ -324,6 +324,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/switch-profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["switchProfile"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/student-login": {
         parameters: {
             query?: never;
@@ -334,6 +350,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["studentLogin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/student-login/select": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["selectProfile"];
         delete?: never;
         options?: never;
         head?: never;
@@ -772,6 +804,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/students/{id}/profiles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["profiles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/orgs/{orgId}/teachers/{teacherId}/payable-lessons": {
         parameters: {
             query?: never;
@@ -852,7 +900,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/me/materials": {
+    "/me/profiles": {
         parameters: {
             query?: never;
             header?: never;
@@ -868,7 +916,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/me/lessons": {
+    "/me/materials": {
         parameters: {
             query?: never;
             header?: never;
@@ -876,6 +924,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["list_11"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/lessons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_12"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1123,7 +1187,7 @@ export interface components {
             /** Format: uuid */
             teacherId?: string;
         };
-        StudentResponse: {
+        StudentCreatedResponse: {
             /** Format: uuid */
             id?: string;
             email?: string;
@@ -1132,6 +1196,7 @@ export interface components {
             status?: "ACTIVE" | "DISABLED";
             /** Format: date-time */
             createdAt?: string;
+            profileCreated?: boolean;
         };
         AddPrepaidLessonsRequest: {
             /** Format: int32 */
@@ -1528,9 +1593,10 @@ export interface components {
             /** Format: date-time */
             enrolledAt?: string;
         };
-        StudentLoginRequest: {
-            /** Format: email */
-            email: string;
+        SwitchProfileRequest: {
+            /** Format: uuid */
+            profileId: string;
+            refreshToken: string;
         };
         AuthTokensResponse: {
             accessToken?: string;
@@ -1540,6 +1606,31 @@ export interface components {
             expiresInSeconds?: number;
             /** @enum {string} */
             scope?: "USER" | "STUDENT";
+        };
+        StudentLoginRequest: {
+            /** Format: email */
+            email: string;
+        };
+        ProfileSelectionResponse: {
+            selectionToken?: string;
+            /** Format: date-time */
+            expiresAt?: string;
+            profiles?: components["schemas"]["StudentProfileResponse"][];
+        };
+        StudentLoginResponse: {
+            tokens?: components["schemas"]["AuthTokensResponse"];
+            profileSelection?: components["schemas"]["ProfileSelectionResponse"];
+        };
+        StudentProfileResponse: {
+            /** Format: uuid */
+            id?: string;
+            name?: string;
+            placeName?: string;
+        };
+        SelectProfileRequest: {
+            selectionToken: string;
+            /** Format: uuid */
+            profileId: string;
         };
         ResetPasswordRequest: {
             token: string;
@@ -1582,6 +1673,16 @@ export interface components {
             email?: string;
             /** @enum {string} */
             status?: "ACTIVE" | "DISABLED";
+        };
+        StudentResponse: {
+            /** Format: uuid */
+            id?: string;
+            email?: string;
+            name?: string;
+            /** @enum {string} */
+            status?: "ACTIVE" | "DISABLED";
+            /** Format: date-time */
+            createdAt?: string;
         };
         UpdateOrganizationRequest: {
             name?: string;
@@ -2077,7 +2178,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["StudentResponse"];
+                    "*/*": components["schemas"]["StudentCreatedResponse"];
                 };
             };
         };
@@ -2765,6 +2866,30 @@ export interface operations {
             };
         };
     };
+    switchProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SwitchProfileRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthTokensResponse"];
+                };
+            };
+        };
+    };
     studentLogin: {
         parameters: {
             query?: never;
@@ -2775,6 +2900,30 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["StudentLoginRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StudentLoginResponse"];
+                };
+            };
+        };
+    };
+    selectProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SelectProfileRequest"];
             };
         };
         responses: {
@@ -3695,6 +3844,28 @@ export interface operations {
             };
         };
     };
+    profiles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StudentResponse"][];
+                };
+            };
+        };
+    };
     payableLessons: {
         parameters: {
             query: {
@@ -3827,6 +3998,26 @@ export interface operations {
     };
     list_10: {
         parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StudentProfileResponse"][];
+                };
+            };
+        };
+    };
+    list_11: {
+        parameters: {
             query: {
                 pageable: components["schemas"]["Pageable"];
             };
@@ -3847,7 +4038,7 @@ export interface operations {
             };
         };
     };
-    list_11: {
+    list_12: {
         parameters: {
             query: {
                 pageable: components["schemas"]["Pageable"];

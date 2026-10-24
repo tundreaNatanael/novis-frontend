@@ -8,6 +8,7 @@ import {
   organization,
   page,
   student,
+  studentCreated,
   studentEnrollment,
   studentUser,
   summary,
@@ -34,7 +35,7 @@ describe('add student with a course', () => {
       http.post(api('/students'), async ({ request }) => {
         studentBodies.push((await request.json()) as Record<string, unknown>)
         return HttpResponse.json(
-          student({ id: 's-new', name: 'Kid', email: 'kid@riverside.test' }),
+          studentCreated({ id: 's-new', name: 'Kid', email: 'kid@riverside.test' }),
           { status: 201 },
         )
       }),
@@ -135,7 +136,7 @@ describe('add student with a course', () => {
         HttpResponse.json(page([course({ id: 'c-1', title: 'Piano' })])),
       ),
       http.post(api('/students'), () =>
-        HttpResponse.json(student({ id: 's-new', name: 'Kid' }), { status: 201 }),
+        HttpResponse.json(studentCreated({ id: 's-new', name: 'Kid' }), { status: 201 }),
       ),
       http.post(api('/courses/c-1/enrollments'), () =>
         apiError(404, 'NOT_FOUND', 'Student not found: s-new'),
@@ -155,6 +156,51 @@ describe('add student with a course', () => {
     expect(screen.getByRole('button', { name: 'Skip for now' })).toBeInTheDocument()
   })
 
+  const sharedEmailHandlers = (profileCreated: boolean) => [
+    http.get(api('/orgs/org-1'), () => HttpResponse.json(organization())),
+    http.get(api('/orgs/org-1/members'), () => HttpResponse.json(page([]))),
+    http.get(api('/courses'), () => HttpResponse.json(page([]))),
+    http.post(api('/students'), () =>
+      HttpResponse.json(
+        studentCreated({ id: 's-new', name: 'Ana', email: 'parent@riverside.test', profileCreated }),
+        { status: 201 },
+      ),
+    ),
+    http.get(api('/students/s-new'), () =>
+      HttpResponse.json(student({ id: 's-new', name: 'Ana', email: 'parent@riverside.test' })),
+    ),
+    http.get(api('/users/s-new'), () =>
+      HttpResponse.json(studentUser({ id: 's-new', name: 'Ana', email: 'parent@riverside.test' })),
+    ),
+    http.get(api('/students/s-new/lessons/summary'), () => HttpResponse.json(summary)),
+    http.get(api('/students/s-new/enrollments'), () => HttpResponse.json(page([]))),
+    http.get(api('/students/s-new/profiles'), () => HttpResponse.json([])),
+    http.get(api('/homework'), () => HttpResponse.json(page([]))),
+  ]
+
+  it('names the new profile when the API created one on a shared email', async () => {
+    server.use(...sharedEmailHandlers(true))
+    const { user: actor } = renderApp('/platform/orgs/org-1/students?new=1')
+
+    await actor.type(await screen.findByLabelText(/^Name/), 'Ana')
+    await actor.type(screen.getByLabelText(/^Email/), 'parent@riverside.test')
+    await actor.click(screen.getByRole('button', { name: 'Create student' }))
+
+    expect(await screen.findByText('New profile created for Ana')).toBeInTheDocument()
+  })
+
+  it('says the student was created when the API linked the existing profile of that name', async () => {
+    server.use(...sharedEmailHandlers(false))
+    const { user: actor } = renderApp('/platform/orgs/org-1/students?new=1')
+
+    await actor.type(await screen.findByLabelText(/^Name/), 'Ana')
+    await actor.type(screen.getByLabelText(/^Email/), 'parent@riverside.test')
+    await actor.click(screen.getByRole('button', { name: 'Create student' }))
+
+    // Toasts of earlier tests in this file stay mounted, so only the positive sentence is asserted.
+    expect(await screen.findByText('Student created')).toBeInTheDocument()
+  })
+
   it('refuses a student of another place and says why, instead of reusing the account', async () => {
     server.use(
       http.get(api('/orgs/org-1'), () => HttpResponse.json(organization())),
@@ -170,9 +216,7 @@ describe('add student with a course', () => {
     )
     const { user: actor } = renderApp('/platform/orgs/org-1/students?new=1')
 
-    expect(
-      await screen.findByText(/A student of another school or teacher cannot be added/),
-    ).toBeInTheDocument()
+    expect(await screen.findByText(/Siblings can share one email/)).toBeInTheDocument()
     await actor.type(screen.getByLabelText(/^Name/), 'Kid')
     await actor.type(screen.getByLabelText(/^Email/), 'kid@elsewhere.test')
     await actor.click(screen.getByRole('button', { name: 'Create student' }))

@@ -99,7 +99,7 @@ export function EditStudentSheet({
           <Field
             label="Email"
             required
-            hint="Students sign in with this address."
+            hint="Students sign in with this address. Changing it moves only this profile; siblings sharing the old email keep it."
             error={form.formState.errors.email?.message}
           >
             {(a11y) => (

@@ -16,6 +16,9 @@ describe('student detail', () => {
       http.get(api('/users/s-1'), () => HttpResponse.json(studentUser())),
       http.get(api('/students/s-1/lessons/summary'), () => HttpResponse.json(summary)),
       http.get(api('/students/s-1/enrollments'), () => HttpResponse.json(page([]))),
+      http.get(api('/students/s-1/profiles'), () =>
+        HttpResponse.json([student({ id: 's-2', name: 'Ana Student' })]),
+      ),
       http.get(api('/homework'), () => HttpResponse.json(page([]))),
       http.delete(api('/memberships/:id'), ({ params }) => {
         removed.push(String(params.id))
@@ -28,6 +31,9 @@ describe('student detail', () => {
       await screen.findByRole('heading', { level: 2, name: 'Kid Student' }),
     ).toBeInTheDocument()
     expect(await screen.findByText('Student of')).toBeInTheDocument()
+    // The sibling on the same email inside this organization, linked to their own page (D-049).
+    const sibling = await screen.findByRole('link', { name: 'Ana Student' })
+    expect(sibling).toHaveAttribute('href', '/org/org-1/students/s-2')
 
     await user.click(screen.getByRole('button', { name: 'More actions' }))
     await user.click(
@@ -41,5 +47,22 @@ describe('student detail', () => {
 
     await waitFor(() => expect(removed).toEqual(['m-s-1']))
     await waitFor(() => expect(router.state.location.pathname).toBe('/org/org-1/students'))
+  })
+
+  it('says when no other profile of the email is in this organization', async () => {
+    signedInAs(orgAdmin('org-1'))
+    server.use(
+      http.get(api('/orgs/org-1'), () => HttpResponse.json(organization())),
+      http.get(api('/orgs/org-1/members'), () => HttpResponse.json(page([]))),
+      http.get(api('/students/s-1'), () => HttpResponse.json(student())),
+      http.get(api('/users/s-1'), () => HttpResponse.json(studentUser())),
+      http.get(api('/students/s-1/lessons/summary'), () => HttpResponse.json(summary)),
+      http.get(api('/students/s-1/enrollments'), () => HttpResponse.json(page([]))),
+      http.get(api('/students/s-1/profiles'), () => HttpResponse.json([])),
+      http.get(api('/homework'), () => HttpResponse.json(page([]))),
+    )
+    renderApp('/org/org-1/students/s-1')
+
+    expect(await screen.findByText('No other profile in this organization.')).toBeInTheDocument()
   })
 })
