@@ -31,7 +31,9 @@ export const studentKeys = {
   enrollments: (id: string, params: PageParams) =>
     [...studentKeys.all, 'enrollments', id, params] as const,
   profiles: (id?: string) =>
-    id ? ([...studentKeys.all, 'profiles', id] as const) : ([...studentKeys.all, 'profiles'] as const),
+    id
+      ? ([...studentKeys.all, 'profiles', id] as const)
+      : ([...studentKeys.all, 'profiles'] as const),
 }
 
 export const studentsApi = {

@@ -162,7 +162,12 @@ describe('add student with a course', () => {
     http.get(api('/courses'), () => HttpResponse.json(page([]))),
     http.post(api('/students'), () =>
       HttpResponse.json(
-        studentCreated({ id: 's-new', name: 'Ana', email: 'parent@riverside.test', profileCreated }),
+        studentCreated({
+          id: 's-new',
+          name: 'Ana',
+          email: 'parent@riverside.test',
+          profileCreated,
+        }),
         { status: 201 },
       ),
     ),
