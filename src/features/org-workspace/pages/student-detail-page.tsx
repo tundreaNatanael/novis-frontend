@@ -7,7 +7,7 @@ import { enrollmentKeys, enrollmentsApi } from '@/api/enrollments'
 import { isApiError } from '@/api/errors'
 import { memberKeys, membersApi } from '@/api/members'
 import { studentKeys, studentsApi } from '@/api/students'
-import type { StudentEnrollment } from '@/api/types'
+import type { Student, StudentEnrollment } from '@/api/types'
 import { userKeys, usersApi } from '@/api/users'
 import type { RouteHandle } from '@/app/route-handle'
 import { PageSkeleton } from '@/app/shell/app-shell'
@@ -364,9 +364,11 @@ export function Component() {
           <DetailPanel
             title="Other profiles on this email"
             description={
-              scope.kind === 'org'
-                ? 'Siblings who sign in with the same email and learn in this organization.'
-                : 'Siblings who sign in with the same email and learn with this teacher.'
+              capabilities.isSuperAdmin
+                ? 'Every other profile that signs in with this email, wherever it learns.'
+                : scope.kind === 'org'
+                  ? 'Siblings who sign in with the same email and learn in this organization.'
+                  : 'Siblings who sign in with the same email and learn with this teacher.'
             }
           >
             {profiles.isPending ? (
@@ -377,22 +379,28 @@ export function Component() {
               <DetailField label="None">
                 <span className="inline-flex items-center gap-1 text-muted-foreground">
                   <Users className="size-3.5" aria-hidden />
-                  {scope.kind === 'org'
-                    ? 'No other profile in this organization.'
-                    : 'No other profile with this teacher.'}
+                  {capabilities.isSuperAdmin
+                    ? 'No other profile on this email.'
+                    : scope.kind === 'org'
+                      ? 'No other profile in this organization.'
+                      : 'No other profile with this teacher.'}
                 </span>
               </DetailField>
             ) : (
-              profiles.data.map((profile) => (
-                <DetailField key={profile.id} label={enumLabel(profile.status)}>
-                  <Link
-                    to={`${basePath}/students/${profile.id}`}
-                    className="font-medium text-primary underline-offset-4 hover:underline"
-                  >
-                    {profile.name}
-                  </Link>
-                </DetailField>
-              ))
+              profiles.data.map((profile) =>
+                capabilities.isSuperAdmin ? (
+                  <SiblingAnywhere key={profile.id} profile={profile} />
+                ) : (
+                  <DetailField key={profile.id} label={enumLabel(profile.status)}>
+                    <Link
+                      to={`${basePath}/students/${profile.id}`}
+                      className="font-medium text-primary underline-offset-4 hover:underline"
+                    >
+                      {profile.name}
+                    </Link>
+                  </DetailField>
+                ),
+              )
             )}
           </DetailPanel>
         </div>
@@ -477,5 +485,38 @@ export function Component() {
         />
       ) : null}
     </div>
+  )
+}
+
+/**
+ * A sibling as the super-admin sees it: the API lists every profile of the email, so the row names
+ * the sibling's school (from `GET /users/{id}`) and links into that school's workspace. A profile
+ * without a school (freelance, or no place yet) has no link: the API does not say whose roster it is
+ * on, and linking it into this workspace would open it out of place.
+ */
+function SiblingAnywhere({ profile }: { profile: Student }) {
+  const user = useQuery({
+    queryKey: userKeys.detail(profile.id),
+    queryFn: ({ signal }) => usersApi.get(profile.id, signal),
+  })
+  const school = user.data?.organization ?? null
+  return (
+    <DetailField label={enumLabel(profile.status)}>
+      <span className="flex flex-wrap items-baseline gap-x-2">
+        {school ? (
+          <Link
+            to={`/platform/orgs/${school.id}/students/${profile.id}`}
+            className="font-medium text-primary underline-offset-4 hover:underline"
+          >
+            {profile.name}
+          </Link>
+        ) : (
+          <span className="font-medium text-foreground">{profile.name}</span>
+        )}
+        <span className="text-sm text-muted-foreground">
+          {user.isPending ? '…' : school ? school.name : 'Freelance or no school yet'}
+        </span>
+      </span>
+    </DetailField>
   )
 }
