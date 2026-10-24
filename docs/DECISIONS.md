@@ -524,3 +524,36 @@ their count.
 their history is paid out from the super-admin's console or through the API. A `409` (someone paid
 some of the lessons meanwhile) shows the server's sentence and refreshes the lists rather than
 retrying.
+
+## D-048 · 2026-10-24 · Finance: a tab that sets students' payments against teachers' payouts
+
+**Decision.** The organization workspace gets a **Finance** tab (both mounts, the org admin's
+sidebar too), behind `canViewFinance` (the super-admin and the organization's admin). It counts
+lessons, never money, with the backend's finance counts (API.md §9.7). A period picker offers This
+month (the default, no URL key), Previous month and Custom days; the period lives in the URL and is
+turned into two instants in the browser's time zone with calendar arithmetic (`finance-period.ts`):
+the start of the first day to the start of the day after the last, so a month with a clock change
+stays whole. Four cards (paid by students, used, paid to teachers, owed to teachers with the
+all-time owed under it) come from `GET /orgs/{orgId}/reports/summary`. A Students and a Teachers
+table follow, both sorted and paged by the API; each keeps its list state under its own URL prefix
+(`useListParams({ prefix })`), and another period sends both back to their first page. A row opens
+the person's page; a teacher row also links to `…/teachers/:id#payouts`, where the Payouts panel
+scrolls itself into view once its lessons are in. The two mismatches (paid by the student but not
+paid out, paid out but not paid by the student) are badges with an icon and words, "None" when
+there is nothing to flag. A teacher who left is marked "Former teacher" and linked only for the
+super-admin, since an org admin gets `404` on their page (gap G21). Prepaid left and unpaid due
+share their names and hints with the student's Lesson balances (`lesson-counts.ts`): the same
+numbers under the same words.
+**Context.** The task asked for an admin overview of how many lessons students paid for against
+how many the admin paid out to teachers, with the period computed by the client (an organization
+has no time zone), summary cards, two server-sorted tables, mismatches that never rely on colour,
+stacked lists on phones and the student's balances using the same numbers.
+**Alternatives.** A Students | Teachers switch with one table at a time — rejected: the overview
+is the point, and the cards already sum both sides. Sorting by name — not offered: the API sorts by
+counts only (names come from one lookup per page that keeps deleted accounts). Invalidating the
+reports from every lesson, payment and payout mutation — rejected for `staleTime: 0`: almost every
+write changes them, and the tab refetches on each visit anyway. A teacher filter on the Students
+table (the API has `teacherId`) — not asked for, left out.
+**Consequences.** The numbers are only as fresh as the last visit or period change. An org admin
+cannot open a former teacher's page from the tab (G21), nor a student who left. Custom days in the
+wrong order show a field error and no request.

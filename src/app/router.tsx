@@ -37,6 +37,7 @@ function orgWorkspaceRoutes(mount: 'platform' | 'org'): RouteObject[] {
     },
     { path: 'invites', lazy: () => import('@/features/org-workspace/pages/invites-page') },
     { path: 'lessons', lazy: () => import('@/features/org-workspace/pages/org-lessons-page') },
+    { path: 'finance', lazy: () => import('@/features/org-workspace/pages/finance-page') },
   ]
   if (mount === 'platform') {
     routes.push(

@@ -29,6 +29,21 @@ All notable changes to the Novis admin console. The format follows
 
 ### Added
 
+- **Finance** (backend finance reports, API.md §9.7, D-048): a **Finance** tab in the organization
+  workspace (both mounts, and the org admin's sidebar) for the new `canViewFinance` capability (the
+  super-admin and the organization's admin). Counted in lessons, never money. A period picker
+  (This month by default, Previous month, Custom days) keeps the period in the URL
+  (`?period=previous-month`, `?period=custom&from=&to=`) and sends it as two instants computed in
+  the browser's time zone. Four cards (`GET /orgs/{orgId}/reports/summary`): paid by students,
+  used, paid to teachers, owed to teachers (with the all-time owed). A **Students** table
+  (`/reports/students`: paid by student, used, prepaid left, unpaid due, last payment) and a
+  **Teachers** table (`/reports/teachers`: taught, paid out, owed, owed all time, the two
+  mismatches, last payout), each sorted and paged by the API with its own URL keys (`students*`,
+  `teachers*`), stacked lists below `md`, empty states. Rows open the student's or the teacher's
+  page; a teacher row has a **Payouts** link to `…/teachers/:id#payouts`. Mismatches are a badge
+  with an icon and words. A teacher who left is marked "Former teacher" and linked only for the
+  super-admin (gap G21). The reports refetch on every visit (`staleTime: 0`) instead of being
+  invalidated by lesson, payment and payout writes. `src/api/reports.ts`, `src/features/finance`.
 - **Teacher payouts** (backend teacher payouts, D-047): a **Payouts** panel on a teacher's page in
   both workspace mounts, for the new `canManageTeacherPayouts` capability (the super-admin and the
   organization's admin). It shows what the organization owes the teacher ("Owed: N lessons", the
@@ -80,6 +95,17 @@ All notable changes to the Novis admin console. The format follows
 
 ### Changed
 
+- `src/api/schema.d.ts` regenerated (`npm run api:types`) after the finance reports (additions only:
+  the three `/orgs/{orgId}/reports/*` routes and their rows), typed in `types.ts` as
+  `StudentFinanceRow`, `TeacherFinanceRow`, `FinanceSummary` and `FinancePeriod`.
+- A student's **Lesson balances** take their labels and hints from `src/features/lessons/lesson-counts.ts`,
+  which the Finance tab shares: Prepaid left and Unpaid due are the same numbers under the same
+  names in both places. The words did not change.
+- The **Payouts** panel has the id `payouts` and scrolls into view once its lessons are in when
+  the URL ends in `#payouts` (`payoutsPath`).
+- `useListParams` takes an optional `prefix` (`students` → `studentsPage`, `studentsSort`, …) so
+  two tables on one page keep apart URL state; `DataTable`'s `rowHref` may return `undefined` for
+  a row that opens nothing.
 - `src/api/schema.d.ts` regenerated (`npm run api:types`) after the teacher payouts and the teacher
   calendar: `Lesson` gained `teacherPayout` (`LessonTeacherPayout | null`, typed in `types.ts`),
   and some generated operation names moved (`create_2` → `create_3`…); nothing in the console

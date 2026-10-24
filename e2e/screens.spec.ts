@@ -45,6 +45,7 @@ test.describe('screens', () => {
             { name: 'org-overview', path: `/platform/orgs/${org}` },
             { name: 'org-students', path: `/platform/orgs/${org}/students` },
             { name: 'org-courses', path: `/platform/orgs/${org}/courses` },
+            { name: 'org-finance', path: `/platform/orgs/${org}/finance` },
           ]
         : []),
       { name: 'freelance', path: '/platform/freelance' },

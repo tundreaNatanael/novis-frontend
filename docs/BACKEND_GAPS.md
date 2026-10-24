@@ -38,7 +38,7 @@ Phase 0 checkpoint on 2026-10-16 (`docs/DECISIONS.md` D-015).
 | [G18](#g18-small-shape-gaps-found-while-building-phase-2)                   | Membership ids, clearing optional fields              | **B** (tiny) — add `id` to `MembershipSummary`; accept `null` for `description` / `defaultMeetingUrl` in `PATCH /courses/{id}`                         | hours       | fixed in backend: membership id (G20, `organization.membershipId`); `null` clears on `PATCH` homework, courses, lesson links |
 | [G19](#g19-lesson-rows-carry-ids-only)                                      | Ledger rows need N name lookups                       | **B** (small) — add `teacherName`, `studentName`, `courseTitle`, `organizationName` to `LessonResponse`                                                | hours       | open (worked around)                                                                                                         |
 | [G20](#g20-one-role-per-account)                                            | One role per account                                  | **B** — `User.role` + `User.organization`, `409 ROLE_CONFLICT` / `INVITE_PENDING`, `/freelance-teachers`, invite `?status=` + resend                   | backend     | adapted in UI (schema hand-edited to the contract; regenerate)                                                               |
-| [G21](#g21-a-teacher-who-left-has-no-page-for-the-organizations-admin)      | Pay out the lessons of a teacher who left             | **B** — let the organization's admin read a former teacher's name (e.g. teachers with history next to the members)                                     | ½ day       | open (the super-admin's console reaches them)                                                                                |
+| [G21](#g21-a-teacher-who-left-has-no-page-for-the-organizations-admin)      | Pay out the lessons of a teacher who left             | **B** — let the organization's admin read a former teacher's name (e.g. teachers with history next to the members)                                     | ½ day       | open (the super-admin's console reaches them; the Finance tab lists them, D-048)                                             |
 | [G16](#g16-documentation--code-discrepancies)                               | Docs ≠ code                                           | record; no action in the console                                                                                                                       | —           | recorded                                                                                                                     |
 
 Everything marked **B** keeps the backend's rules: authorization in the service, roles and
@@ -664,4 +664,9 @@ so the Payouts panel of a former teacher only opens for the super-admin
 
 **Option B.** Let the organization's admin read the name of a teacher who has lessons there (for
 example former teachers listed next to the members, or `GET /orgs/{orgId}/teacher-payouts` without
-`teacherId` plus a list of teachers owed). **Status: open.**
+`teacherId` plus a list of teachers owed).
+
+**Update (D-048).** The finance reports now list every teacher with lessons in the organization,
+a teacher who left included (`active: false`, with their name and what is owed to them), so the
+admin sees them on the Finance tab. Their page, and so their Payouts panel, still answers `404` to
+the org admin: the tab marks them "Former teacher" and does not link them. **Status: open.**

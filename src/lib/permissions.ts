@@ -40,6 +40,16 @@ export interface Capabilities {
    */
   canManageTeacherPayouts: boolean
   /**
+   * Read the Finance tab: lessons the students paid for and used against lessons paid out to the
+   * teachers (API.md §9.7) — the super-admin and the organization's admin; others get `403` / `404`.
+   */
+  canViewFinance: boolean
+  /**
+   * Open the page of a teacher who left the organization: the super-admin only, an org admin gets
+   * `404` from `GET /users/{id}` (gap G21), so the Finance tab does not link them there.
+   */
+  canOpenFormerTeachers: boolean
+  /**
    * Assign homework for a teacher of the organization (the super-admin: any teacher), naming them,
    * and edit or delete the organization's homework (the server answers `404` for anything else).
    */
@@ -154,6 +164,8 @@ export function deriveCapabilities(
     canManageLessons: isOrgAdmin,
     canManageStudentPayments: isOrgAdmin,
     canManageTeacherPayouts: isOrgAdmin,
+    canViewFinance: isOrgAdmin,
+    canOpenFormerTeachers: superAdmin,
     canManageHomework: isOrgAdmin,
     canManageFreelance: superAdmin,
     canSearchUsers: superAdmin,

@@ -1,6 +1,7 @@
 import type {
   Course,
   Enrollment,
+  FinanceSummary,
   Homework,
   Lesson,
   LessonDetail,
@@ -11,7 +12,9 @@ import type {
   PayoutLesson,
   Student,
   StudentEnrollment,
+  StudentFinanceRow,
   StudentPayment,
+  TeacherFinanceRow,
   TeacherPayout,
   TeacherPayoutDetail,
   User,
@@ -276,6 +279,52 @@ export function teacherPayoutDetail(
   ],
 ): TeacherPayoutDetail {
   return { payout: teacherPayout(overrides), lessons }
+}
+
+/** A student's row of the finance report (`s-1`, Kid Student), whose counts match `summary`. */
+export function studentFinanceRow(overrides: Partial<StudentFinanceRow> = {}): StudentFinanceRow {
+  return {
+    studentId: 's-1',
+    name: 'Kid Student',
+    paidByStudent: 4,
+    used: 3,
+    prepaidRemaining: 2,
+    unpaidDue: 1,
+    lastPaymentAt: '2026-10-02T09:00:00Z',
+    ...overrides,
+  }
+}
+
+/** `u-1`'s (Ana Pop) row of the finance report: one mismatch of each kind. */
+export function teacherFinanceRow(overrides: Partial<TeacherFinanceRow> = {}): TeacherFinanceRow {
+  return {
+    teacherId: 'u-1',
+    name: 'Ana Pop',
+    active: true,
+    taught: 5,
+    paidOut: 3,
+    owed: 2,
+    owedAllTime: 4,
+    usedPaidNotPaidOut: 1,
+    paidOutNotPaidByStudent: 1,
+    lastPayoutOn: '2026-10-20',
+    ...overrides,
+  }
+}
+
+/** The organization's totals of the finance reports for a period. */
+export function financeSummary(): FinanceSummary {
+  return {
+    students: { paidByStudent: 6, used: 5, prepaidRemaining: 2, unpaidDue: 1 },
+    teachers: {
+      taught: 5,
+      paidOut: 3,
+      owed: 2,
+      owedAllTime: 4,
+      usedPaidNotPaidOut: 1,
+      paidOutNotPaidByStudent: 1,
+    },
+  }
 }
 
 export function lessonDetail(

@@ -29,13 +29,14 @@ describe('organization workspace', () => {
       'Courses',
       'Invites',
       'Lessons',
+      'Finance',
     ]) {
       expect(within(tabs).getByRole('link', { name: label })).toBeInTheDocument()
     }
     expect(await screen.findByRole('button', { name: 'Archive organization' })).toBeInTheDocument()
   })
 
-  it('gives an organization admin the lessons but hides admins and the danger zone under /org', async () => {
+  it('gives an organization admin the lessons and finance but hides admins and the danger zone under /org', async () => {
     signedInAs(orgAdmin('org-1'))
     orgHandlers()
     renderApp('/org/org-1')
@@ -45,6 +46,10 @@ describe('organization workspace', () => {
     expect(within(tabs).getByRole('link', { name: 'Lessons' })).toHaveAttribute(
       'href',
       '/org/org-1/lessons',
+    )
+    expect(within(tabs).getByRole('link', { name: 'Finance' })).toHaveAttribute(
+      'href',
+      '/org/org-1/finance',
     )
     expect(within(tabs).queryByRole('link', { name: 'Admins' })).not.toBeInTheDocument()
     const sidebar = await screen.findByRole('complementary', { name: 'Primary' })

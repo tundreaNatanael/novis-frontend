@@ -55,8 +55,8 @@ export interface DataTableProps<TData extends RowData> {
   sort: string | undefined
   onSortChange: (sort: string | undefined) => void
   getRowId: (row: TData) => string
-  /** Row click target; also used by the mobile list. */
-  rowHref?: (row: TData) => string
+  /** Row click target; also used by the mobile list. `undefined` leaves that row unclickable. */
+  rowHref?: (row: TData) => string | undefined
   rowActions?: (row: TData) => ReactNode
   /** The phone layout for one row: title, subtitle, badge. */
   renderMobileRow: (row: TData) => ReactNode

@@ -51,6 +51,7 @@ export function Component() {
     { label: 'Invites', to: `${basePath}/invites` },
   )
   if (capabilities.canManageLessons) tabs.push({ label: 'Lessons', to: `${basePath}/lessons` })
+  if (capabilities.canViewFinance) tabs.push({ label: 'Finance', to: `${basePath}/finance` })
 
   const context: OrgWorkspaceContext = { kind: 'org', org, orgId, basePath, mount, capabilities }
 

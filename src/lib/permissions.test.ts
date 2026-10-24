@@ -147,6 +147,17 @@ describe('deriveCapabilities', () => {
     expect(deriveCapabilities(freelancer, org).canManageTeacherPayouts).toBe(false)
   })
 
+  it('shows the Finance tab to the organization’s admins and the super-admin, former teachers’ pages to the super-admin only', () => {
+    expect(deriveCapabilities(superAdmin, org).canViewFinance).toBe(true)
+    expect(deriveCapabilities(admin, org).canViewFinance).toBe(true)
+    expect(deriveCapabilities(admin, other).canViewFinance).toBe(false)
+    expect(deriveCapabilities(teacherOnly, org).canViewFinance).toBe(false)
+    expect(deriveCapabilities(roleless, org).canViewFinance).toBe(false)
+    expect(deriveCapabilities(freelancer, org).canViewFinance).toBe(false)
+    expect(deriveCapabilities(superAdmin, org).canOpenFormerTeachers).toBe(true)
+    expect(deriveCapabilities(admin, org).canOpenFormerTeachers).toBe(false)
+  })
+
   it('leaves other admins, other organizations and freelance teachers to the super-admin', () => {
     const caps = deriveCapabilities(admin, org)
     expect(caps.canEditUser(otherAdmin)).toBe(false)

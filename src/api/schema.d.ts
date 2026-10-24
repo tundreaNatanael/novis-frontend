@@ -788,6 +788,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/orgs/{orgId}/reports/teachers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["teachers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/reports/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["summary_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/reports/students": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["students"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/orgs/{orgId}/members": {
         parameters: {
             query?: never;
@@ -1750,6 +1798,93 @@ export interface components {
             /** Format: int32 */
             totalPages?: number;
             last?: boolean;
+        };
+        PageResponseTeacherFinanceRowResponse: {
+            content?: components["schemas"]["TeacherFinanceRowResponse"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+            last?: boolean;
+        };
+        TeacherFinanceRowResponse: {
+            /** Format: uuid */
+            teacherId?: string;
+            name?: string;
+            active?: boolean;
+            /** Format: int64 */
+            taught?: number;
+            /** Format: int64 */
+            paidOut?: number;
+            /** Format: int64 */
+            owed?: number;
+            /** Format: int64 */
+            owedAllTime?: number;
+            /** Format: int64 */
+            usedPaidNotPaidOut?: number;
+            /** Format: int64 */
+            paidOutNotPaidByStudent?: number;
+            /** Format: date */
+            lastPayoutOn?: string;
+        };
+        FinanceSummaryResponse: {
+            students?: components["schemas"]["StudentFinanceTotals"];
+            teachers?: components["schemas"]["TeacherFinanceTotals"];
+        };
+        StudentFinanceTotals: {
+            /** Format: int64 */
+            paidByStudent?: number;
+            /** Format: int64 */
+            used?: number;
+            /** Format: int64 */
+            prepaidRemaining?: number;
+            /** Format: int64 */
+            unpaidDue?: number;
+        };
+        TeacherFinanceTotals: {
+            /** Format: int64 */
+            taught?: number;
+            /** Format: int64 */
+            paidOut?: number;
+            /** Format: int64 */
+            owed?: number;
+            /** Format: int64 */
+            owedAllTime?: number;
+            /** Format: int64 */
+            usedPaidNotPaidOut?: number;
+            /** Format: int64 */
+            paidOutNotPaidByStudent?: number;
+        };
+        PageResponseStudentFinanceRowResponse: {
+            content?: components["schemas"]["StudentFinanceRowResponse"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+            last?: boolean;
+        };
+        StudentFinanceRowResponse: {
+            /** Format: uuid */
+            studentId?: string;
+            name?: string;
+            /** Format: int64 */
+            paidByStudent?: number;
+            /** Format: int64 */
+            used?: number;
+            /** Format: int64 */
+            prepaidRemaining?: number;
+            /** Format: int64 */
+            unpaidDue?: number;
+            /** Format: date-time */
+            lastPaymentAt?: string;
         };
         PageResponseMemberResponse: {
             content?: components["schemas"]["MemberResponse"][];
@@ -3583,6 +3718,84 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PageResponsePayoutLessonResponse"];
+                };
+            };
+        };
+    };
+    teachers: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                pageable: components["schemas"]["Pageable"];
+            };
+            header?: never;
+            path: {
+                orgId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseTeacherFinanceRowResponse"];
+                };
+            };
+        };
+    };
+    summary_1: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path: {
+                orgId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["FinanceSummaryResponse"];
+                };
+            };
+        };
+    };
+    students: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                teacherId?: string;
+                pageable: components["schemas"]["Pageable"];
+            };
+            header?: never;
+            path: {
+                orgId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseStudentFinanceRowResponse"];
                 };
             };
         };

@@ -36,7 +36,7 @@ Dev login: `admin@novis.local` / `ChangeMe123!` (throttled 5/min per email — s
 src/app         providers (queryClient.ts, theme.tsx, app.tsx), router.tsx, route-handle.ts, shell/ (sidebar, top bar, drawer, breadcrumbs, ⌘K)
 src/api         client.ts · errors.ts · types.ts · schema.d.ts (generated) · paging.ts · <resource>.ts (api + query keys)
 src/auth        tokenStore.ts · session.tsx (SessionProvider, useSession, useMe) · guards.tsx
-src/features    auth/ account/ platform/ org-workspace/ freelance/ lessons/ homework/ teacher-payouts/ — pages are route modules (homework/ and teacher-payouts/ hold panels and sheets those pages share)
+src/features    auth/ account/ platform/ org-workspace/ freelance/ lessons/ homework/ teacher-payouts/ finance/ — pages are route modules (homework/, teacher-payouts/ and finance/ hold panels, sheets and tables those pages share)
 src/components  ui/ (shadcn, re-themed) · form/ (Field, FormError, applyServerErrors) · page-header, brand-mark, …
 src/lib         permissions.ts (capabilities + lessonRules) · format.ts · schemas.ts · use-*.ts hooks
 src/test        setup.ts (jest-dom, MSW lifecycle, cleanup) · server.ts
@@ -175,8 +175,15 @@ organization's payments (D-040). **Teacher payouts** (D-047) are a Payouts panel
 page (`src/features/teacher-payouts`, `src/api/teacher-payouts.ts`, `canManageTeacherPayouts`): the
 owed count and payable lessons with checkboxes (the selection survives paging) or "Pay everything
 up to…" (`upTo` = the start of the next local day), one Record payout sheet, and the history with
-"Show voided" and a type-`void` Void dialog; the pure helpers are in `payout-state.ts`. Lesson
-detail shows `teacherPayout` in its own field. Tests: Vitest + MSW over
+"Show voided" and a type-`void` Void dialog; the pure helpers are in `payout-state.ts`; a link
+ending in `#payouts` (`payoutsPath`) lands on the panel. Lesson
+detail shows `teacherPayout` in its own field. **Finance** (D-048) is a tab of the organization
+workspace (`canViewFinance`; `src/features/finance`, `src/api/reports.ts`, page
+`org-workspace/pages/finance-page.tsx`): a period in the URL turned into instants in the browser's
+time zone (`finance-period.ts`), four cards from the summary, and a Students and a Teachers table
+sorted and paged by the API under their own URL prefixes (`useListParams({ prefix })`); counted in
+lessons with the names of `src/features/lessons/lesson-counts.ts`, which the Lesson balances share.
+Tests: Vitest + MSW over
 the real route tree (`src/test/render.tsx`), Playwright in `e2e/` (API sign-in fixture, live
 smoke flow, phone checks, screenshots + axe). Open follow-ups are the **B** items in
 `docs/BACKEND_GAPS.md` (G17 refresh grace window, G19 names on lesson rows, G21 a teacher who left

@@ -7,6 +7,13 @@ export const PAYOUT_MAX_LESSONS = 500
 export const HISTORY_PAGE_SIZE = 10
 /** What the admin types before a payout is voided. */
 export const VOID_CONFIRM_TEXT = 'void'
+/** The id of the Payouts panel on a teacher's page; a link ending in `#payouts` scrolls to it. */
+export const PAYOUTS_ANCHOR = 'payouts'
+
+/** A teacher's page opened at their Payouts panel, inside a workspace (`basePath`). */
+export function payoutsPath(basePath: string, teacherId: string): string {
+  return `${basePath}/teachers/${teacherId}#${PAYOUTS_ANCHOR}`
+}
 
 /** Today as a `date` input value (`yyyy-MM-dd`) in the browser's time zone. */
 export function todayInput(now: Date = new Date()): string {

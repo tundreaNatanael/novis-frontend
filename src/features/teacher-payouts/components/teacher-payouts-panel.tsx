@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { CalendarCheck2, HandCoins } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useLocation } from 'react-router'
 import { teacherPayoutKeys, teacherPayoutsApi } from '@/api/teacher-payouts'
 import type { PayoutLesson } from '@/api/types'
 import { Pagination } from '@/components/data/pagination'
@@ -17,6 +18,7 @@ import {
 import { enumLabel, formatDateTimeRange, pluralize } from '@/lib/format'
 import {
   PAYABLE_PAGE_SIZE,
+  PAYOUTS_ANCHOR,
   PAYOUT_MAX_LESSONS,
   lessonLabel,
   pageSelectionState,
@@ -54,8 +56,24 @@ export function TeacherPayoutsPanel({ orgId, teacher }: Props) {
   const owed = payable.data?.totalElements
   const tooMany = selected.size > PAYOUT_MAX_LESSONS
 
+  // A link to `…/teachers/:id#payouts` (the Finance tab's) lands on the panel once, when its
+  // lessons are in and the page has its height.
+  const { hash } = useLocation()
+  const sectionRef = useRef<HTMLElement>(null)
+  const landed = useRef(false)
+  useEffect(() => {
+    if (landed.current || hash !== `#${PAYOUTS_ANCHOR}` || payable.isPending) return
+    landed.current = true
+    sectionRef.current?.scrollIntoView?.({ block: 'start' })
+  }, [hash, payable.isPending])
+
   return (
-    <section aria-label="Payouts" className="rounded-lg border border-border bg-card">
+    <section
+      ref={sectionRef}
+      id={PAYOUTS_ANCHOR}
+      aria-label="Payouts"
+      className="scroll-mt-4 rounded-lg border border-border bg-card"
+    >
       <header className="flex flex-wrap items-start justify-between gap-3 border-b border-border px-4 py-3">
         <div>
           <h2 className="text-sm font-semibold text-card-foreground">Payouts</h2>

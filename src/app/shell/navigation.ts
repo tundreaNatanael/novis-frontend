@@ -5,6 +5,7 @@ import {
   GraduationCap,
   LayoutDashboard,
   Mail,
+  Scale,
   UserRound,
   Users,
   type LucideIcon,
@@ -52,6 +53,7 @@ export function navigationFor(me: User): NavSection[] {
         { label: 'Courses', to: `${base}/courses`, icon: BookOpen },
         { label: 'Invites', to: `${base}/invites`, icon: Mail },
         { label: 'Lessons', to: `${base}/lessons`, icon: CalendarDays },
+        { label: 'Finance', to: `${base}/finance`, icon: Scale },
       ],
     },
   ]

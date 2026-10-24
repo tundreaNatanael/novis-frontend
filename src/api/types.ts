@@ -183,6 +183,22 @@ export interface TeacherPayoutDetail {
   /** By date; empty once the payout is voided. */
   lessons: PayoutLesson[]
 }
+/**
+ * One student's row of the finance report (API.md §9.7), counted in the organization's lessons:
+ * paid and used in the period, the balances as they stand now. `lastPaymentAt` is the latest
+ * payment, whatever the period.
+ */
+export type StudentFinanceRow = Nullable<Strict<S['StudentFinanceRowResponse']>, 'lastPaymentAt'>
+/**
+ * One teacher's row of the finance report (API.md §9.7); `active: false` for a teacher who left
+ * and has lessons there. `owedAllTime` is what their Payouts panel calls owed.
+ */
+export type TeacherFinanceRow = Nullable<Strict<S['TeacherFinanceRowResponse']>, 'lastPayoutOn'>
+/** The organization's totals of both reports for the period (`students.used` = `teachers.taught`). */
+export interface FinanceSummary {
+  students: Strict<S['StudentFinanceTotals']>
+  teachers: Strict<S['TeacherFinanceTotals']>
+}
 
 // --- request bodies -------------------------------------------------------------------------
 
@@ -400,6 +416,14 @@ export interface PayableLessonFilters {
   from?: string
   /** ISO instant, exclusive. */
   to?: string
+}
+/**
+ * The period of the finance reports: ISO instants, `from` included, `to` excluded. The console
+ * computes them in the admin's time zone (an organization has none).
+ */
+export interface FinancePeriod {
+  from: string
+  to: string
 }
 export interface TeacherPayoutFilters {
   teacherId?: string
