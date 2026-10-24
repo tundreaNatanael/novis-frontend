@@ -292,6 +292,7 @@ export function studentFinanceRow(overrides: Partial<StudentFinanceRow> = {}): S
   return {
     studentId: 's-1',
     name: 'Kid Student',
+    active: true,
     paidByStudent: 4,
     used: 3,
     prepaidRemaining: 2,

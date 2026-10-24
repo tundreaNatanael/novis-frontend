@@ -9,7 +9,7 @@ import { EmptyState } from '@/components/data/empty-state'
 import { LESSON_COUNTS } from '@/features/lessons/lesson-counts'
 import { formatDate } from '@/lib/format'
 import { useListParams } from '@/lib/use-list-params'
-import { CountList } from './finance-counts'
+import { CountList, FormerStudentBadge } from './finance-counts'
 
 const col = columnHelper<StudentFinanceRow>()
 
@@ -24,14 +24,22 @@ interface StudentFinanceTableProps {
   period: FinancePeriod
   /** The workspace's base path, for links to the students' pages. */
   basePath: string
+  /** The super-admin opens the page of a student who left; an org admin cannot. */
+  canOpenFormerStudents: boolean
 }
 
 /**
- * Every student with lessons in the organization (`GET /orgs/{orgId}/reports/students`): paid and
- * used in the period, prepaid left and unpaid due now — the numbers of their Lesson balances.
- * Sorted and paged by the API; the list state lives in the URL as `students*`.
+ * Every student with lessons in the organization, those who left included
+ * (`GET /orgs/{orgId}/reports/students`): paid and used in the period, prepaid left and unpaid due
+ * now — the numbers of their Lesson balances. Sorted and paged by the API; the list state lives in
+ * the URL as `students*`.
  */
-export function StudentFinanceTable({ orgId, period, basePath }: StudentFinanceTableProps) {
+export function StudentFinanceTable({
+  orgId,
+  period,
+  basePath,
+  canOpenFormerStudents,
+}: StudentFinanceTableProps) {
   const params = useListParams({ prefix: 'students', sort: 'used,desc' })
   const query = useQuery({
     queryKey: reportKeys.students(orgId, period, params.pageParams),
@@ -39,22 +47,34 @@ export function StudentFinanceTable({ orgId, period, basePath }: StudentFinanceT
     placeholderData: keepPreviousData,
     staleTime: 0,
   })
-  const studentPath = (row: StudentFinanceRow) => `${basePath}/students/${row.studentId}`
+  const linked = (row: StudentFinanceRow) => row.active || canOpenFormerStudents
+  const studentPath = (row: StudentFinanceRow) =>
+    linked(row) ? `${basePath}/students/${row.studentId}` : undefined
 
   const columns = useMemo(
     () => [
       col.accessor('name', {
         header: 'Student',
         enableSorting: false,
-        cell: (info) => (
-          <Link
-            to={`${basePath}/students/${info.row.original.studentId}`}
-            onClick={(event) => event.stopPropagation()}
-            className="font-medium text-foreground underline-offset-4 hover:underline"
-          >
-            {info.getValue()}
-          </Link>
-        ),
+        cell: (info) => {
+          const row = info.row.original
+          return (
+            <span className="flex flex-wrap items-center gap-2 py-1">
+              {row.active || canOpenFormerStudents ? (
+                <Link
+                  to={`${basePath}/students/${row.studentId}`}
+                  onClick={(event) => event.stopPropagation()}
+                  className="font-medium text-foreground underline-offset-4 hover:underline"
+                >
+                  {info.getValue()}
+                </Link>
+              ) : (
+                <span className="font-medium text-foreground">{info.getValue()}</span>
+              )}
+              {row.active ? null : <FormerStudentBadge />}
+            </span>
+          )
+        },
       }),
       count('paidByStudent'),
       count('used'),
@@ -69,7 +89,7 @@ export function StudentFinanceTable({ orgId, period, basePath }: StudentFinanceT
         meta: { className: 'hidden lg:table-cell', headerClassName: 'hidden lg:table-cell' },
       }),
     ],
-    [basePath],
+    [basePath, canOpenFormerStudents],
   )
 
   return (
@@ -102,7 +122,10 @@ export function StudentFinanceTable({ orgId, period, basePath }: StudentFinanceT
         onRetry={() => void query.refetch()}
         renderMobileRow={(row) => (
           <div className="min-w-0">
-            <p className="truncate font-medium text-foreground">{row.name}</p>
+            <p className="flex flex-wrap items-center gap-2">
+              <span className="truncate font-medium text-foreground">{row.name}</span>
+              {row.active ? null : <FormerStudentBadge />}
+            </p>
             <CountList
               counts={[
                 ['paidByStudent', row.paidByStudent],

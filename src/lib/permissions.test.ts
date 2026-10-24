@@ -156,6 +156,8 @@ describe('deriveCapabilities', () => {
     expect(deriveCapabilities(freelancer, org).canViewFinance).toBe(false)
     expect(deriveCapabilities(superAdmin, org).canOpenFormerTeachers).toBe(true)
     expect(deriveCapabilities(admin, org).canOpenFormerTeachers).toBe(false)
+    expect(deriveCapabilities(superAdmin, org).canOpenFormerStudents).toBe(true)
+    expect(deriveCapabilities(admin, org).canOpenFormerStudents).toBe(false)
   })
 
   it('leaves other admins, other organizations and freelance teachers to the super-admin', () => {

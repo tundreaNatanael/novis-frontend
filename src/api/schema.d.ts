@@ -1976,6 +1976,7 @@ export interface components {
             /** Format: uuid */
             studentId?: string;
             name?: string;
+            active?: boolean;
             /** Format: int64 */
             paidByStudent?: number;
             /** Format: int64 */

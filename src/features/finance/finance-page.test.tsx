@@ -103,7 +103,7 @@ describe('finance tab', () => {
     for (const [label, value] of [
       ['Paid by students', '6'],
       ['Used', '5'],
-      ['Paid to teachers', '3'],
+      ['Paid out to teachers', '3'],
       ['Owed to teachers', '2'],
     ] as const) {
       const card = within(totals).getByText(label).closest('li')
@@ -275,6 +275,30 @@ describe('finance tab', () => {
       'href',
       '/platform/orgs/org-1/teachers/u-2#payouts',
     )
+  })
+
+  it('marks a student who left; an organization admin cannot open their page', async () => {
+    signedInAs(orgAdmin('org-1'))
+    reports({ students: [studentFinanceRow({ studentId: 's-2', name: 'Old Kid', active: false })] })
+    renderApp('/org/org-1/finance')
+
+    const table = await screen.findByRole('table', { name: STUDENTS })
+    expect(await within(table).findByText('Old Kid')).toBeInTheDocument()
+    expect(within(table).getByText('Former student')).toBeInTheDocument()
+    expect(within(table).queryByRole('link', { name: 'Old Kid' })).not.toBeInTheDocument()
+  })
+
+  it('links a student who left for the super-admin, who can open their page', async () => {
+    signedInAs(superAdmin)
+    reports({ students: [studentFinanceRow({ studentId: 's-2', name: 'Old Kid', active: false })] })
+    renderApp('/platform/orgs/org-1/finance')
+
+    const table = await screen.findByRole('table', { name: STUDENTS })
+    expect(await within(table).findByRole('link', { name: 'Old Kid' })).toHaveAttribute(
+      'href',
+      '/platform/orgs/org-1/students/s-2',
+    )
+    expect(within(table).getByText('Former student')).toBeInTheDocument()
   })
 
   it('lands a Payouts link on the panel of the teacher’s page', async () => {

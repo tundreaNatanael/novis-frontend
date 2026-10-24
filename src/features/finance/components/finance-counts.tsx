@@ -41,6 +41,15 @@ export function FormerTeacherBadge() {
   )
 }
 
+/** A student who left the organization (or whose account was deleted) and still has lessons there. */
+export function FormerStudentBadge() {
+  return (
+    <ToneBadge tone="neutral" icon={UserMinus}>
+      Former student
+    </ToneBadge>
+  )
+}
+
 /** Counts as label–value pairs, for a phone row. */
 export function CountList({ counts }: { counts: [LessonCountName, number][] }) {
   return (

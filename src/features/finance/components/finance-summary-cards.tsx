@@ -32,7 +32,7 @@ export function FinanceSummaryCards({ orgId, period }: FinanceSummaryCardsProps)
     },
     { label: 'Used', value: totals?.students.used, hint: LESSON_COUNTS.used.hint },
     {
-      label: 'Paid to teachers',
+      label: 'Paid out to teachers',
       value: totals?.teachers.paidOut,
       hint: LESSON_COUNTS.paidOut.hint,
     },

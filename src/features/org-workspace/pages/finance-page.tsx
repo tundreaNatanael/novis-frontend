@@ -52,7 +52,12 @@ export function Component() {
       {period ? (
         <>
           <FinanceSummaryCards orgId={orgId} period={period} />
-          <StudentFinanceTable orgId={orgId} period={period} basePath={basePath} />
+          <StudentFinanceTable
+            orgId={orgId}
+            period={period}
+            basePath={basePath}
+            canOpenFormerStudents={capabilities.canOpenFormerStudents}
+          />
           <TeacherFinanceTable
             orgId={orgId}
             period={period}

@@ -189,7 +189,7 @@ export interface TeacherPayoutDetail {
 /**
  * One student's row of the finance report (API.md §9.7), counted in the organization's lessons:
  * paid and used in the period, the balances as they stand now. `lastPaymentAt` is the latest
- * payment, whatever the period.
+ * payment, whatever the period; `active: false` for a student who left or whose account was deleted.
  */
 export type StudentFinanceRow = Nullable<Strict<S['StudentFinanceRowResponse']>, 'lastPaymentAt'>
 /**
@@ -365,7 +365,6 @@ export interface CreateHomeworkRequest {
   /** 1–100 lines; they start open. */
   items: { text: string }[]
 }
-/** Omitted fields stay. The console never sends `lessonId` (the sheet has no lesson picker). */
 /** Omitted fields stay; an explicit `null` removes one (API.md §11). */
 export interface UpdateHomeworkRequest {
   /** `null` unlinks the lesson. The console never sends it (no lesson picker). */

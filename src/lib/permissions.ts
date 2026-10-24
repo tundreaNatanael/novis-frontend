@@ -50,6 +50,11 @@ export interface Capabilities {
    */
   canOpenFormerTeachers: boolean
   /**
+   * Open the page of a student who left the organization (or whose account was deleted): the
+   * super-admin only; an org admin no longer reaches them, so the Finance tab does not link them.
+   */
+  canOpenFormerStudents: boolean
+  /**
    * Assign homework for a teacher of the organization (the super-admin: any teacher), naming them,
    * and edit or delete the organization's homework (the server answers `404` for anything else).
    */
@@ -166,6 +171,7 @@ export function deriveCapabilities(
     canManageTeacherPayouts: isOrgAdmin,
     canViewFinance: isOrgAdmin,
     canOpenFormerTeachers: superAdmin,
+    canOpenFormerStudents: superAdmin,
     canManageHomework: isOrgAdmin,
     canManageFreelance: superAdmin,
     canSearchUsers: superAdmin,
