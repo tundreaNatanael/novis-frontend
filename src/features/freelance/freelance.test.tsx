@@ -431,6 +431,25 @@ describe('freelance teachers', () => {
   })
 })
 
+describe('freelance add student', () => {
+  beforeEach(() => signedInAs(superAdmin))
+
+  it('explains siblings on one email in a freelance teacher’s words', async () => {
+    server.use(
+      http.get(api('/freelance-teachers/f-1'), () => HttpResponse.json(freelancer)),
+      http.get(api('/students'), () => HttpResponse.json(page([]))),
+      http.get(api('/courses'), () => HttpResponse.json(page([]))),
+    )
+    renderApp('/platform/freelance/f-1/students?new=1')
+
+    expect(
+      await screen.findByText(
+        /The same name links this teacher’s existing student; the same name at a school or another teacher cannot be added\./,
+      ),
+    ).toBeInTheDocument()
+  })
+})
+
 describe('freelance teachers for an organization admin', () => {
   it('has no navigation entry and sends the routes back to the admin’s organization', async () => {
     signedInAs(orgAdmin('org-1'))

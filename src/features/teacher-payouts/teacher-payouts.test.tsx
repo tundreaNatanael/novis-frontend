@@ -226,6 +226,32 @@ describe('teacher payouts panel', () => {
     expect(voided).toEqual([{ reason: 'Recorded twice' }])
   })
 
+  it('keeps Void payout disabled until the confirmation is exactly “void”', async () => {
+    server.use(
+      http.get(api(PAYABLE), () => HttpResponse.json(page([]))),
+      http.get(api(PAYOUTS), () => HttpResponse.json(page([teacherPayout()]))),
+    )
+    const { user: actor } = renderApp('/org/org-1/teachers/u-1')
+
+    const panel = await screen.findByRole('region', { name: 'Payouts' })
+    await actor.click(
+      await within(panel).findByRole('button', { name: /^Actions for the payout of/ }),
+    )
+    await actor.click(await screen.findByRole('menuitem', { name: 'Void payout' }))
+    const dialog = await screen.findByRole('alertdialog', { name: 'Void payout' })
+    const confirm = within(dialog).getByRole('button', { name: 'Void payout' })
+    await actor.type(within(dialog).getByLabelText('Reason'), 'Recorded twice')
+    const typed = within(dialog).getByLabelText(/to confirm/)
+    for (const wrong of ['Void', 'voids', 'void it']) {
+      await actor.clear(typed)
+      await actor.type(typed, wrong)
+      expect(confirm).toBeDisabled()
+    }
+    await actor.clear(typed)
+    await actor.type(typed, 'void')
+    expect(confirm).toBeEnabled()
+  })
+
   it('shows voided payouts on request, with who voided them and why', async () => {
     const requested: (string | null)[] = []
     server.use(

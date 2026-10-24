@@ -35,6 +35,10 @@ export type ApiErrorCode =
   // A booking or a new slot overlaps another lesson of the teacher or the student (409); the
   // same request with `allowOverlap: true` books it anyway.
   | 'SCHEDULE_CONFLICT'
+  // Student sign-in (401): no active profile for the email, a profile-picker token that is unknown,
+  // used or expired. The console never signs students in.
+  | 'STUDENT_LOGIN_FAILED'
+  | 'INVALID_SELECTION_TOKEN'
 
 /** The error body every Novis endpoint returns (API.md §1.6). */
 export interface FieldError {
