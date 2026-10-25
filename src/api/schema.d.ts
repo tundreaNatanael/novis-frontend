@@ -164,6 +164,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/materials/{id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["complete"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/materials/upload-url": {
         parameters: {
             query?: never;
@@ -1371,6 +1387,9 @@ export interface components {
             type?: "PDF" | "IMAGE" | "MUSICXML" | "VIDEO" | "LINK";
             externalUrl?: string;
             fileName?: string;
+            contentType?: string;
+            /** Format: int64 */
+            sizeBytes?: number;
             /** Format: date-time */
             createdAt?: string;
         };
@@ -1383,6 +1402,9 @@ export interface components {
             /** @enum {string} */
             type: "PDF" | "IMAGE" | "MUSICXML" | "VIDEO" | "LINK";
             fileName: string;
+            contentType: string;
+            /** Format: int64 */
+            sizeBytes: number;
             /** Format: uuid */
             courseId?: string;
             /** Format: uuid */
@@ -2458,6 +2480,28 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    complete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MaterialResponse"];
+                };
             };
         };
     };

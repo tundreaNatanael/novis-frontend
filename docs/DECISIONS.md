@@ -590,3 +590,26 @@ a trace. The panel refetches with every student invalidation (`studentKeys.all`)
 wherever it learns, so for the super-admin the panel says so and names each sibling's school (from
 `GET /users/{id}`), linking into that school's workspace; a sibling without a school (freelance or
 no place yet) is listed without a link, since the API does not say whose roster it is on.
+
+## D-050 · 2026-10-25 · Uploads are the mobile app's; the console opens uploaded files
+
+**Decision.** The console does not upload materials. Teachers, who upload them, have no access to
+the console (`/no-access`), and the backend's upload flow (a pending material, a signed `PUT`
+straight to R2 with the content type signed in, then `POST /materials/{id}/complete`) is built
+for the mobile app. The console only opens what was uploaded: on the lesson page an uploaded file
+shows its title and file name with an **Open** button, which fetches a fresh signed URL
+(`GET /materials/{id}/download-url`) and opens it in a new tab. The URL opens inline, so a video
+plays in the browser's own player and a PDF or image shows. The tab is opened on the click, before
+the request, so popup blockers allow it, and loses its opener, since it ends on the storage's
+origin; a failed request closes it again and the toast says why. Links still open directly.
+**Context.** The backend task that turned R2 uploads on (inline downloads, 6-hour video URLs,
+pending uploads hidden until completed) asked the console for a way to open uploaded files and
+nothing more.
+**Alternatives.** An upload form for admins — rejected: no one asked for it, and it would need the
+pending / complete / cancel flow and progress in the browser plus a CORS rule on the bucket. An
+embedded `<video>` player on the lesson page — rejected for now: the browser's tab already plays the
+inline URL with seeking, and an embedded player would have to refetch the URL when it expires.
+Caching the download URL in the query cache — rejected: it expires, so it is fetched on every click.
+**Consequences.** `src/api/materials.ts` has `materialsApi.downloadUrl` and no query keys. The
+console never sees a pending upload (the API lists ready materials only). `Material` carries
+`contentType` and `sizeBytes`, unused on screen for now.

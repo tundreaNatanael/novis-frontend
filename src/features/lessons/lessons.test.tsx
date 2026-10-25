@@ -1,11 +1,12 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import { http, HttpResponse } from 'msw/http'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { LessonDetail, ScheduleLessonRequest } from '@/api/types'
 import {
   course,
   lesson,
   lessonDetail,
+  material,
   member,
   orgAdmin,
   organization,
@@ -209,6 +210,77 @@ describe('lesson detail', () => {
     signedInAs(superAdmin)
     nameLookups()
     server.use(http.get(api('/students/s-1/lessons/summary'), () => HttpResponse.json(summary)))
+  })
+
+  describe('an uploaded file', () => {
+    afterEach(() => vi.restoreAllMocks())
+
+    it('opens in a new tab through a fresh signed URL, next to links that open directly', async () => {
+      const tab = { opener: {} as unknown, location: { href: '' }, close: vi.fn() }
+      const openWindow = vi.spyOn(window, 'open').mockReturnValue(tab as unknown as Window)
+      const signed = 'https://storage.test/novis/lessons/l-1/m-1/scales.mp4?X-Amz-Signature=abc'
+      server.use(
+        http.get(api('/lessons/l-1'), () =>
+          HttpResponse.json(
+            lessonDetail(
+              {},
+              {
+                materials: [
+                  material(),
+                  material({
+                    id: 'm-2',
+                    title: 'Recording',
+                    type: 'LINK',
+                    externalUrl: 'https://youtu.be/x',
+                    fileName: null,
+                    contentType: null,
+                    sizeBytes: null,
+                  }),
+                ],
+              },
+            ),
+          ),
+        ),
+        http.get(api('/materials/m-1/download-url'), () =>
+          HttpResponse.json({ url: signed, expiresAt: '2026-10-20T21:00:00Z' }),
+        ),
+      )
+      const { user: actor } = renderApp('/platform/lessons/l-1')
+
+      expect(await screen.findByText('(scales.mp4)')).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: 'Recording' })).toHaveAttribute(
+        'href',
+        'https://youtu.be/x',
+      )
+      expect(screen.queryByRole('button', { name: 'Open Recording' })).not.toBeInTheDocument()
+      await actor.click(screen.getByRole('button', { name: 'Open Scales, slowly' }))
+
+      await waitFor(() => expect(tab.location.href).toBe(signed))
+      expect(openWindow).toHaveBeenCalledWith('', '_blank')
+      expect(tab.opener).toBeNull()
+      expect(tab.close).not.toHaveBeenCalled()
+    })
+
+    it('closes the tab again and says why when the file cannot be opened', async () => {
+      const tab = { opener: {} as unknown, location: { href: '' }, close: vi.fn() }
+      vi.spyOn(window, 'open').mockReturnValue(tab as unknown as Window)
+      server.use(
+        http.get(api('/lessons/l-1'), () =>
+          HttpResponse.json(lessonDetail({}, { materials: [material()] })),
+        ),
+        http.get(api('/materials/m-1/download-url'), () =>
+          apiError(404, 'NOT_FOUND', 'Material not found: m-1'),
+        ),
+      )
+      const { user: actor } = renderApp('/platform/lessons/l-1')
+
+      await actor.click(await screen.findByRole('button', { name: 'Open Scales, slowly' }))
+
+      expect(await screen.findByText('Could not open Scales, slowly')).toBeInTheDocument()
+      expect(screen.getByText('Not found, or not accessible with your role.')).toBeInTheDocument()
+      expect(tab.close).toHaveBeenCalled()
+      expect(tab.location.href).toBe('')
+    })
   })
 
   it('closes a pending dated lesson with a journal and reports a rollover', async () => {

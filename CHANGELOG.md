@@ -3,6 +3,28 @@
 All notable changes to the Novis admin console. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); dates are the day the change landed on `main`.
 
+## Open uploaded files — Unreleased (not on `main` yet)
+
+### Breaking
+
+- Backend material uploads (R2, D-050): `Material` gains `contentType` and `sizeBytes`,
+  `POST /materials/upload-url` requires them, an upload is listed only after
+  `POST /materials/{id}/complete`, and download URLs open inline (a video's lasts 6 hours). The
+  console does not upload, so nothing it sends changed. `src/api/schema.d.ts` was regenerated
+  (`npm run api:types`).
+
+### Added
+
+- **Open uploaded files** (D-050): on the lesson page an uploaded material has an **Open** button
+  that fetches a fresh signed URL (`GET /materials/{id}/download-url`) into a new tab, where a video
+  plays and a PDF or image shows; a failure closes the tab and says why. `src/api/materials.ts`
+  (`materialsApi.downloadUrl`), the `SignedUrl` type and the `material()` test fixture.
+
+### Changed
+
+- `ApiErrorCode` lists `UPLOAD_INCOMPLETE` and `UPLOAD_REJECTED` (API.md §1.6), so the union
+  matches the documented list (types only: the console never uploads).
+
 ## Student profiles on one email — Unreleased
 
 ### Breaking

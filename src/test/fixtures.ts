@@ -6,6 +6,7 @@ import type {
   Lesson,
   LessonDetail,
   LessonSummary,
+  Material,
   Member,
   Organization,
   Page,
@@ -343,6 +344,25 @@ export function lessonDetail(
     materials: [],
     rolledOverToLessonId: null,
     ...extra,
+  }
+}
+
+/** An uploaded video on lesson l-1 (a link: `externalUrl` set, the file fields `null`). */
+export function material(overrides: Partial<Material> = {}): Material {
+  return {
+    id: 'm-1',
+    courseId: null,
+    lessonId: 'l-1',
+    teacherId: 'u-1',
+    organizationId: 'org-1',
+    title: 'Scales, slowly',
+    type: 'VIDEO',
+    externalUrl: null,
+    fileName: 'scales.mp4',
+    contentType: 'video/mp4',
+    sizeBytes: 48_211_234,
+    createdAt: '2026-10-20T15:00:00Z',
+    ...overrides,
   }
 }
 

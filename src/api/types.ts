@@ -144,10 +144,22 @@ export type Homework = Nullable<
   | 'dueAt'
   | 'completedAt'
 >
+/**
+ * A link (`externalUrl`) or an uploaded file (`fileName`, `contentType`, `sizeBytes`); lists only
+ * ever hold ready uploads (API.md §10).
+ */
 export type Material = Nullable<
   Strict<S['MaterialResponse']>,
-  'courseId' | 'lessonId' | 'organizationId' | 'externalUrl' | 'fileName'
+  | 'courseId'
+  | 'lessonId'
+  | 'organizationId'
+  | 'externalUrl'
+  | 'fileName'
+  | 'contentType'
+  | 'sizeBytes'
 >
+/** `GET /materials/{id}/download-url`: `expiresAt` is `null` for links, which never expire. */
+export type SignedUrl = Nullable<Strict<S['SignedUrlResponse']>, 'expiresAt'>
 export interface LessonDetail {
   lesson: Lesson
   materials: Material[]

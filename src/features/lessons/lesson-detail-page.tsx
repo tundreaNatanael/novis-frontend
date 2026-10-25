@@ -49,6 +49,7 @@ import { CloseLessonSheet } from './components/close-lesson-sheet'
 import { JournalSheet } from './components/journal-sheet'
 import { LessonStatusBadge, PaidBadge, TeacherPayoutBadge } from './components/lesson-badges'
 import { LessonCrumb } from './components/lesson-crumb'
+import { OpenMaterialButton } from './components/open-material-button'
 import { ScheduleLessonSheet } from './components/schedule-lesson-sheet'
 import { useLessonNames } from './hooks/use-lesson-names'
 import { useLessonPaths } from './lesson-paths'
@@ -56,9 +57,9 @@ import { useLessonPaths } from './lesson-paths'
 export const handle: RouteHandle = { crumb: (params) => <LessonCrumb lessonId={params.lessonId} /> }
 
 /**
- * `GET /lessons/{id}` with every field and the materials, the homework that refers to the lesson
- * (`GET /homework?lessonId=`, with Assign, Edit and Delete), the student's balances and every
- * supported action. Mounted at `/platform/lessons/:lessonId` for the super-admin and at
+ * `GET /lessons/{id}` with every field and the materials (an uploaded file opens in a new tab), the
+ * homework that refers to the lesson (`GET /homework?lessonId=`, with Assign, Edit and Delete), the
+ * student's balances and every supported action. Mounted at `/platform/lessons/:lessonId` for the super-admin and at
  * `/org/:orgId/lessons/:lessonId` for an org admin (D-040).
  */
 export function Component() {
@@ -463,11 +464,14 @@ export function Component() {
                       {m.title}
                     </a>
                   ) : (
-                    <span>
-                      {m.title}{' '}
-                      <span className="text-xs text-muted-foreground">
-                        ({m.fileName ?? 'file'})
+                    <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span>
+                        {m.title}{' '}
+                        <span className="text-xs text-muted-foreground">
+                          ({m.fileName ?? 'file'})
+                        </span>
                       </span>
+                      <OpenMaterialButton material={m} />
                     </span>
                   )}
                 </DetailField>

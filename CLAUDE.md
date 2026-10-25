@@ -148,8 +148,9 @@ current password). The super-admin's Freelance section (D-037) runs on `/freelan
 list is searched on the server (`q` debounced with `useDebouncedValue`, the only list that does
 not filter the loaded page), Disable / Re-enable are explicit confirmed actions, Delete asks for
 the email and explains the cascade, and the teacher workspace shows a 404 page for any other id.
-`src/api/schema.d.ts` is generated from the backend (`npm run api:types`, last run on 2026-10-24
-after `StudentFinanceRowResponse` gained `active`; before that, the student profiles on one email:
+`src/api/schema.d.ts` is generated from the backend (`npm run api:types`, last run on 2026-10-25
+after `MaterialResponse` gained `contentType` / `sizeBytes` and `POST /materials/{id}/complete`
+appeared; before that, after `StudentFinanceRowResponse` gained `active`; before that, the student profiles on one email:
 `StudentCreatedResponse`, `StudentLoginResponse`, `GET /students/{id}/profiles`, `GET /me/profiles`,
 the select / switch auth routes); after a backend change regenerate it and fix `types.ts` first. **Siblings on one email** (D-049): a
 student is one profile of its email; the student page lists the other profiles inside the
@@ -181,7 +182,9 @@ owed count and payable lessons with checkboxes (the selection survives paging) o
 up to…" (`upTo` = the start of the next local day), one Record payout sheet, and the history with
 "Show voided" and a type-`void` Void dialog; the pure helpers are in `payout-state.ts`; a link
 ending in `#payouts` (`payoutsPath`) lands on the panel. Lesson
-detail shows `teacherPayout` in its own field. **Finance** (D-048) is a tab of the organization
+detail shows `teacherPayout` in its own field, and an uploaded material there has **Open**
+(D-050): a fresh signed URL from `materialsApi.downloadUrl` opened inline in a new tab (pre-opened on
+the click, opener cleared); uploading is the mobile app's. **Finance** (D-048) is a tab of the organization
 workspace (`canViewFinance`; `src/features/finance`, `src/api/reports.ts`, page
 `org-workspace/pages/finance-page.tsx`): a period in the URL turned into instants in the browser's
 time zone (`finance-period.ts`), four cards from the summary, and a Students and a Teachers table

@@ -35,6 +35,10 @@ export type ApiErrorCode =
   // A booking or a new slot overlaps another lesson of the teacher or the student (409); the
   // same request with `allowOverlap: true` books it anyway.
   | 'SCHEDULE_CONFLICT'
+  // Uploads (409, API.md §10): the file is not in storage yet, or it is not the declared one (the
+  // material is gone). The console never uploads and never lists a pending material.
+  | 'UPLOAD_INCOMPLETE'
+  | 'UPLOAD_REJECTED'
   // Student sign-in (401): no active profile for the email, a profile-picker token that is unknown,
   // used or expired. The console never signs students in.
   | 'STUDENT_LOGIN_FAILED'
