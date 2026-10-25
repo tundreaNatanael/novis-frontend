@@ -3,7 +3,7 @@
 All notable changes to the Novis admin console. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); dates are the day the change landed on `main`.
 
-## Open uploaded files — Unreleased (not on `main` yet)
+## Open uploaded files — Unreleased
 
 ### Breaking
 
