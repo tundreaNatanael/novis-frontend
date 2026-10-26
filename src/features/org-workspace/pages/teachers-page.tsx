@@ -24,7 +24,7 @@ export function Component() {
     <div className="flex flex-col gap-4">
       <SectionHeader
         title="Teachers"
-        description="Teachers own courses and run lessons. Each course belongs to exactly one teacher."
+        description="Teachers run lessons in the courses you assign them. Each course belongs to exactly one teacher."
       />
       <MembersTable
         role="TEACHER"

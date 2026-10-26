@@ -14,7 +14,7 @@ import { applyServerErrors } from '@/components/form/server-errors'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { hasConsoleAccess, homeFor } from '@/lib/permissions'
+import { hasAppAccess, homeFor } from '@/lib/permissions'
 import { emailSchema } from '@/lib/schemas'
 import { usePageTitle } from '@/lib/use-page-title'
 import { AuthLayout } from './auth-layout'
@@ -43,7 +43,7 @@ export function Component() {
     try {
       const tokens = await authApi.login(values)
       const me = await signIn(tokens)
-      if (!hasConsoleAccess(me)) {
+      if (!hasAppAccess(me)) {
         navigate('/no-access', { replace: true })
         return
       }
@@ -64,7 +64,7 @@ export function Component() {
   return (
     <AuthLayout
       title="Sign in"
-      description="Administrators sign in with their email and password."
+      description="Administrators and teachers sign in with their email and password."
       footer={
         <Link
           to="/forgot-password"

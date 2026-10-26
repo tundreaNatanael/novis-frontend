@@ -98,16 +98,42 @@ export function membershipRoleOf(user: Pick<User, 'role' | 'organization'>): Mem
     : null
 }
 
-/** The super-admin and the admin of an active organization may use the console. */
+/** The super-admin and the admin of an active organization may use the admin console. */
 export function hasConsoleAccess(me: User | null | undefined): boolean {
   return isSuperAdmin(me) || adminOrganization(me) !== null
+}
+
+/**
+ * Where a teacher works: the active organization of a `TEACHER`, or nowhere for a freelance
+ * teacher. `null` for everyone else, a teacher of an archived organization included (D-051).
+ */
+export type TeacherPlace =
+  { kind: 'org'; organization: UserOrganization } | { kind: 'freelance'; organization: null }
+
+export function teacherPlace(me: User | null | undefined): TeacherPlace | null {
+  if (me?.role === 'FREELANCE_TEACHER') return { kind: 'freelance', organization: null }
+  if (me?.role === 'TEACHER' && me.organization?.status === 'ACTIVE') {
+    return { kind: 'org', organization: me.organization }
+  }
+  return null
+}
+
+/** A teacher with a place to work in: they use the teacher workspace at `/teach` (D-051). */
+export function isTeacher(me: User | null | undefined): boolean {
+  return teacherPlace(me) !== null
+}
+
+/** Anyone with a home in this app: the console roles and teachers. */
+export function hasAppAccess(me: User | null | undefined): boolean {
+  return hasConsoleAccess(me) || isTeacher(me)
 }
 
 /** Where `/` sends the user. */
 export function homeFor(me: User | null | undefined): string {
   if (isSuperAdmin(me)) return '/platform'
   const org = adminOrganization(me)
-  return org ? `/org/${org.id}` : '/no-access'
+  if (org) return `/org/${org.id}`
+  return isTeacher(me) ? '/teach' : '/no-access'
 }
 
 export function deriveCapabilities(

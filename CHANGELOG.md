@@ -3,6 +3,81 @@
 All notable changes to the Novis admin console. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); dates are the day the change landed on `main`.
 
+## Courses assigned by the school's admin — Unreleased
+
+### Breaking
+
+- **An org teacher has no Courses tab in the teacher workspace** (D-053): the backend now answers
+  a teacher of a school `403` on `POST` / `PATCH` / `DELETE /courses`, because the school's admin
+  creates each course and assigns it to a teacher in the console (Courses → New course, Teacher
+  detail → New course, as before). The top bar and the phone tab bar show Today, Students,
+  Calendar and Profile; `/teach/courses` sends them to Today; a course page, opened from a
+  student's Courses section, keeps Enroll a student, Unenroll and Add material and drops Edit and
+  Archive, and its back link leads to Students. A freelance teacher keeps the tab and every course
+  action.
+
+### Added
+
+- `teachCapabilities(me).canManageCourses` (freelance teachers only), with tests for both kinds of
+  teacher: the tab, the redirect and the course page's actions.
+
+### Changed
+
+- The console's Teachers tab says "Teachers run lessons in the courses you assign them."
+
+## Teacher workspace — Unreleased
+
+### Breaking
+
+- Teachers can sign in to the web app. `hasConsoleAccess` is unchanged (the admin console stays
+  the super-admin's and org admins'), but `RequireAuth` now admits anyone with a home here
+  (`hasAppAccess`: the console roles or a teacher), `homeFor` sends a `TEACHER` of an active
+  organization or a `FREELANCE_TEACHER` to `/teach` (they used to land on `/no-access`), the
+  "no access" page is for accounts with neither an admin nor a teacher role (or staff of an
+  archived organization), and `RequireSuperAdmin` / `RequireOrgAdmin` redirect a teacher to
+  `/teach`. The sign-in page says "Administrators and teachers sign in…".
+
+### Added
+
+- **Teacher workspace** at `/teach/*` (D-051): the mobile app's screens for a desktop, apart from
+  the admin console. Its own shell (`src/features/teach/components/teach-shell.tsx`: brand, the
+  five destinations, Book lesson, the avatar menu; a bottom tab bar on phones), the mobile app's
+  indigo look through the `teach` class on `<html>` (tokens in `src/index.css`, portals included),
+  its own English / Romanian copy (`src/features/teach/i18n`, the mobile app's keys, remembered per
+  browser) and one sheet host (`sheets/sheet-host.tsx`) every page opens its forms through.
+  Pages: Today; Students and a student; Calendar (Day / Week / Month grids and the lesson lists,
+  the view, day and segment in the URL, one `GET /teacher/calendar` per window with the
+  neighbours prefetched, a lesson's actions with one-click Mark as held, an empty slot books,
+  "To finish (N)" jumps to the oldest); Courses and a course; a lesson; Payments and a payout
+  (org teachers); Profile. Sheets: Book lesson (one, or a weekly series with a dry-run preview;
+  an overlap asks before booking anyway), Schedule, Finish lesson (outcome, journal, links, then
+  "Assign homework?"), Edit journal, Attach material, Assign / Edit homework, Add / Rename
+  student, Add prepaid lessons (freelance), New / Edit course, Enroll, Change password; an
+  uploaded video plays in a dialog that fetches its own URL and resumes once after a failure.
+- `src/api/teacher.ts` (`GET /teacher/students`, `/teacher/calendar`, `/teacher/payouts`,
+  `/teacher/payouts/{id}`, `/teacher/earnings` and `teacherKeys`), `lessonsApi.planSeries` /
+  `bookSeries`, `materialsApi.createLink` / `createUploadUrl` / `complete` / `remove`,
+  `coursesApi.materials` / `homework`, infinite-list keys on the lesson, course and homework
+  modules, and the `RosterStudent`, `CalendarLesson`, `TeacherEarnings`, `SeriesOccurrence`,
+  `LessonSeriesPlan`, `LessonSeries`, `MaterialUpload`, `CreateLessonSeriesRequest`,
+  `CreateMaterialRequest`, `CreateUploadRequest`, `CalendarQuery` and `EarningsQuery` types.
+  `teacherPlace`, `isTeacher` and `hasAppAccess` in `src/lib/permissions.ts`.
+- Status tokens for lesson and money states (`upcoming`, `held`, `canceled`, `late`, `unpaid`,
+  `paid`, `credits`, each with a `-soft` surface) in `src/index.css`, usable anywhere.
+- **File uploads from the browser** (D-052) behind `VITE_ENABLE_UPLOADS` (`.env.example`):
+  `POST /materials/upload-url` → `PUT` straight to the storage with progress and Cancel →
+  `POST /materials/{id}/complete`; a `501` hides uploads for the session; a cancel or failure
+  deletes the pending material; closing the sheet mid-upload asks first.
+- Tests: `src/features/teach/**/*.test.ts(x)` (the access rule and capabilities, dates, the
+  calendar's windows, layout and actions, lesson / course / material helpers, the en / ro parity,
+  and the MSW flows), the `rosterStudent()` and `calendarLesson()` fixtures; Vitest runs in
+  Europe/Bucharest (`vitest.config.ts`) so the daylight-saving cases are real.
+
+### Changed
+
+- The "no access" page is titled "Nothing to open yet" and names a teacher of an archived
+  organization too.
+
 ## Open uploaded files — Unreleased
 
 ### Breaking

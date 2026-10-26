@@ -39,6 +39,7 @@ Phase 0 checkpoint on 2026-10-16 (`docs/DECISIONS.md` D-015).
 | [G19](#g19-lesson-rows-carry-ids-only)                                      | Ledger rows need N name lookups                       | **B** (small) — add `teacherName`, `studentName`, `courseTitle`, `organizationName` to `LessonResponse`                                                | hours       | open (worked around)                                                                                                         |
 | [G20](#g20-one-role-per-account)                                            | One role per account                                  | **B** — `User.role` + `User.organization`, `409 ROLE_CONFLICT` / `INVITE_PENDING`, `/freelance-teachers`, invite `?status=` + resend                   | backend     | adapted in UI                                                                                                                |
 | [G21](#g21-a-teacher-who-left-has-no-page-for-the-organizations-admin)      | Pay out the lessons of a teacher who left             | **B** — let the organization's admin read a former teacher's name (e.g. teachers with history next to the members)                                     | ½ day       | open (the super-admin's console reaches them; the Finance tab lists them, D-048)                                             |
+| [G22](#g22-browser-uploads-need-a-cors-rule-on-the-bucket)                  | Teachers upload files from the web workspace          | **B** (infra) — allow `PUT` from the app's origin on the bucket                                                                                        | open        | —                                                                                                                            |
 | [G16](#g16-documentation--code-discrepancies)                               | Docs ≠ code                                           | record; no action in the console                                                                                                                       | —           | recorded                                                                                                                     |
 
 Everything marked **B** keeps the backend's rules: authorization in the service, roles and
@@ -671,3 +672,18 @@ example former teachers listed next to the members, or `GET /orgs/{orgId}/teache
 a teacher who left included (`active: false`, with their name and what is owed to them), so the
 admin sees them on the Finance tab. Their page, and so their Payouts panel, still answers `404` to
 the org admin: the tab marks them "Former teacher" and does not link them. **Status: open.**
+
+## G22 Browser uploads need a CORS rule on the bucket
+
+**Found while building the teacher workspace (D-051, D-052).** API.md §10 has the client `PUT` the
+bytes straight to the storage with the signed URL. The mobile app does that from native code; the
+workspace does it from the browser, which sends a CORS preflight to the bucket's origin first.
+Without a bucket rule allowing `PUT` (and the `Content-Type` header) from the app's origin the
+upload fails before a byte is sent, the workspace deletes the pending material and says "The
+upload didn't go through".
+
+**Option B.** Configure the bucket's CORS (R2: the bucket's CORS policy; MinIO through
+`R2_ENDPOINT`: `mc anonymous` / the server's CORS settings) for the web app's origins
+(`http://localhost:5173` in development, the production origin), methods `PUT`, headers
+`Content-Type`. No API change. Until then the workspace keeps `VITE_ENABLE_UPLOADS` off and
+attaches links only. **Status: open.**

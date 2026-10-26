@@ -5,7 +5,9 @@ It is a guide, not a changelog: history lives in `CHANGELOG.md`, decisions in `d
 
 ## What this is
 
-The Novis **admin console** (React SPA) for super-admins and organization admins. The backend is
+The Novis **admin console** (React SPA) for super-admins and organization admins, and — apart from
+it, at `/teach` — the **teacher workspace** (D-051): the mobile app's screens for a desktop, for a
+teacher of a school or a freelance teacher, in English or Romanian. The backend is
 the sibling repo `../novis-backend`: **`API.md` there is the HTTP contract**, and when its docs
 and its Java code disagree, **the code wins** (record the discrepancy in `docs/BACKEND_GAPS.md`).
 Requirements and screens: `docs/PLAN.md`. Gaps between requirements and API: `docs/BACKEND_GAPS.md`.
@@ -37,6 +39,7 @@ src/app         providers (queryClient.ts, theme.tsx, app.tsx), router.tsx, rout
 src/api         client.ts · errors.ts · types.ts · schema.d.ts (generated) · paging.ts · <resource>.ts (api + query keys)
 src/auth        tokenStore.ts · session.tsx (SessionProvider, useSession, useMe) · guards.tsx
 src/features    auth/ account/ platform/ org-workspace/ freelance/ lessons/ homework/ teacher-payouts/ finance/ — pages are route modules (homework/, teacher-payouts/ and finance/ hold panels, sheets and tables those pages share)
+src/features/teach  the teacher workspace (D-051): teach-layout.tsx (providers + shell), pages/, components/ (its own primitives), sheets/ (every form + sheet-host.tsx), calendar/, data/ (query and mutation hooks), i18n/ (en.ts, ro.ts, the provider), lib/ (dates, formatters, schemas, capabilities), lessons/ courses/ students/ materials/ (pure helpers)
 src/components  ui/ (shadcn, re-themed) · form/ (Field, FormError, applyServerErrors) · page-header, brand-mark, …
 src/lib         permissions.ts (capabilities + lessonRules) · format.ts · schemas.ts · use-*.ts hooks
 src/test        setup.ts (jest-dom, MSW lifecycle, cleanup) · server.ts
@@ -108,6 +111,24 @@ Radix dialogs trap focus, `prefers-reduced-motion` respected, status never by co
 **Copy.** Sentence case, plain verbs, the user's vocabulary (organization, admin, teacher, student,
 lesson, course). An action keeps its name through the flow ("Archive organization" → toast
 "Organization archived"). Errors say what happened and what to do; they do not apologize.
+
+**The teacher workspace (`/teach`, D-051) is its own app inside this one.** It reuses the API
+modules, `tokenStore` / session, the shadcn primitives, `Field` / `SelectField` and the pure
+homework helpers, and nothing of the console's pages or shell. Its rules: every string goes
+through `useT()` from `src/features/teach/i18n` (add the key to `en.ts`, mirror it in `ro.ts`;
+`i18n.test.ts` checks the parity) — no console component with English copy inside a teacher
+screen; dates go through `useFormatters()` (the browser's locale and time zone, ISO with offset
+to the API: `lib/dates.ts`); the look comes from the `teach` class the layout puts on `<html>`
+(indigo tokens in `src/index.css`, so portals match), with the status tones of
+`components/tone.ts`; forms are sheets opened through `useTeachSheets().open({ kind, … })` and
+rendered once by `TeachSheetHost`, never mounted per page; lists are infinite queries under the
+API modules' keys (`lessonKeys.infinite`, `teacherKeys.*`) and anything that changes a lesson
+calls `useInvalidateLessons()` (lessons + students + everything under `teacherKeys`); actions
+follow `teachCapabilities(me)` (`canManageStudentPayments` and `canManageCourses` for a freelance
+teacher only: the Courses tab, New course, Edit, Archive; `canViewPayouts` for an org teacher
+only), display follows the data (`studentPayment: null` and
+`null` counts render nothing). The calendar keeps its view, day and segment in the URL
+(`?view=&date=&segment=&focus=`), one `GET /teacher/calendar` per local-midnight window.
 
 ## Recipes
 
@@ -192,11 +213,22 @@ sorted and paged by the API under their own URL prefixes (`useListParams({ prefi
 lessons with the names of `src/features/lessons/lesson-counts.ts`, which the Lesson balances share; a
 teacher or student who left is marked "Former …" and linked for the super-admin only
 (`canOpenFormerTeachers` / `canOpenFormerStudents`).
+**The teacher workspace** (D-051, `src/features/teach`) gives teachers the mobile
+app's feature set on the web: `homeFor` sends a `TEACHER` of an active organization or a
+`FREELANCE_TEACHER` to `/teach` (`RequireTeacher`), where Today, Students, Calendar, Courses (a
+freelance teacher's only: a school's admin assigns an org teacher's courses, D-053), a
+lesson, Payments (org teachers) and Profile mirror the app's screens, with the app's sheets (book
+one lesson or a weekly series with a dry run, schedule, finish, journal, attach a link or upload a
+file behind `VITE_ENABLE_UPLOADS` (D-052), homework, students, credits, courses, enroll, password)
+and its English / Romanian copy. Walked through in the browser against the dev backend as the demo
+teacher (Today, calendar, a lesson, students, courses, profile, both themes and languages, desktop
+and phone widths).
 Tests: Vitest + MSW over
 the real route tree (`src/test/render.tsx`), Playwright in `e2e/` (API sign-in fixture, live
-smoke flow, phone checks, screenshots + axe). Open follow-ups are the **B** items in
+smoke flow, phone checks, screenshots + axe; nothing for `/teach` yet). Open follow-ups are the **B** items in
 `docs/BACKEND_GAPS.md` (G17 refresh grace window, G19 names on lesson rows, G21 a teacher who left
-has no page for the organization's admin) and the README's Known limitations.
+has no page for the organization's admin, G22 a CORS rule on the bucket for browser uploads) and
+the README's Known limitations.
 
 ## Don'ts
 

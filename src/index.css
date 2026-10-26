@@ -43,6 +43,22 @@
   --color-info: var(--info);
   --color-info-soft: var(--info-soft);
 
+  /* Lesson and money states (the mobile app's status colours): each with a soft surface. */
+  --color-upcoming: var(--upcoming);
+  --color-upcoming-soft: var(--upcoming-soft);
+  --color-held: var(--held);
+  --color-held-soft: var(--held-soft);
+  --color-canceled: var(--canceled);
+  --color-canceled-soft: var(--canceled-soft);
+  --color-late: var(--late);
+  --color-late-soft: var(--late-soft);
+  --color-unpaid: var(--unpaid);
+  --color-unpaid-soft: var(--unpaid-soft);
+  --color-paid: var(--paid);
+  --color-paid-soft: var(--paid-soft);
+  --color-credits: var(--credits);
+  --color-credits-soft: var(--credits-soft);
+
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -107,6 +123,22 @@
   --chart-4: #5b6573;
   --chart-5: #b45309;
 
+  /* Lesson states: upcoming = indigo, held = green, canceled = grey, late = orange; money: unpaid = red, paid = green, credits = purple */
+  --upcoming: #433bff;
+  --upcoming-soft: color-mix(in oklab, var(--upcoming) 13%, transparent);
+  --held: #1a8f42;
+  --held-soft: color-mix(in oklab, var(--held) 14%, transparent);
+  --canceled: #6f6f7a;
+  --canceled-soft: color-mix(in oklab, var(--canceled) 14%, transparent);
+  --late: #c97200;
+  --late-soft: color-mix(in oklab, var(--late) 14%, transparent);
+  --unpaid: #de3b33;
+  --unpaid-soft: color-mix(in oklab, var(--unpaid) 12%, transparent);
+  --paid: #1a8f42;
+  --paid-soft: color-mix(in oklab, var(--paid) 14%, transparent);
+  --credits: #9a3fd6;
+  --credits-soft: color-mix(in oklab, var(--credits) 12%, transparent);
+
   /* Sidebar: ink in both themes, brass marker */
   --sidebar: #1b2432;
   --sidebar-foreground: #e8e4da;
@@ -153,6 +185,21 @@
   --chart-4: #9aa4b2;
   --chart-5: #f0a24a;
 
+  --upcoming: #8c86ff;
+  --upcoming-soft: color-mix(in oklab, #433bff 24%, transparent);
+  --held: #30d158;
+  --held-soft: color-mix(in oklab, var(--held) 22%, transparent);
+  --canceled: #9b9ba6;
+  --canceled-soft: color-mix(in oklab, var(--canceled) 22%, transparent);
+  --late: #ff9f0a;
+  --late-soft: color-mix(in oklab, var(--late) 22%, transparent);
+  --unpaid: #ff453a;
+  --unpaid-soft: color-mix(in oklab, var(--unpaid) 22%, transparent);
+  --paid: #30d158;
+  --paid-soft: color-mix(in oklab, var(--paid) 22%, transparent);
+  --credits: #bf5af2;
+  --credits-soft: color-mix(in oklab, var(--credits) 22%, transparent);
+
   --sidebar: #0b1017;
   --sidebar-foreground: #d8d3c8;
   --sidebar-primary: #d9a441;
@@ -161,6 +208,58 @@
   --sidebar-accent-foreground: #f6f3ec;
   --sidebar-border: #1f2937;
   --sidebar-ring: #d9a441;
+}
+
+/*
+ * The teacher workspace (D-051) carries the mobile app's calm indigo look: the class sits on <html>
+ * while /teach is mounted, so portals (sheets, dialogs, menus, toasts) take the same tokens.
+ */
+.teach {
+  --background: #fbfbfe;
+  --foreground: #050315;
+  --card: #ffffff;
+  --card-foreground: #050315;
+  --popover: #ffffff;
+  --popover-foreground: #050315;
+  --primary: #2f27ce;
+  --primary-foreground: #ffffff;
+  --secondary: #f2f1fa;
+  --secondary-foreground: #050315;
+  --muted: #f2f1fa;
+  --muted-foreground: #5f5d75;
+  --accent: #dedcff;
+  --accent-foreground: #2f27ce;
+  --border: #e6e5f1;
+  --input: #d8d6ea;
+  --ring: #433bff;
+  --success: #1a8f42;
+  --warning: #a35d00;
+  --warning-soft: color-mix(in oklab, #c97200 14%, transparent);
+  --info: #2f27ce;
+}
+
+.dark.teach {
+  --background: #050412;
+  --foreground: #ebe9fc;
+  --card: #0f0e22;
+  --card-foreground: #ebe9fc;
+  --popover: #1a1935;
+  --popover-foreground: #ebe9fc;
+  --primary: #3a31d8;
+  --primary-foreground: #ffffff;
+  --secondary: #1a1935;
+  --secondary-foreground: #ebe9fc;
+  --muted: #1a1935;
+  --muted-foreground: #a3a1bd;
+  --accent: color-mix(in oklab, #433bff 24%, transparent);
+  --accent-foreground: #8c86ff;
+  --border: #26254a;
+  --input: #302f5a;
+  --ring: #8c86ff;
+  --success: #30d158;
+  --warning: #ff9f0a;
+  --warning-soft: color-mix(in oklab, var(--warning) 20%, transparent);
+  --info: #8c86ff;
 }
 
 @layer base {

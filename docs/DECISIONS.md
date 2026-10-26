@@ -613,3 +613,83 @@ Caching the download URL in the query cache — rejected: it expires, so it is f
 **Consequences.** `src/api/materials.ts` has `materialsApi.downloadUrl` and no query keys. The
 console never sees a pending upload (the API lists ready materials only). `Material` carries
 `contentType` and `sizeBytes`, unused on screen for now.
+
+## D-051 · 2026-10-26 · The teacher workspace: the mobile app's screens at `/teach`, apart from the console
+
+**Decision.** Teachers get the web app too, as their own workspace at `/teach/*`
+(`src/features/teach`), not as a role inside the admin console. `homeFor` sends a `TEACHER` of
+an active organization or a `FREELANCE_TEACHER` there (`RequireTeacher`), `hasConsoleAccess`
+stays what it was, and `RequireAuth` admits anyone with a home (`hasAppAccess`). The workspace
+is the mobile app's feature set, screen for screen — Today, Students, Calendar (day / week /
+month grids and the lesson lists), Courses, a lesson, Payments for org teachers, Profile — with
+the app's sheets (book one lesson or a weekly series with a dry-run preview, schedule, finish with
+outcome + journal + links then "Assign homework?", journal, attach material, homework, students,
+credits, courses, enroll, change password) and its copy in English and Romanian (the app's own
+keys, `src/features/teach/i18n`, remembered per browser). It has its own shell (a top bar with
+the five destinations and one primary action, a bottom tab bar on phones), its own look (the
+app's calm indigo, applied by the `teach` class the layout puts on `<html>`, so portals match
+too, with the status tones of `src/index.css`), its own primitives (`components/`), and one sheet
+host every page opens its forms through (`useTeachSheets().open({ kind, … })`), the way the app
+pushes a modal route. The calendar keeps its view, day and segment in the URL, so Today's links
+and "To finish (N)" are plain links. It reuses the API modules, the session, the shadcn
+primitives, `Field` / `SelectField`, the pure homework helpers (D-042) and `lessonRules`' ideas,
+and nothing of the console's pages.
+**Context.** The product has two clients: the admin console for admins and the mobile app for
+teachers and students. Teachers wanted the same functions on a desktop, with a design of its own
+that feels like the app, kept separate from the admin console.
+**Alternatives.** Mounting the console's organization workspace for teachers with a reduced
+capability set — rejected: the console's screens are an admin's (ledgers, tables, every field of
+every entity) and English-only, while the app's are a teacher's day (what is left to finish,
+what to schedule, who is next); a teacher would have had neither the calendar nor the sheets. One
+shared i18n for the whole app — rejected for now: the console's copy is English by design (D-038
+copy by code), and translating it is its own task; the workspace carries its own dictionary so
+no English leaks into a Romanian screen. Sheets in the query string, as the console does (D-012)
+— rejected: a teacher's flows chain (finish → assign homework, a calendar slot → book), which a
+sheet host does in one line; deep-linking a half-filled form was not asked for.
+**Consequences.** Two visual systems live in `src/index.css`: the console's paper-and-brass and
+the workspace's indigo, switched by one class on `<html>`. Copy exists twice where both apps
+have a screen (the console's lesson detail and the workspace's lesson page say the same things
+in their own words). A change to the mobile app's teacher screens is now a change here too.
+`/account` still exists for teachers but is not linked from the workspace (Profile replaces it).
+No Playwright coverage for `/teach` yet.
+
+## D-052 · 2026-10-26 · The workspace uploads files from the browser, behind a flag
+
+**Decision.** Attach material in the workspace takes a link always and, with
+`VITE_ENABLE_UPLOADS=true`, a file: the mobile app's flow in the browser (`POST
+/materials/upload-url` → `PUT` the bytes straight to the storage with the signed content type,
+progress and Cancel → `POST /materials/{id}/complete`; a cancel or failure deletes the pending
+material; a `501` hides uploads for the session; closing the sheet mid-upload asks first). An
+uploaded video plays in a dialog in the workspace (its own signed URL, one automatic fresh URL at
+the same position after a failure); any other uploaded file opens inline in a new tab as the
+console does (D-050).
+**Context.** D-050 left uploading to the mobile app because teachers had no web access; now they
+do, and "every function of the app" includes it.
+**Alternatives.** Keeping uploads mobile-only — rejected for the same reason. Proxying the bytes
+through the API — rejected: API.md §10 is built around a direct `PUT`.
+**Consequences.** The browser sends the bytes to the bucket itself, so the bucket needs a CORS
+rule allowing `PUT` from the app's origin (gap G22; `R2_ENDPOINT` / MinIO in development). The
+flag stays off by default: without a storage provider the API answers `501` anyway. The admin
+console is unchanged (D-050 stands for it).
+
+## D-053 · 2026-10-26 · A school's courses are its admin's: no Courses tab for an org teacher
+
+**Decision.** A teacher of a school no longer creates or edits courses: the school's admin creates
+each course in the console (Courses → New course, or Teacher detail → New course) and assigns it
+to a teacher, as before. In the teacher workspace an org teacher has no Courses tab (the top bar
+and the phone tab bar show four destinations), `/teach/courses` sends them to Today, and a course
+page, reached from a student's page, keeps Enroll a student, Unenroll and Add material but has no
+Edit or Archive (`teachCapabilities(me).canManageCourses`, a freelance teacher's only). A freelance
+teacher, who has no admin, keeps the tab and every course action. The console is unchanged apart
+from the Teachers tab's description.
+**Context.** The user's request ("the admin creates a course and assigns it to the teacher"). The
+backend now answers an org teacher `403` on `POST` / `PATCH` / `DELETE /courses` (its CHANGELOG,
+"Courses are assigned by the school's admin"); reading, enrolling and course materials stay the
+teacher's. The mobile app drops its Courses tab the same way.
+**Alternatives.** Removing the tab for freelance teachers too — rejected: only the super-admin
+could then create their courses. Hiding the tab while the API still accepted a teacher's course —
+rejected: the rule is the server's. Dropping the course page for org teachers as well — rejected:
+enrolling students and course materials stay with the teacher.
+**Consequences.** An org teacher reaches a course only through a student enrolled in it (the
+student page's Courses section); a course nobody is enrolled in yet is out of their reach until
+the admin enrolls a first student. The course page's back link leads to Students for them.

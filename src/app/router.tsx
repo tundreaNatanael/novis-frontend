@@ -5,6 +5,7 @@ import {
   RequireAuth,
   RequireOrgAdmin,
   RequireSuperAdmin,
+  RequireTeacher,
 } from '@/auth/guards'
 import { FullPageSpinner } from '@/components/full-page-spinner'
 import { RootErrorBoundary } from './root-error-boundary'
@@ -58,6 +59,28 @@ function orgWorkspaceRoutes(mount: 'platform' | 'org'): RouteObject[] {
   return routes
 }
 
+/**
+ * The teacher workspace (D-051): its own shell at `/teach/*`, apart from the admin console, with
+ * the screens of the mobile app. Pages are lazy route modules like the console's.
+ */
+function teacherWorkspaceRoutes(): RouteObject[] {
+  return [
+    { index: true, lazy: () => import('@/features/teach/pages/today-page') },
+    { path: 'students', lazy: () => import('@/features/teach/pages/students-page') },
+    {
+      path: 'students/:studentId',
+      lazy: () => import('@/features/teach/pages/student-detail-page'),
+    },
+    { path: 'calendar', lazy: () => import('@/features/teach/pages/calendar-page') },
+    { path: 'courses', lazy: () => import('@/features/teach/pages/courses-page') },
+    { path: 'courses/:courseId', lazy: () => import('@/features/teach/pages/course-detail-page') },
+    { path: 'lessons/:lessonId', lazy: () => import('@/features/teach/pages/lesson-detail-page') },
+    { path: 'payments', lazy: () => import('@/features/teach/pages/payments-page') },
+    { path: 'payments/:payoutId', lazy: () => import('@/features/teach/pages/payout-detail-page') },
+    { path: 'profile', lazy: () => import('@/features/teach/pages/profile-page') },
+  ]
+}
+
 /** The route tree, also mounted in tests through `createMemoryRouter`. */
 export const routes: RouteObject[] = [
   {
@@ -79,6 +102,16 @@ export const routes: RouteObject[] = [
         children: [
           { index: true, element: <HomeRedirect /> },
           { path: 'no-access', lazy: () => import('@/features/auth/no-access-page') },
+          {
+            path: 'teach',
+            element: <RequireTeacher />,
+            children: [
+              {
+                lazy: () => import('@/features/teach/teach-layout'),
+                children: teacherWorkspaceRoutes(),
+              },
+            ],
+          },
           {
             lazy: () => import('./shell/app-shell'),
             children: [

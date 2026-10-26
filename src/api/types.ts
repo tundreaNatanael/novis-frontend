@@ -214,6 +214,46 @@ export interface FinanceSummary {
   students: Strict<S['StudentFinanceTotals']>
   teachers: Strict<S['TeacherFinanceTotals']>
 }
+/**
+ * One row of `GET /teacher/students` (API.md §12): the caller's roster plus the students enrolled
+ * in their courses, each with the counts **with this teacher**. The three payment counts are `null`
+ * for an org teacher (the school's admin manages payments) and set for a freelance teacher.
+ */
+export type RosterStudent = Nullable<
+  Omit<Strict<S['RosterStudentResponse']>, 'nextLesson'> & { nextLesson: Lesson },
+  'prepaidRemaining' | 'unpaidDue' | 'upcomingUnpaid' | 'nextLesson'
+>
+/**
+ * One row of `GET /teacher/calendar` (API.md §12): a dated lesson of the caller with the names a
+ * calendar shows and no payment data. `paidOut` is the school's payout to the teacher, never the
+ * student's payment.
+ */
+export type CalendarLesson = Nullable<
+  Strict<S['CalendarLessonResponse']>,
+  'courseId' | 'courseTitle' | 'meetingUrl' | 'closedAt' | 'seriesId'
+>
+/** `GET /teacher/earnings`: a teacher's charged lessons in a window, those a live payout covers, and the rest (API.md §9.6). */
+export type TeacherEarnings = Nullable<Strict<S['TeacherEarningsResponse']>, 'lastPaidOn'>
+/** One date of a weekly series' dry run; `conflictWithLessonId` only when the caller may open that lesson. */
+export type SeriesOccurrence = Nullable<
+  Strict<S['SeriesOccurrenceResponse']>,
+  'conflictWithLessonId'
+>
+/** `POST /lessons/series` with `dryRun: true`: the dates it would book, nothing written. */
+export interface LessonSeriesPlan {
+  occurrences: SeriesOccurrence[]
+}
+/** `POST /lessons/series`: every lesson booked, in date order, with the shared `seriesId`. */
+export interface LessonSeries {
+  seriesId: string
+  lessons: Lesson[]
+}
+/** `POST /materials/upload-url`: a pending material and the signed `PUT` URL for its bytes (API.md §10). */
+export interface MaterialUpload {
+  material: Material
+  uploadUrl: string
+  uploadUrlExpiresAt: string
+}
 
 // --- request bodies -------------------------------------------------------------------------
 
@@ -322,6 +362,42 @@ export interface CreateLessonRequest {
   usePrepaid?: boolean
   /** Book even if the time overlaps another lesson of the teacher or the student (else `409 SCHEDULE_CONFLICT`). */
   allowOverlap?: boolean
+}
+/** `POST /lessons/series` (API.md §9.5): the same dates every one or two weeks, in the given zone. */
+export interface CreateLessonSeriesRequest {
+  studentId: string
+  teacherId?: string
+  courseId?: string
+  /** The first lesson, any ISO-8601 offset. */
+  firstAt: string
+  /** An IANA zone (`Europe/Bucharest`): the dates keep their local time across clock changes. */
+  timeZone: string
+  intervalWeeks: 1 | 2
+  /** 1–52 dates. */
+  count: number
+  durationMinutes?: number
+  meetingUrl?: string
+  allowOverlap?: boolean
+  /** Plan only: answers the dates with their conflicts and writes nothing. */
+  dryRun?: boolean
+}
+/** `POST /materials`: a link-based material on a course and / or a lesson (API.md §10). */
+export interface CreateMaterialRequest {
+  title: string
+  type: MaterialType
+  externalUrl: string
+  courseId?: string
+  lessonId?: string
+}
+/** `POST /materials/upload-url`: declares the file; the server checks the type's content types and size limit. */
+export interface CreateUploadRequest {
+  title: string
+  type: Exclude<MaterialType, 'LINK'>
+  fileName: string
+  contentType: string
+  sizeBytes: number
+  courseId?: string
+  lessonId?: string
 }
 export interface ScheduleLessonRequest {
   /** `null` unschedules, and so does leaving it out: send the date even to change only the link. */
@@ -460,4 +536,14 @@ export interface LessonFilters {
   /** ISO instant, exclusive. */
   to?: string
   unscheduled?: boolean
+}
+/** `GET /teacher/calendar`: local midnights with their offsets, at most 42 days (and an hour) apart. */
+export interface CalendarQuery {
+  from: string
+  to: string
+}
+/** `GET /teacher/earnings`: the local month's bounds with their offsets. */
+export interface EarningsQuery {
+  from?: string
+  to?: string
 }

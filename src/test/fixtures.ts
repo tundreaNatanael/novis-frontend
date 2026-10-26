@@ -1,4 +1,5 @@
 import type {
+  CalendarLesson,
   Course,
   Enrollment,
   FinanceSummary,
@@ -11,6 +12,7 @@ import type {
   Organization,
   Page,
   PayoutLesson,
+  RosterStudent,
   Student,
   StudentCreated,
   StudentEnrollment,
@@ -388,6 +390,39 @@ export function homework(overrides: Partial<Homework> = {}): Homework {
     ],
     createdAt: '2026-10-21T10:00:00Z',
     updatedAt: '2026-10-21T10:00:00Z',
+    ...overrides,
+  }
+}
+
+/** A roster row of `GET /teacher/students`: `s-1` with the calling teacher; an org teacher's counts are `null`. */
+export function rosterStudent(overrides: Partial<RosterStudent> = {}): RosterStudent {
+  return {
+    ...student(),
+    prepaidRemaining: null,
+    unpaidDue: null,
+    upcomingUnpaid: null,
+    toSchedule: 0,
+    nextLesson: null,
+    ...overrides,
+  }
+}
+
+/** A row of `GET /teacher/calendar`: lesson `l-1` of `s-1` in course `c-1`, pending. */
+export function calendarLesson(overrides: Partial<CalendarLesson> = {}): CalendarLesson {
+  return {
+    id: 'l-1',
+    studentId: 's-1',
+    studentName: 'Kid Student',
+    courseId: 'c-1',
+    courseTitle: 'Piano — beginners',
+    scheduledAt: '2026-10-20T15:00:00Z',
+    durationMinutes: 60,
+    status: 'PENDING',
+    meetingUrl: null,
+    closedAt: null,
+    hasJournal: false,
+    paidOut: false,
+    seriesId: null,
     ...overrides,
   }
 }

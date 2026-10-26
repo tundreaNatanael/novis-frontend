@@ -67,11 +67,12 @@ describe('console access and home', () => {
     expect(hasConsoleAccess(archivedAdmin)).toBe(false)
   })
 
-  it('sends each role to its home', () => {
+  it('sends each role to its home (teachers to their workspace, D-051)', () => {
     expect(homeFor(superAdmin)).toBe('/platform')
     expect(homeFor(admin)).toBe(`/org/${org}`)
-    expect(homeFor(teacherOnly)).toBe('/no-access')
-    expect(homeFor(freelancer)).toBe('/no-access')
+    expect(homeFor(teacherOnly)).toBe('/teach')
+    expect(homeFor(freelancer)).toBe('/teach')
+    expect(homeFor(studentHere)).toBe('/no-access')
     expect(homeFor(roleless)).toBe('/no-access')
     expect(homeFor(user({ role: 'ADMIN', organization: place(org, { status: 'ARCHIVED' }) }))).toBe(
       '/no-access',

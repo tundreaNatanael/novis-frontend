@@ -19,6 +19,10 @@ export const homeworkKeys = {
   lists: () => [...homeworkKeys.all, 'list'] as const,
   list: (filters: HomeworkFilters, params: PageParams) =>
     [...homeworkKeys.lists(), filters, params] as const,
+  /** A list loaded page after page (the teacher workspace). */
+  infinite: (filters: HomeworkFilters) => [...homeworkKeys.lists(), 'infinite', filters] as const,
+  /** `GET /homework/{id}`, read by the teacher workspace's edit sheet. */
+  detail: (id: string) => [...homeworkKeys.all, 'detail', id] as const,
 }
 
 export const homeworkApi = {

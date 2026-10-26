@@ -28,8 +28,9 @@ export const studentKeys = {
   detail: (id: string) => [...studentKeys.all, 'detail', id] as const,
   summary: (id: string, teacherId: string | null) =>
     [...studentKeys.all, 'summary', id, teacherId ?? 'all'] as const,
+  enrollmentsOf: (id: string) => [...studentKeys.all, 'enrollments', id] as const,
   enrollments: (id: string, params: PageParams) =>
-    [...studentKeys.all, 'enrollments', id, params] as const,
+    [...studentKeys.enrollmentsOf(id), params] as const,
   profiles: (id?: string) =>
     id
       ? ([...studentKeys.all, 'profiles', id] as const)

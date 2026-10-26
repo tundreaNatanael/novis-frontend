@@ -12,7 +12,7 @@ import { FormError } from '@/components/form/form-error'
 import { applyServerErrors } from '@/components/form/server-errors'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { hasConsoleAccess, homeFor } from '@/lib/permissions'
+import { hasAppAccess, homeFor } from '@/lib/permissions'
 import { nameSchema, passwordConfirmation } from '@/lib/schemas'
 import { usePageTitle } from '@/lib/use-page-title'
 import { AuthLayout } from './auth-layout'
@@ -46,7 +46,7 @@ export function Component() {
         password: values.password,
       })
       const me = await signIn(tokens)
-      navigate(hasConsoleAccess(me) ? homeFor(me) : '/no-access', { replace: true })
+      navigate(hasAppAccess(me) ? homeFor(me) : '/no-access', { replace: true })
     } catch (error) {
       if (isApiError(error) && error.is('INVITE_PASSWORD_MISMATCH')) {
         // An existing account accepts with its current password, not a new one.
