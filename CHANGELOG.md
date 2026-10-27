@@ -3,6 +3,28 @@
 All notable changes to the Novis admin console. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); dates are the day the change landed on `main`.
 
+## Lesson totals on Today — Unreleased
+
+### Changed
+
+- **Today in the teacher workspace opens with the lesson totals table** (D-055, API.md §12
+  `GET /teacher/lesson-totals`): three columns — **Lessons held** / **Paid** / **Paid in advance**
+  (_Ședințe făcute / Plătite / Plătit în avans_) — with the number under each, all time. "Paid" is
+  what the school paid out to a teacher of a school (the table then links to Payments) and what the
+  students paid for a freelance teacher. Paid in advance shows "+2"; in arrears the third header
+  becomes **In arrears** (_Restanță_) in red and the amount owed shows in red without a minus
+  ("2", not "−2"). It replaces the two tiles of this month's lessons held and what the
+  school owes (both still on Payments); the `StatTile` component and `useLessonCount` went with them.
+
+### Added
+
+- `teacherApi.lessonTotals` / `teacherKeys.lessonTotals()` (under `teacherKeys.all`, so anything
+  that changes a lesson refreshes it), `useLessonTotals`, `LessonTotals` in `src/api/types.ts`,
+  `schema.d.ts` regenerated (also `StudentDashboard.lessonTotals`, which the console does not
+  read: students do not use it). en / ro keys under `teacher.today.totals`.
+- Tests: Today for a school's teacher (arrears, no hint under "Paid", the Payments link), a freelance
+  teacher ("by your students", in advance) and a failed request; `balanceValue`.
+
 ## Weekly lessons in the console — Unreleased
 
 ### Added

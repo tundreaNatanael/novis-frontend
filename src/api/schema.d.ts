@@ -820,6 +820,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/teacher/lesson-totals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["lessonTotals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/teacher/earnings": {
         parameters: {
             query?: never;
@@ -2034,6 +2050,14 @@ export interface components {
             totalPages?: number;
             last?: boolean;
         };
+        LessonTotalsResponse: {
+            /** Format: int64 */
+            held?: number;
+            /** Format: int64 */
+            paid?: number;
+            /** Format: int64 */
+            balance?: number;
+        };
         TeacherEarningsResponse: {
             /** Format: int64 */
             taught?: number;
@@ -2308,6 +2332,7 @@ export interface components {
             upcomingUnpaid?: number;
             /** Format: int64 */
             toSchedule?: number;
+            lessonTotals?: components["schemas"]["LessonTotalsResponse"];
             courses?: components["schemas"]["CourseResponse"][];
         };
         SignedUrlResponse: {
@@ -4179,6 +4204,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["TeacherPayoutDetailResponse"];
+                };
+            };
+        };
+    };
+    lessonTotals: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LessonTotalsResponse"];
                 };
             };
         };

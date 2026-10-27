@@ -252,6 +252,8 @@ export type CalendarLesson = Nullable<
 >
 /** `GET /teacher/earnings`: a teacher's charged lessons in a window, those a live payout covers, and the rest (API.md §9.6). */
 export type TeacherEarnings = Nullable<Strict<S['TeacherEarningsResponse']>, 'lastPaidOn'>
+/** `GET /teacher/lesson-totals`: the teacher's own lessons, all time — held (`PRESENT`), paid, and `paid − held` (API.md §3). */
+export type LessonTotals = Strict<S['LessonTotalsResponse']>
 /** One date of a weekly series' dry run; `conflictWithLessonId` only when the caller may open that lesson. */
 export type SeriesOccurrence = Nullable<
   Strict<S['SeriesOccurrenceResponse']>,

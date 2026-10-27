@@ -732,3 +732,35 @@ lessons and the detail route answers the rule only; the arithmetic is the API's 
 workspace's mark has both languages. `useLessonNames` names any row with the lesson's ids. The
 dry-run query keys live apart from the rules' keys, so a write does not run a dry run again. The
 teacher workspace's calendar does not handle the API's new `projected` rows yet (gap G23).
+
+## D-055 · 2026-10-27 · Today shows the teacher's all-time lesson totals as a table
+
+**Decision.** Today in the teacher workspace opens with one table of three columns — **Lessons
+held** / **Paid** / **Paid in advance** (_Ședințe făcute / Plătite / Plătit în avans_) — with the
+number under each header, from `GET /teacher/lesson-totals` (API.md §12): the teacher's own lessons,
+all time. "Held" is `PRESENT` only. "Paid" follows who pays the teacher: the school's live payouts
+for a teacher of a school (no hint under "Paid": the product owner dropped "by the school"; the table links to Payments), the
+students' payments for a freelance teacher ("by your students"). The balance is `paid − held`:
+paid in advance shows "+2" (or "0") under **Paid in advance**; in arrears the header itself becomes
+**In arrears** (_Restanță_) and the amount owed shows without a minus ("2"), header and number in
+the unpaid tone — the word says the state, so it is never told by colour alone, and a minus under
+"In arrears" would say it twice (the product owner's call). It is a real `<table>` with
+column headers, so a screen reader reads each number with its header. The table replaces the
+tiles of this month's lessons held and what the school owes.
+**Context.** The product owner asked for this table, with these headers, on the student's and the
+teacher's main page; the backend amended its payments decision so that each caller reads their own
+totals (a teacher: lessons held and paid for). Students do not use the console, so only the teacher
+workspace changed; the mobile app shows the same table on both homes.
+**Alternatives.** Keeping the monthly tiles next to the table — rejected: two "lessons held" numbers
+(this month and all time) side by side read as a contradiction, and Payments keeps the month's
+taught / paid / owed. One `StatTile` per number — rejected: three separate cards do not read as one
+row of a table, and the balance needs its header and its number together. Keeping "Paid in
+advance" over a negative number with "In arrears" written under it — the first version, changed
+at the product owner's request: the header now names what the number is. Computing the totals in the
+browser from `GET /lessons` counts — rejected: a school's teacher may not see payments, and the
+"each credit once" rule is the server's.
+**Consequences.** "Paid" for a school's teacher is a teacher payout, worded "Paid",
+never "payment" (D-047). The totals refresh with anything that changes a lesson (`teacherKeys`);
+recording a payout happens in the console, so a teacher sees it on the next load. A paid late
+cancellation counts in "Paid" but not in "Held", by the backend's definition, so it adds one to the
+balance.

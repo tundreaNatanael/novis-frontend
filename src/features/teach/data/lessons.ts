@@ -2,6 +2,7 @@ import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-qu
 import { useCallback, useMemo } from 'react'
 import { lessonKeys, lessonsApi } from '@/api/lessons'
 import { studentKeys, studentsApi } from '@/api/students'
+import { teacherApi, teacherKeys } from '@/api/teacher'
 import type { CreateLessonSeriesRequest, LessonFilters } from '@/api/types'
 import { useMe } from '@/auth/session'
 import { toIsoWithOffset } from '../lib/dates'
@@ -35,14 +36,15 @@ export function useTeacherLessons(
   return { ...query, lessons, total }
 }
 
-/** `totalElements` of a filter — one request with `size=1`. */
-export function useLessonCount(filters: LessonFilters) {
-  const me = useMe()
-  const scoped: LessonFilters = { ...filters, teacherId: me.id }
+/**
+ * `GET /teacher/lesson-totals`: the teacher's own lessons held and paid (by the school, or by the
+ * students for a freelance teacher), all time, and the difference. Under `teacherKeys`, so anything
+ * that changes a lesson refreshes it.
+ */
+export function useLessonTotals() {
   return useQuery({
-    queryKey: lessonKeys.count(scoped),
-    queryFn: async ({ signal }) =>
-      (await lessonsApi.list(scoped, { page: 0, size: 1 }, signal)).totalElements,
+    queryKey: teacherKeys.lessonTotals(),
+    queryFn: ({ signal }) => teacherApi.lessonTotals(signal),
   })
 }
 

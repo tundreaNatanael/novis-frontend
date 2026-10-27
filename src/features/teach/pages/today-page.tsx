@@ -1,4 +1,4 @@
-import { Banknote, CalendarPlus, CheckCircle2, PartyPopper } from 'lucide-react'
+import { CalendarPlus, PartyPopper } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import type { RouteHandle } from '@/app/route-handle'
@@ -6,15 +6,14 @@ import { useMe } from '@/auth/session'
 import { Button } from '@/components/ui/button'
 import { calendarLinkTo, calendarListLink } from '../calendar/links'
 import { LessonRow } from '../components/lesson-row'
+import { LessonTotalsTable } from '../components/lesson-totals-table'
 import { PageTitle, Section } from '../components/section'
-import { StatTile } from '../components/stat-tile'
 import { EmptyState, ErrorState, SkeletonList } from '../components/states'
 import { ToFinishBanner } from '../components/to-finish-banner'
-import { useLessonCount, useLessonLookups, useTeacherLessons, useToFinish } from '../data/lessons'
-import { useMonthEarnings } from '../data/payouts'
+import { useLessonLookups, useLessonTotals, useTeacherLessons, useToFinish } from '../data/lessons'
 import { useT } from '../i18n/use-i18n'
 import { teachCapabilities } from '../lib/capabilities'
-import { endOfDay, endOfMonth, parseLocalDate, startOfMonth, toIsoWithOffset } from '../lib/dates'
+import { endOfDay, toIsoWithOffset } from '../lib/dates'
 import { useFormatters } from '../lib/use-formatters'
 import { useTeachTitle } from '../lib/use-teach-title'
 import { useTeachSheets } from '../sheets/use-teach-sheets'
@@ -22,16 +21,16 @@ import { useTeachSheets } from '../sheets/use-teach-sheets'
 export const handle: RouteHandle = { title: 'Today' }
 
 /**
- * Today: the date, the "To finish" banner, two number tiles (lessons held this month; for a
- * school's teacher what the school still owes, opening Payments), then the lessons to finish,
- * today's and the coming ones.
+ * Today: the date, the "To finish" banner, the table of all-time lesson totals (held, paid by the
+ * school or by the students, the difference; for a school's teacher it opens Payments), then the
+ * lessons to finish, today's and the coming ones.
  */
 export function Component() {
   const t = useT()
   const fmt = useFormatters()
   const me = useMe()
   const sheets = useTeachSheets()
-  const { canViewPayouts, place } = teachCapabilities(me)
+  const { canViewPayouts } = teachCapabilities(me)
   const [now] = useState(() => new Date())
   useTeachTitle(t('teacher.today.title'))
 
@@ -39,8 +38,6 @@ export function Component() {
     () => ({
       now: toIsoWithOffset(now),
       endOfToday: toIsoWithOffset(endOfDay(now)),
-      monthStart: toIsoWithOffset(startOfMonth(now)),
-      monthEnd: toIsoWithOffset(endOfMonth(now)),
     }),
     [now],
   )
@@ -58,33 +55,9 @@ export function Component() {
     { status: 'PENDING', from: bounds.endOfToday },
     'scheduledAt,asc',
   )
-  const heldPresent = useLessonCount({
-    status: 'PRESENT',
-    from: bounds.monthStart,
-    to: bounds.monthEnd,
-  })
-  const heldLate = useLessonCount({
-    status: 'CANCELED_LATE',
-    from: bounds.monthStart,
-    to: bounds.monthEnd,
-  })
-  // What the school paid this teacher for (a teacher payout); a freelance teacher has no school.
-  const earnings = useMonthEarnings(now, { enabled: canViewPayouts })
+  const totals = useLessonTotals()
   const { studentName, courseTitle } = useLessonLookups()
   const oldestToFinish = toFinishSummary.data?.oldest ?? null
-
-  const heldValue =
-    heldPresent.isPending || heldLate.isPending
-      ? '…'
-      : String((heldPresent.data ?? 0) + (heldLate.data ?? 0))
-  const lastPaidOn = earnings.data?.lastPaidOn ? parseLocalDate(earnings.data.lastPaidOn) : null
-  const owedValue = earnings.data ? String(earnings.data.owed) : earnings.isError ? '—' : '…'
-  const school = place.kind === 'org' ? place.organization.name : ''
-  const owedHint = earnings.data
-    ? lastPaidOn
-      ? t('teacher.payments.lastPaidOn', { date: fmt.shortDate(lastPaidOn) })
-      : t('teacher.payments.neverPaid')
-    : school
 
   return (
     <div className="flex flex-col gap-6">
@@ -105,25 +78,15 @@ export function Component() {
       {oldestToFinish && toFinishSummary.data ? (
         <ToFinishBanner count={toFinishSummary.data.count} to={calendarLinkTo(oldestToFinish)} />
       ) : null}
-      <div className="grid gap-4 sm:grid-cols-2 lg:max-w-xl">
-        <StatTile
-          icon={CheckCircle2}
-          tone="held"
-          value={heldValue}
-          label={t('teacher.today.heldLabel')}
-          hint={fmt.monthYear(now)}
-        />
-        {canViewPayouts ? (
-          <StatTile
-            icon={Banknote}
-            tone="paid"
-            value={owedValue}
-            label={t('teacher.today.owedLabel')}
-            hint={owedHint}
-            to="/teach/payments"
-          />
-        ) : null}
-      </div>
+      {/* A school pays its teacher (teacher payouts, on Payments); a freelance teacher is paid by the students. */}
+      <LessonTotalsTable
+        className="lg:max-w-xl"
+        totals={totals.data}
+        failed={totals.isError}
+        paidHint={canViewPayouts ? undefined : t('teacher.today.totals.paidByStudents')}
+        to={canViewPayouts ? '/teach/payments' : undefined}
+        toLabel={t('nav.payments')}
+      />
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="flex min-w-0 flex-col gap-6">
           <Section title={t('teacher.today.toFinish')} hint={t('teacher.today.toFinishHint')}>

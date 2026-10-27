@@ -32,6 +32,9 @@ function emptyWorkspace() {
     http.get(api('/teacher/earnings'), () =>
       HttpResponse.json({ taught: 3, paidOut: 1, owed: 2, lastPaidOn: '2026-10-20' }),
     ),
+    http.get(api('/teacher/lesson-totals'), () =>
+      HttpResponse.json({ held: 5, paid: 3, balance: -2 }),
+    ),
     http.get(api('/students/s-1/lessons/summary'), () =>
       HttpResponse.json({
         ...summary,
@@ -44,6 +47,13 @@ function emptyWorkspace() {
   )
 }
 
+/** The numbers row of the lesson totals table, as the reader sees it. */
+function cellTexts(table: HTMLElement) {
+  return within(table)
+    .getAllByRole('cell')
+    .map((cell) => cell.textContent)
+}
+
 describe('the teacher workspace (D-051)', () => {
   it('is where a teacher lands, with the school in the shell; an admin is sent to their own home', async () => {
     signedInAs(user())
@@ -51,8 +61,7 @@ describe('the teacher workspace (D-051)', () => {
     renderApp('/')
     expect(await screen.findByRole('heading', { level: 1, name: 'Hello, Ana' })).toBeInTheDocument()
     expect(screen.getByText('Teacher at Riverside Music School')).toBeInTheDocument()
-    // An org teacher sees what the school owes; a freelance teacher would not.
-    expect(await screen.findByText('Owed to you')).toBeInTheDocument()
+    expect(await screen.findByRole('table', { name: 'Your lessons' })).toBeInTheDocument()
     expect(screen.getAllByRole('link', { name: 'Students' }).length).toBeGreaterThan(0)
   })
 
@@ -116,6 +125,48 @@ describe('Today', () => {
       'href',
       '/teach/calendar?view=day&date=2020-01-10&focus=l-1',
     )
+  })
+
+  it("shows a school's teacher their lessons held, paid out and the arrears, opening Payments", async () => {
+    renderApp('/teach')
+    const table = await screen.findByRole('table', { name: 'Your lessons' })
+    await waitFor(() => expect(cellTexts(table)).toEqual(['5', '3', '2']))
+    const [held, paid, balance] = within(table).getAllByRole('columnheader')
+    expect(held).toHaveTextContent('Lessons held')
+    expect(paid).toHaveTextContent(/^Paid$/)
+    // In arrears the header says so in place of "Paid in advance", and the amount has no minus.
+    expect(balance).toHaveTextContent(/^In arrears$/)
+    const card = table.closest('div')!
+    expect(within(card).getByRole('link', { name: 'Payments' })).toHaveAttribute(
+      'href',
+      '/teach/payments',
+    )
+  })
+
+  it('shows a freelance teacher what their students paid, ahead of the lessons held', async () => {
+    signedInAs(freelanceTeacher())
+    server.use(
+      http.get(api('/teacher/lesson-totals'), () =>
+        HttpResponse.json({ held: 2, paid: 3, balance: 1 }),
+      ),
+    )
+    renderApp('/teach')
+    const table = await screen.findByRole('table', { name: 'Your lessons' })
+    expect(within(table).getAllByRole('columnheader')[1]).toHaveTextContent('Paidby your students')
+    await waitFor(() => expect(cellTexts(table)).toEqual(['2', '3', '+1']))
+    expect(within(table).getAllByRole('columnheader')[2]).toHaveTextContent(/^Paid in advance$/)
+    expect(within(table.closest('div')!).queryByRole('link')).not.toBeInTheDocument()
+  })
+
+  it('shows a dash when the totals cannot be loaded', async () => {
+    server.use(
+      http.get(api('/teacher/lesson-totals'), () =>
+        apiError(403, 'FORBIDDEN', 'Requires a teacher account'),
+      ),
+    )
+    renderApp('/teach')
+    const table = await screen.findByRole('table', { name: 'Your lessons' })
+    await waitFor(() => expect(cellTexts(table)).toEqual(['—', '—', '—']))
   })
 })
 

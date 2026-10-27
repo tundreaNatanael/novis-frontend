@@ -230,7 +230,9 @@ freelance teacher's only: a school's admin assigns an org teacher's courses, D-0
 lesson, Payments (org teachers) and Profile mirror the app's screens, with the app's sheets (book
 one lesson or a weekly series with a dry run, schedule, finish, journal, attach a link or upload a
 file behind `VITE_ENABLE_UPLOADS` (D-052), homework, students, credits, courses, enroll, password)
-and its English / Romanian copy. Walked through in the browser against the dev backend as the demo
+and its English / Romanian copy. Today opens with the lesson totals table (D-055,
+`GET /teacher/lesson-totals`: all-time lessons held, paid and the difference), which replaced the
+tiles of this month's lessons held and what the school owes. Walked through in the browser against the dev backend as the demo
 teacher (Today, calendar, a lesson, students, courses, profile, both themes and languages, desktop
 and phone widths).
 Tests: Vitest + MSW over
