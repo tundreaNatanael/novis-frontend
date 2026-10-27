@@ -52,7 +52,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/orgs": {
+    "/recurring-lessons": {
         parameters: {
             query?: never;
             header?: never;
@@ -68,7 +68,55 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/orgs/{orgId}/teacher-payouts": {
+    "/recurring-lessons/{id}/occurrences/{occurrenceOn}/skip": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["skipOccurrence"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/recurring-lessons/{id}/occurrences/{occurrenceOn}/book": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["bookOccurrence"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/recurring-lessons/{id}/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["end"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs": {
         parameters: {
             query?: never;
             header?: never;
@@ -78,6 +126,22 @@ export interface paths {
         get: operations["list_2"];
         put?: never;
         post: operations["create_2"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orgs/{orgId}/teacher-payouts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_3"];
+        put?: never;
+        post: operations["create_3"];
         delete?: never;
         options?: never;
         head?: never;
@@ -141,7 +205,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["create_3"];
+        post: operations["create_4"];
         delete?: never;
         options?: never;
         head?: never;
@@ -203,9 +267,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_3"];
+        get: operations["list_4"];
         put?: never;
-        post: operations["create_4"];
+        post: operations["create_5"];
         delete?: never;
         options?: never;
         head?: never;
@@ -285,22 +349,6 @@ export interface paths {
         };
         get: operations["listHomework"];
         put?: never;
-        post: operations["create_5"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/freelance-teachers": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["list_4"];
-        put?: never;
         post: operations["create_6"];
         delete?: never;
         options?: never;
@@ -308,7 +356,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/courses": {
+    "/freelance-teachers": {
         parameters: {
             query?: never;
             header?: never;
@@ -324,7 +372,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/courses/{courseId}/enrollments": {
+    "/courses": {
         parameters: {
             query?: never;
             header?: never;
@@ -332,6 +380,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["list_6"];
+        put?: never;
+        post: operations["create_8"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/courses/{courseId}/enrollments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_7"];
         put?: never;
         post: operations["enroll"];
         delete?: never;
@@ -516,7 +580,7 @@ export interface paths {
         patch: operations["update_1"];
         trace?: never;
     };
-    "/orgs/{id}": {
+    "/recurring-lessons/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -526,10 +590,26 @@ export interface paths {
         get: operations["get_2"];
         put?: never;
         post?: never;
-        delete: operations["delete_2"];
+        delete?: never;
         options?: never;
         head?: never;
         patch: operations["update_2"];
+        trace?: never;
+    };
+    "/orgs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_3"];
+        put?: never;
+        post?: never;
+        delete: operations["delete_2"];
+        options?: never;
+        head?: never;
+        patch: operations["update_3"];
         trace?: never;
     };
     "/me/homework-items/{id}": {
@@ -603,13 +683,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_3"];
+        get: operations["get_4"];
         put?: never;
         post?: never;
         delete: operations["delete_3"];
         options?: never;
         head?: never;
-        patch: operations["update_3"];
+        patch: operations["update_4"];
         trace?: never;
     };
     "/homework-items/{id}": {
@@ -625,7 +705,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch: operations["update_4"];
+        patch: operations["update_5"];
         trace?: never;
     };
     "/freelance-teachers/{id}": {
@@ -635,13 +715,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_4"];
+        get: operations["get_5"];
         put?: never;
         post?: never;
         delete: operations["delete_4"];
         options?: never;
         head?: never;
-        patch: operations["update_5"];
+        patch: operations["update_6"];
         trace?: never;
     };
     "/courses/{id}": {
@@ -651,13 +731,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_5"];
+        get: operations["get_6"];
         put?: never;
         post?: never;
         delete: operations["delete_5"];
         options?: never;
         head?: never;
-        patch: operations["update_6"];
+        patch: operations["update_7"];
         trace?: never;
     };
     "/users": {
@@ -667,7 +747,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_7"];
+        get: operations["list_8"];
         put?: never;
         post?: never;
         delete?: never;
@@ -699,7 +779,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_8"];
+        get: operations["list_9"];
         put?: never;
         post?: never;
         delete?: never;
@@ -779,7 +859,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_6"];
+        get: operations["get_7"];
         put?: never;
         post?: never;
         delete?: never;
@@ -811,7 +891,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_9"];
+        get: operations["list_10"];
         put?: never;
         post?: never;
         delete?: never;
@@ -916,23 +996,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/me/profiles": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["list_10"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/me/materials": {
+    "/me/recurring-lessons": {
         parameters: {
             query?: never;
             header?: never;
@@ -948,7 +1012,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/me/lessons": {
+    "/me/profiles": {
         parameters: {
             query?: never;
             header?: never;
@@ -956,6 +1020,38 @@ export interface paths {
             cookie?: never;
         };
         get: operations["list_12"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/materials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_13"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/lessons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_14"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1019,7 +1115,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_7"];
+        get: operations["get_8"];
         put?: never;
         post?: never;
         delete: operations["delete_6"];
@@ -1241,6 +1337,11 @@ export interface components {
             durationMinutes?: number;
             /** Format: uuid */
             seriesId?: string;
+            /** Format: uuid */
+            recurringLessonId?: string;
+            /** Format: date */
+            occurrenceOn?: string;
+            followsRule?: boolean;
             studentPayment?: components["schemas"]["StudentPaymentResponse"];
             teacherPayout?: components["schemas"]["LessonTeacherPayoutResponse"];
             journal?: string;
@@ -1283,6 +1384,99 @@ export interface components {
             paidAt?: string;
             /** Format: uuid */
             recordedById?: string;
+        };
+        CreateRecurringLessonRequest: {
+            /** Format: uuid */
+            studentId: string;
+            /** Format: uuid */
+            teacherId?: string;
+            /** Format: uuid */
+            courseId?: string;
+            /** Format: date-time */
+            firstAt: string;
+            timeZone: string;
+            /** Format: int32 */
+            intervalWeeks: number;
+            /** Format: int32 */
+            durationMinutes?: number;
+            meetingUrl?: string;
+            allowOverlap?: boolean;
+            dryRun?: boolean;
+        };
+        RecurringLessonPlanResponse: {
+            occurrences?: components["schemas"]["RecurringOccurrenceResponse"][];
+        };
+        RecurringOccurrenceResponse: {
+            /** Format: date */
+            occurrenceOn?: string;
+            /** Format: date-time */
+            scheduledAt?: string;
+            conflict?: boolean;
+            /** Format: uuid */
+            conflictWithLessonId?: string;
+        };
+        RecurringConflictResponse: {
+            /** Format: date */
+            occurrenceOn?: string;
+            /** Format: date-time */
+            scheduledAt?: string;
+            /** Format: uuid */
+            conflictWithLessonId?: string;
+        };
+        RecurringLessonDetailResponse: {
+            rule?: components["schemas"]["RecurringLessonResponse"];
+            lessons?: components["schemas"]["LessonResponse"][];
+        };
+        RecurringLessonResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            teacherId?: string;
+            /** Format: uuid */
+            studentId?: string;
+            /** Format: uuid */
+            courseId?: string;
+            /** Format: uuid */
+            organizationId?: string;
+            /** @enum {string} */
+            weekday?: "MONDAY" | "TUESDAY" | "WEDNESDAY" | "THURSDAY" | "FRIDAY" | "SATURDAY" | "SUNDAY";
+            localTime?: string;
+            timeZone?: string;
+            /** Format: int32 */
+            intervalWeeks?: number;
+            /** Format: date */
+            startsOn?: string;
+            /** Format: date */
+            endsOn?: string;
+            /** Format: int32 */
+            durationMinutes?: number;
+            meetingUrl?: string;
+            /** @enum {string} */
+            status?: "ACTIVE" | "ENDED";
+            /** @enum {string} */
+            endReason?: "STOPPED" | "REPLACED" | "STUDENT_LEFT" | "TEACHER_LEFT" | "COURSE_REMOVED" | "ACCOUNT_DELETED";
+            /** Format: date-time */
+            endedAt?: string;
+            /** Format: uuid */
+            endedById?: string;
+            /** Format: date */
+            generatedUntil?: string;
+            /** Format: uuid */
+            replacesId?: string;
+            conflicts?: components["schemas"]["RecurringConflictResponse"][];
+            /** Format: uuid */
+            createdById?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
+        BookOccurrenceRequest: {
+            allowOverlap?: boolean;
+        };
+        EndRecurringLessonRequest: {
+            /** Format: date */
+            endsOn?: string;
         };
         CreateOrganizationRequest: {
             name: string;
@@ -1706,6 +1900,22 @@ export interface components {
             /** Format: date-time */
             createdAt?: string;
         };
+        UpdateRecurringLessonRequest: {
+            /** Format: date */
+            effectiveFrom: string;
+            /** @enum {string} */
+            weekday?: "MONDAY" | "TUESDAY" | "WEDNESDAY" | "THURSDAY" | "FRIDAY" | "SATURDAY" | "SUNDAY";
+            /** Format: time-local */
+            localTime?: string;
+            timeZone?: string;
+            /** Format: int32 */
+            intervalWeeks?: number;
+            /** Format: int32 */
+            durationMinutes?: number;
+            meetingUrl?: string;
+            allowOverlap?: boolean;
+            dryRun?: boolean;
+        };
         UpdateOrganizationRequest: {
             name?: string;
             slug?: string;
@@ -1856,6 +2066,12 @@ export interface components {
             paidOut?: boolean;
             /** Format: uuid */
             seriesId?: string;
+            /** Format: uuid */
+            recurringLessonId?: string;
+            /** Format: date */
+            occurrenceOn?: string;
+            followsRule?: boolean;
+            projected?: boolean;
         };
         PageResponseStudentResponse: {
             content?: components["schemas"]["StudentResponse"][];
@@ -1897,6 +2113,18 @@ export interface components {
             status?: "ACTIVE" | "DROPPED" | "COMPLETED";
             /** Format: date-time */
             enrolledAt?: string;
+        };
+        PageResponseRecurringLessonResponse: {
+            content?: components["schemas"]["RecurringLessonResponse"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+            last?: boolean;
         };
         PageResponseOrganizationResponse: {
             content?: components["schemas"]["OrganizationResponse"][];
@@ -2235,6 +2463,140 @@ export interface operations {
     list_1: {
         parameters: {
             query: {
+                studentId?: string;
+                teacherId?: string;
+                courseId?: string;
+                status?: "ACTIVE" | "ENDED";
+                organizationId?: string;
+                pageable: components["schemas"]["Pageable"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseRecurringLessonResponse"];
+                };
+            };
+        };
+    };
+    create_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateRecurringLessonRequest"];
+            };
+        };
+        responses: {
+            /** @description dryRun: the first occurrences and their conflicts */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RecurringLessonPlanResponse"];
+                };
+            };
+            /** @description The rule and the lessons booked for it */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RecurringLessonDetailResponse"];
+                };
+            };
+        };
+    };
+    skipOccurrence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                occurrenceOn: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    bookOccurrence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                occurrenceOn: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["BookOccurrenceRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LessonResponse"];
+                };
+            };
+        };
+    };
+    end: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["EndRecurringLessonRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RecurringLessonResponse"];
+                };
+            };
+        };
+    };
+    list_2: {
+        parameters: {
+            query: {
                 pageable: components["schemas"]["Pageable"];
             };
             header?: never;
@@ -2254,7 +2616,7 @@ export interface operations {
             };
         };
     };
-    create_1: {
+    create_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -2278,7 +2640,7 @@ export interface operations {
             };
         };
     };
-    list_2: {
+    list_3: {
         parameters: {
             query: {
                 teacherId?: string;
@@ -2306,7 +2668,7 @@ export interface operations {
             };
         };
     };
-    create_2: {
+    create_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -2435,7 +2797,7 @@ export interface operations {
             };
         };
     };
-    create_3: {
+    create_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -2529,7 +2891,7 @@ export interface operations {
             };
         };
     };
-    list_3: {
+    list_4: {
         parameters: {
             query: {
                 studentId?: string;
@@ -2560,7 +2922,7 @@ export interface operations {
             };
         };
     };
-    create_4: {
+    create_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -2741,7 +3103,7 @@ export interface operations {
             };
         };
     };
-    create_5: {
+    create_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -2765,7 +3127,7 @@ export interface operations {
             };
         };
     };
-    list_4: {
+    list_5: {
         parameters: {
             query: {
                 q?: string;
@@ -2789,7 +3151,7 @@ export interface operations {
             };
         };
     };
-    create_6: {
+    create_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -2813,7 +3175,7 @@ export interface operations {
             };
         };
     };
-    list_5: {
+    list_6: {
         parameters: {
             query: {
                 organizationId?: string;
@@ -2837,7 +3199,7 @@ export interface operations {
             };
         };
     };
-    create_7: {
+    create_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -2861,7 +3223,7 @@ export interface operations {
             };
         };
     };
-    list_6: {
+    list_7: {
         parameters: {
             query: {
                 pageable: components["schemas"]["Pageable"];
@@ -3278,6 +3640,54 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    "*/*": components["schemas"]["RecurringLessonResponse"];
+                };
+            };
+        };
+    };
+    update_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateRecurringLessonRequest"];
+            };
+        };
+        responses: {
+            /** @description dryRun: the dates the change would book; otherwise the rule holding the new settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RecurringLessonDetailResponse"];
+                };
+            };
+        };
+    };
+    get_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
                     "*/*": components["schemas"]["OrganizationResponse"];
                 };
             };
@@ -3303,7 +3713,7 @@ export interface operations {
             };
         };
     };
-    update_2: {
+    update_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -3433,7 +3843,7 @@ export interface operations {
             };
         };
     };
-    get_3: {
+    get_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -3475,7 +3885,7 @@ export interface operations {
             };
         };
     };
-    update_3: {
+    update_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -3501,7 +3911,7 @@ export interface operations {
             };
         };
     };
-    update_4: {
+    update_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -3527,7 +3937,7 @@ export interface operations {
             };
         };
     };
-    get_4: {
+    get_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -3569,7 +3979,7 @@ export interface operations {
             };
         };
     };
-    update_5: {
+    update_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -3595,7 +4005,7 @@ export interface operations {
             };
         };
     };
-    get_5: {
+    get_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -3637,7 +4047,7 @@ export interface operations {
             };
         };
     };
-    update_6: {
+    update_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -3663,7 +4073,7 @@ export interface operations {
             };
         };
     };
-    list_7: {
+    list_8: {
         parameters: {
             query: {
                 freelance?: boolean;
@@ -3707,7 +4117,7 @@ export interface operations {
             };
         };
     };
-    list_8: {
+    list_9: {
         parameters: {
             query: {
                 pageable: components["schemas"]["Pageable"];
@@ -3819,7 +4229,7 @@ export interface operations {
             };
         };
     };
-    get_6: {
+    get_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -3865,7 +4275,7 @@ export interface operations {
             };
         };
     };
-    list_9: {
+    list_10: {
         parameters: {
             query: {
                 pageable: components["schemas"]["Pageable"];
@@ -4041,7 +4451,27 @@ export interface operations {
             };
         };
     };
-    list_10: {
+    list_11: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RecurringLessonResponse"][];
+                };
+            };
+        };
+    };
+    list_12: {
         parameters: {
             query?: never;
             header?: never;
@@ -4061,7 +4491,7 @@ export interface operations {
             };
         };
     };
-    list_11: {
+    list_13: {
         parameters: {
             query: {
                 pageable: components["schemas"]["Pageable"];
@@ -4083,7 +4513,7 @@ export interface operations {
             };
         };
     };
-    list_12: {
+    list_14: {
         parameters: {
             query: {
                 pageable: components["schemas"]["Pageable"];
@@ -4171,7 +4601,7 @@ export interface operations {
             };
         };
     };
-    get_7: {
+    get_8: {
         parameters: {
             query?: never;
             header?: never;

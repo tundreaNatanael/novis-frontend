@@ -40,6 +40,7 @@ Phase 0 checkpoint on 2026-10-16 (`docs/DECISIONS.md` D-015).
 | [G20](#g20-one-role-per-account)                                            | One role per account                                  | **B** — `User.role` + `User.organization`, `409 ROLE_CONFLICT` / `INVITE_PENDING`, `/freelance-teachers`, invite `?status=` + resend                   | backend     | adapted in UI                                                                                                                |
 | [G21](#g21-a-teacher-who-left-has-no-page-for-the-organizations-admin)      | Pay out the lessons of a teacher who left             | **B** — let the organization's admin read a former teacher's name (e.g. teachers with history next to the members)                                     | ½ day       | open (the super-admin's console reaches them; the Finance tab lists them, D-048)                                             |
 | [G22](#g22-browser-uploads-need-a-cors-rule-on-the-bucket)                  | Teachers upload files from the web workspace          | **B** (infra) — allow `PUT` from the app's origin on the bucket                                                                                        | open        | —                                                                                                                            |
+| [G23](#g23-projected-calendar-rows-in-the-teacher-workspace)                | The teacher calendar past the booked horizon          | **A** — show `projected` rows read-only, keyed by rule and date                                                                                        | open        | —                                                                                                                            |
 | [G16](#g16-documentation--code-discrepancies)                               | Docs ≠ code                                           | record; no action in the console                                                                                                                       | —           | recorded                                                                                                                     |
 
 Everything marked **B** keeps the backend's rules: authorization in the service, roles and
@@ -687,3 +688,16 @@ upload didn't go through".
 (`http://localhost:5173` in development, the production origin), methods `PUT`, headers
 `Content-Type`. No API change. Until then the workspace keeps `VITE_ENABLE_UPLOADS` off and
 attaches links only. **Status: open.**
+
+## G23 Projected calendar rows in the teacher workspace
+
+**Found while adding weekly lessons to the console (D-054).** With recurring lessons (API.md §9.8)
+`GET /teacher/calendar` also answers `projected: true` rows: an occurrence of an active weekly
+lesson beyond the dates the generator has booked, read-only, with `id: null`. The teacher
+workspace's calendar (D-046, D-051) keys and links its blocks by `id`, so such a row would render
+with an empty key and a link to no lesson; `types.ts` keeps `CalendarLesson.id` a string for now
+and says so. The mobile app already shows them ("Weekly lesson, not booked yet").
+
+**Option A.** Key calendar rows by the lesson's id or by `recurringLessonId` + `occurrenceOn`,
+render a projected row without actions (the mobile app's "planned by a weekly lesson" hint), and
+make `id` nullable in `types.ts`. No API change. **Status: open.**

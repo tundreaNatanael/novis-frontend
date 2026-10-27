@@ -19,7 +19,10 @@ const STALE = 5 * 60_000
  * Lesson rows carry ids only, so the console resolves names per distinct id (cached for five
  * minutes; one request per entity, not per row). A denormalized ledger row would avoid this (gap G19).
  */
-export function useLessonNames(lessons: Lesson[]): LessonNames {
+/** What a row must carry to be named: a lesson, or a weekly lesson (the same ids). */
+export type NamedRow = Pick<Lesson, 'teacherId' | 'studentId' | 'courseId' | 'organizationId'>
+
+export function useLessonNames(lessons: NamedRow[]): LessonNames {
   const teacherIds = unique(lessons.map((l) => l.teacherId))
   const studentIds = unique(lessons.map((l) => l.studentId))
   const courseIds = unique(lessons.map((l) => l.courseId).filter((id): id is string => !!id))

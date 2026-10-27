@@ -12,6 +12,7 @@ import type {
   Organization,
   Page,
   PayoutLesson,
+  RecurringLesson,
   RosterStudent,
   Student,
   StudentCreated,
@@ -231,6 +232,9 @@ export function lesson(overrides: Partial<Lesson> = {}): Lesson {
     scheduledAt: '2026-10-20T15:00:00Z',
     durationMinutes: 60,
     seriesId: null,
+    recurringLessonId: null,
+    occurrenceOn: null,
+    followsRule: false,
     studentPayment: unpaid,
     teacherPayout: null,
     journal: null,
@@ -423,6 +427,43 @@ export function calendarLesson(overrides: Partial<CalendarLesson> = {}): Calenda
     hasJournal: false,
     paidOut: false,
     seriesId: null,
+    recurringLessonId: null,
+    occurrenceOn: null,
+    followsRule: false,
+    projected: false,
+    ...overrides,
+  }
+}
+
+/**
+ * A weekly lesson of `u-1` (Ana Pop) with `s-1` in course `c-1`: every Tuesday at 17:00 in
+ * Europe/Bucharest for an hour, from 2026-10-20 (a Tuesday), permanent, nothing to settle.
+ */
+export function recurringLesson(overrides: Partial<RecurringLesson> = {}): RecurringLesson {
+  return {
+    id: 'r-1',
+    teacherId: 'u-1',
+    studentId: 's-1',
+    courseId: 'c-1',
+    organizationId: 'org-1',
+    weekday: 'TUESDAY',
+    localTime: '17:00',
+    timeZone: 'Europe/Bucharest',
+    intervalWeeks: 1,
+    startsOn: '2026-10-20',
+    endsOn: null,
+    durationMinutes: 60,
+    meetingUrl: null,
+    status: 'ACTIVE',
+    endReason: null,
+    endedAt: null,
+    endedById: null,
+    generatedUntil: '2026-12-22',
+    replacesId: null,
+    conflicts: [],
+    createdById: 'admin-1',
+    createdAt: '2026-10-19T10:00:00Z',
+    updatedAt: '2026-10-19T10:00:00Z',
     ...overrides,
   }
 }

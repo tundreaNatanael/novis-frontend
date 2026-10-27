@@ -31,6 +31,7 @@ import { HomeworkPanel } from '@/features/homework/components/homework-panel'
 import { AddPrepaidSheet } from '@/features/lessons/components/add-prepaid-sheet'
 import { BalanceFields } from '@/features/lessons/components/balance-fields'
 import { useLessonPaths } from '@/features/lessons/lesson-paths'
+import { WeeklyLessonsPanel } from '@/features/recurring/components/weekly-lessons-panel'
 import { EditStudentSheet } from '../components/edit-student-sheet'
 import { useWorkspaceScope } from '../use-org-workspace'
 
@@ -44,8 +45,10 @@ const ENROLLMENTS = { page: 0, size: 100, sort: 'enrolledAt,desc' }
  * Student detail: `GET /students/{id}` + `GET /users/{id}` (the one organization, with the
  * membership id, or none for a freelance teacher's student), balances from
  * `GET /students/{id}/lessons/summary`, courses from `GET /students/{id}/enrollments`, homework
- * from `GET /homework?studentId=` with Assign, Edit and Delete, and the siblings sharing the email
- * inside this workspace from `GET /students/{id}/profiles` (the server filters by reach, D-049).
+ * from `GET /homework?studentId=` with Assign, Edit and Delete, the weekly lessons from
+ * `GET /recurring-lessons?studentId=` with Set up, Change from a date, Stop and the dates to settle
+ * (D-054), and the siblings sharing the email inside this workspace from
+ * `GET /students/{id}/profiles` (the server filters by reach, D-049).
  */
 export function Component() {
   const scope = useWorkspaceScope()
@@ -249,6 +252,18 @@ export function Component() {
               ))
             )}
           </DetailPanel>
+          {capabilities.canManageLessons ? (
+            <WeeklyLessonsPanel
+              studentId={studentId}
+              studentName={student.name}
+              teacher={
+                scope.kind === 'freelance'
+                  ? { id: scope.teacherId, name: scope.teacher.name }
+                  : undefined
+              }
+              organizationId={orgId ?? undefined}
+            />
+          ) : null}
           <HomeworkPanel
             description={
               scope.kind === 'org'

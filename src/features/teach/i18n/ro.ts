@@ -121,6 +121,7 @@ export const ro = {
     durationHours: '%{count} h',
     durationHoursMinutes: '%{hours} h %{minutes} min',
     inSeries: 'Face parte dintr-o serie săptămânală',
+    weekly: 'Lecție săptămânală',
   },
   homework: {
     title: 'Temă',

@@ -41,6 +41,11 @@ export type HomeworkStatus = NonNullable<
 export type InviteStatus = NonNullable<
   NonNullable<operations['listOrganizationInvites']['parameters']['query']>['status']
 >
+/** A weekly setting in force, or ended (API.md §9.8). */
+export type RecurringLessonStatus = NonNullable<S['RecurringLessonResponse']['status']>
+/** Why a recurring lesson ended: a person stopped it, an edit replaced it, or its parties came apart. */
+export type RecurringLessonEndReason = NonNullable<S['RecurringLessonResponse']['endReason']>
+export type Weekday = NonNullable<S['RecurringLessonResponse']['weekday']>
 
 // --- paging (API.md §1.5) --------------------------------------------------------------------
 
@@ -109,7 +114,10 @@ export type LessonTeacherPayout = Strict<S['LessonTeacherPayoutResponse']>
  * sets) is `null` when the caller does not manage the lesson's payments — never read that as
  * "unpaid". `teacherPayout` is `null` when no live payout covers the lesson (and for freelance
  * lessons). A dated lesson runs from `scheduledAt` for `durationMinutes`; `seriesId` groups the
- * lessons one weekly series booked.
+ * lessons one weekly series booked. `recurringLessonId` / `occurrenceOn` name the weekly lesson
+ * (API.md §9.8) this lesson stands for an occurrence of, kept when it is moved or closed;
+ * `followsRule` is `false` once someone moved, resized, re-linked or unscheduled it by hand (an
+ * edit of the rule then leaves it alone), and always without a rule.
  */
 export type Lesson = Nullable<
   Omit<Strict<S['LessonResponse']>, 'studentPayment' | 'teacherPayout'> & {
@@ -120,6 +128,8 @@ export type Lesson = Nullable<
   | 'organizationId'
   | 'scheduledAt'
   | 'seriesId'
+  | 'recurringLessonId'
+  | 'occurrenceOn'
   | 'studentPayment'
   | 'teacherPayout'
   | 'journal'
@@ -226,11 +236,19 @@ export type RosterStudent = Nullable<
 /**
  * One row of `GET /teacher/calendar` (API.md §12): a dated lesson of the caller with the names a
  * calendar shows and no payment data. `paidOut` is the school's payout to the teacher, never the
- * student's payment.
+ * student's payment. A `projected` row is an occurrence of a weekly lesson beyond the dates the
+ * generator has booked (API.md §9.8): the API sends it with `id: null`; the teacher workspace does
+ * not handle such rows yet (gap G23), so `id` stays a string here.
  */
 export type CalendarLesson = Nullable<
   Strict<S['CalendarLessonResponse']>,
-  'courseId' | 'courseTitle' | 'meetingUrl' | 'closedAt' | 'seriesId'
+  | 'courseId'
+  | 'courseTitle'
+  | 'meetingUrl'
+  | 'closedAt'
+  | 'seriesId'
+  | 'recurringLessonId'
+  | 'occurrenceOn'
 >
 /** `GET /teacher/earnings`: a teacher's charged lessons in a window, those a live payout covers, and the rest (API.md §9.6). */
 export type TeacherEarnings = Nullable<Strict<S['TeacherEarningsResponse']>, 'lastPaidOn'>
@@ -246,6 +264,47 @@ export interface LessonSeriesPlan {
 /** `POST /lessons/series`: every lesson booked, in date order, with the shared `seriesId`. */
 export interface LessonSeries {
   seriesId: string
+  lessons: Lesson[]
+}
+/**
+ * A **weekly setting** of one teacher and one student (API.md §9.8), not a lesson: every one or
+ * two weeks on `weekday` at `localTime` (`HH:mm`) in `timeZone`, for `durationMinutes`, with
+ * `meetingUrl`, from `startsOn` until `endsOn` (`null` while permanent). `generatedUntil` is the
+ * last date lessons exist for (8 weeks ahead); `conflicts` are the dates the daily run could not
+ * book because the slot was taken, for a person to settle; `replacesId` names the rule an edit
+ * from a date split this one off. Never any payment data.
+ */
+export type RecurringLesson = Nullable<
+  Omit<Strict<S['RecurringLessonResponse']>, 'conflicts'> & { conflicts: RecurringConflict[] },
+  | 'courseId'
+  | 'organizationId'
+  | 'endsOn'
+  | 'meetingUrl'
+  | 'endReason'
+  | 'endedAt'
+  | 'endedById'
+  | 'generatedUntil'
+  | 'replacesId'
+  | 'conflicts'
+  | 'createdById'
+>
+/** A date of a weekly lesson the daily run could not book; `conflictWithLessonId` only when the caller may open that lesson. */
+export type RecurringConflict = Nullable<
+  Strict<S['RecurringConflictResponse']>,
+  'conflictWithLessonId'
+>
+/** One date of a weekly lesson's dry run: as `SeriesOccurrence`, plus the local date it stands for. */
+export type RecurringOccurrence = Nullable<
+  Strict<S['RecurringOccurrenceResponse']>,
+  'conflictWithLessonId'
+>
+/** `dryRun: true` on create or edit: the dates up to the horizon with their conflicts, nothing written. */
+export interface RecurringLessonPlan {
+  occurrences: RecurringOccurrence[]
+}
+/** A rule with the lessons standing for its occurrences from today on, by date. */
+export interface RecurringLessonDetail {
+  rule: RecurringLesson
   lessons: Lesson[]
 }
 /** `POST /materials/upload-url`: a pending material and the signed `PUT` URL for its bytes (API.md §10). */
@@ -380,6 +439,52 @@ export interface CreateLessonSeriesRequest {
   allowOverlap?: boolean
   /** Plan only: answers the dates with their conflicts and writes nothing. */
   dryRun?: boolean
+}
+/**
+ * `POST /recurring-lessons` (API.md §9.8): a permanent weekly lesson from `firstAt` (today or
+ * later in `timeZone`), every one or two weeks at the same local time, until it is ended. The
+ * length and link fall back to the course's defaults, copied once.
+ */
+export interface CreateRecurringLessonRequest {
+  studentId: string
+  /** Admins and the super-admin name the teacher, as on `POST /lessons/series`. */
+  teacherId?: string
+  courseId?: string
+  /** The first lesson, any ISO-8601 offset; it sets the weekday, the local time and `startsOn`. */
+  firstAt: string
+  /** An IANA zone (`Europe/Bucharest`): 17:00 stays 17:00 across clock changes. */
+  timeZone: string
+  intervalWeeks: 1 | 2
+  durationMinutes?: number
+  meetingUrl?: string
+  /** Book the dates that overlap other lessons too (else `409 SCHEDULE_CONFLICT`, nothing written). */
+  allowOverlap?: boolean
+  /** Plan only: answers the dates up to the horizon with their conflicts and writes nothing. */
+  dryRun?: boolean
+}
+/**
+ * `PATCH /recurring-lessons/{id}`: a change from `effectiveFrom` (a local date in the rule's
+ * zone, today or later). An omitted field keeps its value; `meetingUrl: null` removes the link;
+ * nothing changed → `400`. When `effectiveFrom` is after the rule's start the rule splits and the
+ * answer is a **new** rule holding the new settings.
+ */
+export interface UpdateRecurringLessonRequest {
+  /** `yyyy-MM-dd` in the rule's zone. */
+  effectiveFrom: string
+  weekday?: Weekday
+  /** `HH:mm`. */
+  localTime?: string
+  timeZone?: string
+  intervalWeeks?: 1 | 2
+  /** Never `null` (the API answers `400`). */
+  durationMinutes?: number
+  meetingUrl?: string | null
+  allowOverlap?: boolean
+  dryRun?: boolean
+}
+/** `POST /recurring-lessons/{id}/end`: `endsOn` is the last day covered; left out, today in the rule's zone. */
+export interface EndRecurringLessonRequest {
+  endsOn?: string
 }
 /** `POST /materials`: a link-based material on a course and / or a lesson (API.md §10). */
 export interface CreateMaterialRequest {
@@ -536,6 +641,14 @@ export interface LessonFilters {
   /** ISO instant, exclusive. */
   to?: string
   unscheduled?: boolean
+}
+/** `GET /recurring-lessons`: visibility as `GET /lessons`, the filters only narrow it. */
+export interface RecurringLessonFilters {
+  studentId?: string
+  teacherId?: string
+  courseId?: string
+  status?: RecurringLessonStatus
+  organizationId?: string
 }
 /** `GET /teacher/calendar`: local midnights with their offsets, at most 42 days (and an hour) apart. */
 export interface CalendarQuery {

@@ -3,6 +3,55 @@
 All notable changes to the Novis admin console. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); dates are the day the change landed on `main`.
 
+## Weekly lessons in the console — Unreleased
+
+### Added
+
+- **Weekly lessons** (D-054, API.md §9.8) on a student's page, in both workspace mounts and in the
+  freelance workspace, for whoever manages lessons there (`canManageLessons`): a **Weekly
+  lessons** panel lists the student's active rules from `GET /recurring-lessons?studentId=&status=ACTIVE`
+  ("Every Tuesday, 17:00–18:00", the teacher, the course, "Next: 3 Nov 2026", the rule's zone when
+  it is not the browser's) and, under a rule, the dates the daily run could not book because the
+  time was taken, each with **Book anyway** (`POST …/occurrences/{date}/book { allowOverlap: true }`),
+  **Skip** (`POST …/skip`, after a confirmation: the date is dropped for good) and a link to the
+  lesson in the way when the API names it.
+- **Set up weekly lesson**: a sheet naming the teacher (a picker of the organization's teachers;
+  fixed in the freelance workspace), an optional course, the first lesson on the browser's clock
+  (its weekday and time repeat in the browser's IANA zone), every week or every 2 weeks, the length
+  (the course's default until edited) and a link. The dates up to the horizon are previewed with a
+  dry run (`dryRun: true`) as the form is filled, overlapping dates marked and linked; `POST
+/recurring-lessons` books the first 8 weeks, and a `409 SCHEDULE_CONFLICT` asks "This time is
+  taken" with **Set it up anyway** (`allowOverlap: true`, D-045).
+- **Change from a date** (a rule's ⋯ menu): `PATCH /recurring-lessons/{id}` with `effectiveFrom`
+  (today in the rule's zone by default), the weekday, the time in the rule's own zone, the repeat,
+  the length and the link; only what changed goes out (an emptied link as `null`; nothing changed
+  sends nothing and says so), the dates from that day are previewed with a dry run, and the
+  overlap question offers **Change it anyway**. The answer is the rule that holds the new settings;
+  when the API split the rule (a new id), the toast says the old one stays until that date.
+- **Stop weekly lesson** (⋯ menu): `POST /recurring-lessons/{id}/end` after a confirmation that
+  says today's lesson stays, paid lessons after today return to the student's lessons to schedule
+  as credits with their payment, an unpaid one with a material is unscheduled, an unpaid one
+  without is deleted, and held, canceled and hand-changed lessons are kept.
+- A **Weekly lesson** mark on lesson rows that carry `recurringLessonId`: the ledger's Status
+  column and phone rows, the agenda, and lesson detail (a "Weekly lesson" field with the
+  occurrence's date, whether the lesson still follows its rule, and a link to the student's weekly
+  lessons). The teacher workspace's lesson rows show the same mark in English and Romanian.
+- `src/api/recurring-lessons.ts` (`recurringLessonKeys`, `recurringLessonsApi`), the pure helpers
+  in `src/features/recurring/recurring-state.ts` (how a rule reads, its next date from `startsOn`
+  in steps of its interval, today in a zone, the set-up and change bodies) with tests, and MSW
+  flows for the panel, the sheets, the overlap questions, Stop, the freelance scope and the mark.
+
+### Changed
+
+- `src/api/schema.d.ts` regenerated from the backend with recurring lessons: `Lesson` and
+  `CalendarLesson` carry `recurringLessonId`, `occurrenceOn` and `followsRule` (nullable in
+  `types.ts`), `CalendarLesson` also `projected`; `RecurringLesson`, `RecurringConflict`,
+  `RecurringOccurrence`, `RecurringLessonPlan`, `RecurringLessonDetail` and the three request
+  bodies are typed by hand in `types.ts`. `useLessonNames` takes any row with the lesson's ids, so
+  the panel names teachers and courses the way the ledger does.
+- The teacher workspace's calendar does not handle the API's new `projected: true` rows (an
+  occurrence beyond the booked horizon, `id: null`) yet (gap G23).
+
 ## Courses assigned by the school's admin — Unreleased
 
 ### Breaking

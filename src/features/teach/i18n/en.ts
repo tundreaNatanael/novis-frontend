@@ -125,6 +125,8 @@ export const en = {
     durationHours: '%{count} h',
     durationHoursMinutes: '%{hours} h %{minutes} min',
     inSeries: 'Part of a weekly series',
+    /** A lesson a weekly lesson (a recurring lesson, API.md §9.8) booked. */
+    weekly: 'Weekly lesson',
   },
   homework: {
     title: 'Homework',

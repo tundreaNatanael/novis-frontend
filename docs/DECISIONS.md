@@ -693,3 +693,42 @@ enrolling students and course materials stay with the teacher.
 **Consequences.** An org teacher reaches a course only through a student enrolled in it (the
 student page's Courses section); a course nobody is enrolled in yet is out of their reach until
 the admin enrolls a first student. The course page's back link leads to Students for them.
+
+## D-054 · 2026-10-27 · Weekly lessons: a panel on the student's page, the teacher named
+
+**Decision.** Permanent weekly lessons (API.md §9.8, backend migration V14) live in a **Weekly
+lessons** panel on a student's page (both workspace mounts and the freelance workspace), for
+whoever manages lessons there (`canManageLessons`). The panel lists the student's active rules
+("Every Tuesday, 17:00–18:00", the teacher, the course, the next date computed from `startsOn` in
+steps of the interval, and the rule's zone when it is not the browser's) and the dates the daily
+run could not book, each with **Book anyway** and **Skip** (confirmed: the date is dropped for
+good). **Set up weekly lesson** names the teacher (`teacherId`, exactly as `POST /lessons/series`:
+a picker of the organization's teachers, the freelance workspace's fixed teacher), takes the first
+lesson on the browser's clock and sends the browser's IANA zone, and previews the dates up to the
+horizon with a dry run as the form is filled, overlapping dates marked and linked when the API
+names the lesson; a `409 SCHEDULE_CONFLICT` asks **Set it up anyway** (D-045). **Change from a
+date** edits the weekday, the time in the rule's own zone, the repeat, the length and the link
+from `effectiveFrom` (today in the rule's zone by default), sends only what changed (an emptied
+link as `null`, nothing changed sends nothing), previews with a dry run, offers **Change it
+anyway**, and reads the answer as the rule that now holds the settings — a new id when the API
+split the rule, which the toast says. **Stop** ends the rule today after a confirmation that
+spells out the giving back (paid lessons return as credits with their payment). Lesson rows that
+carry `recurringLessonId` get a **Weekly lesson** mark (ledger, agenda, lesson detail with the
+occurrence's date and whether it still follows its rule; the teacher workspace's rows in en / ro).
+**Context.** The backend gained recurring lessons as a setting apart from lessons, with a
+generator keeping 8 weeks booked; the mobile app got the teacher and student screens first; the
+task asked for the console's part on the student's page, in this scope.
+**Alternatives.** A Weekly lessons tab per organization — rejected: a rule is a pair's setting,
+and the student's page is where an admin looks for the student's lessons (as Lesson balances and
+Homework). Previewing only on a "Preview" click — rejected: a stale preview would not match the
+form; the dry run follows the form, debounced, as the teacher workspace's series preview does. A
+"Book anyway" checkbox — rejected as in D-045. An end date on Stop — not built: the API's default
+(today) covers the request; listed as a follow-up. "This and following" from a lesson's page —
+left to the teacher workspace and the mobile app; the console changes a rule from the student's
+page. Computing the next date from the generated lessons — rejected: the list endpoint carries no
+lessons and the detail route answers the rule only; the arithmetic is the API's (every date is
+`startsOn` plus whole intervals), and a skipped date is the one case it cannot know.
+**Consequences.** The console's copy stays English (the console has no i18n layer); the teacher
+workspace's mark has both languages. `useLessonNames` names any row with the lesson's ids. The
+dry-run query keys live apart from the rules' keys, so a write does not run a dry run again. The
+teacher workspace's calendar does not handle the API's new `projected` rows yet (gap G23).

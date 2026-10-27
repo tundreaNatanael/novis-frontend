@@ -31,6 +31,10 @@ function lesson(
     hasJournal: false,
     paidOut: false,
     seriesId: null,
+    recurringLessonId: null,
+    occurrenceOn: null,
+    followsRule: false,
+    projected: false,
     ...extra,
   }
 }

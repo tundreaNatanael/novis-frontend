@@ -1,4 +1,4 @@
-import { CalendarPlus, Check } from 'lucide-react'
+import { CalendarPlus, Check, Repeat } from 'lucide-react'
 import type { Lesson } from '@/api/types'
 import { Button } from '@/components/ui/button'
 import { useT } from '../i18n/use-i18n'
@@ -6,6 +6,7 @@ import { useFormatters } from '../lib/use-formatters'
 import { TeachAvatar } from './avatar'
 import { LessonStatusBadge, PaymentBadge, TeacherPayoutBadge } from './lesson-badges'
 import { ListRow } from './list-row'
+import { TeachBadge } from './teach-badge'
 
 export interface LessonRowProps {
   lesson: Lesson
@@ -52,6 +53,9 @@ export function LessonRow({
             <LessonStatusBadge lesson={lesson} now={now} />
             <PaymentBadge lesson={lesson} />
             <TeacherPayoutBadge paidOut={lesson.teacherPayout !== null} />
+            {lesson.recurringLessonId ? (
+              <TeachBadge icon={Repeat}>{t('lesson.weekly')}</TeachBadge>
+            ) : null}
           </>
         }
         trailing={

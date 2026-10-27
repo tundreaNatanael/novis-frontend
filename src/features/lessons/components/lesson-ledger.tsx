@@ -17,7 +17,7 @@ import { useLessonNames, type LessonNames } from '../hooks/use-lesson-names'
 import { useLessonPaths } from '../lesson-paths'
 import { CreateLessonSheet } from './create-lesson-sheet'
 import { LessonAgenda } from './lesson-agenda'
-import { LessonStatusBadge, PaidBadge } from './lesson-badges'
+import { LessonStatusBadge, PaidBadge, WeeklyLessonBadge } from './lesson-badges'
 import { lessonFiltersFromParams } from './lesson-filter-params'
 import { LessonFilters, type FixedScope } from './lesson-filters'
 
@@ -39,7 +39,12 @@ function columns(names: LessonNames, fixed: FixedScope, showPayment: boolean) {
     }),
     col.accessor('status', {
       header: 'Status',
-      cell: (info) => <LessonStatusBadge lesson={info.row.original} />,
+      cell: (info) => (
+        <span className="flex flex-wrap items-center gap-1.5">
+          <LessonStatusBadge lesson={info.row.original} />
+          <WeeklyLessonBadge lesson={info.row.original} />
+        </span>
+      ),
     }),
     ...(showPayment
       ? [
@@ -199,7 +204,10 @@ export function LessonLedger({ fixed }: { fixed: FixedScope }) {
                 {names.student(l.studentId)?.name ?? shortId(l.studentId)} with{' '}
                 {names.teacher(l.teacherId)?.name ?? shortId(l.teacherId)}
               </p>
-              <PaidBadge lesson={l} />
+              <span className="flex flex-wrap items-center gap-1.5">
+                <PaidBadge lesson={l} />
+                <WeeklyLessonBadge lesson={l} />
+              </span>
             </div>
           )}
           emptyState={

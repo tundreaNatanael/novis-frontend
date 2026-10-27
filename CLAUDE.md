@@ -169,8 +169,10 @@ current password). The super-admin's Freelance section (D-037) runs on `/freelan
 list is searched on the server (`q` debounced with `useDebouncedValue`, the only list that does
 not filter the loaded page), Disable / Re-enable are explicit confirmed actions, Delete asks for
 the email and explains the cascade, and the teacher workspace shows a 404 page for any other id.
-`src/api/schema.d.ts` is generated from the backend (`npm run api:types`, last run on 2026-10-25
-after `MaterialResponse` gained `contentType` / `sizeBytes` and `POST /materials/{id}/complete`
+`src/api/schema.d.ts` is generated from the backend (`npm run api:types`, last run on 2026-10-27
+after recurring lessons arrived: `RecurringLessonResponse` and its routes, `recurringLessonId` /
+`occurrenceOn` / `followsRule` on lessons and calendar rows, `projected` on calendar rows; before
+that on 2026-10-25 after `MaterialResponse` gained `contentType` / `sizeBytes` and `POST /materials/{id}/complete`
 appeared; before that, after `StudentFinanceRowResponse` gained `active`; before that, the student profiles on one email:
 `StudentCreatedResponse`, `StudentLoginResponse`, `GET /students/{id}/profiles`, `GET /me/profiles`,
 the select / switch auth routes); after a backend change regenerate it and fix `types.ts` first. **Siblings on one email** (D-049): a
@@ -179,8 +181,16 @@ workspace from `GET /students/{id}/profiles` (the server filters by reach; the s
 sibling and sees each one's school, linked into that school's workspace), Add student's toast
 follows `profileCreated`, and `PATCH /students/{id}` `email` moves one profile only. Lessons have a length (New lesson follows the course's default until edited, the schedule
 sheet sends it when changed) and show start–end times (`formatTimeRange` /
-`formatDateTimeRange`); an overlap is confirmed and booked anyway on request (D-045); weekly series
-are the mobile app's. Homework (D-041) is a
+`formatDateTimeRange`); an overlap is confirmed and booked anyway on request (D-045); finite weekly series
+are the mobile app's and the teacher workspace's. **Weekly lessons** (D-054, API.md §9.8,
+`src/features/recurring`, `src/api/recurring-lessons.ts`) are a panel on a student's page behind
+`canManageLessons`: the active rules with the next date (`nextOccurrenceOf` in
+`recurring-state.ts`), Book anyway / Skip on the dates the daily run could not book, Set up (the
+teacher named, the browser's zone, a dry-run preview that follows the form, "Set it up anyway" on
+a `409`), Change from a date (only changed fields, `effectiveFrom`, the answer may be a new rule)
+and Stop (today; the confirmation spells out the credits that come back); lesson rows with
+`recurringLessonId` carry a "Weekly lesson" mark in the console and in the teacher workspace's
+rows (en / ro). Homework (D-041) is a
 **Homework** panel on lesson and student detail (`src/features/homework`) with one **Assign
 homework** sheet: teacher fixed on a lesson or picked, course from the student's active
 enrollments with that teacher, due date sent as the end of the local day; the close sheet is

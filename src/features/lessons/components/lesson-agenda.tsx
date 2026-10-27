@@ -5,7 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { formatTimeRange, shortId } from '@/lib/format'
 import type { LessonNames } from '../hooks/use-lesson-names'
 import { useLessonPaths } from '../lesson-paths'
-import { LessonStatusBadge, PaidBadge } from './lesson-badges'
+import { LessonStatusBadge, PaidBadge, WeeklyLessonBadge } from './lesson-badges'
 
 interface LessonAgendaProps {
   lessons: Lesson[]
@@ -74,6 +74,7 @@ export function LessonAgenda({ lessons, names, isLoading }: LessonAgendaProps) {
                       </span>
                       <span className="flex shrink-0 flex-wrap items-center gap-1.5">
                         <LessonStatusBadge lesson={lesson} />
+                        <WeeklyLessonBadge lesson={lesson} />
                         <PaidBadge lesson={lesson} />
                       </span>
                     </Link>

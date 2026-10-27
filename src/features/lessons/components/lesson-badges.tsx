@@ -5,6 +5,7 @@ import {
   CircleDollarSign,
   Clock,
   HandCoins,
+  Repeat,
   Ticket,
   XCircle,
 } from 'lucide-react'
@@ -66,6 +67,19 @@ export function TeacherPayoutBadge({ lesson }: { lesson: Pick<Lesson, 'teacherPa
   return (
     <ToneBadge tone="success" icon={HandCoins}>
       Paid to the teacher on {formatDate(lesson.teacherPayout.paidOn)}
+    </ToneBadge>
+  )
+}
+
+/**
+ * The lesson stands for an occurrence of a weekly lesson (API.md §9.8, `recurringLessonId`); it
+ * keeps the mark when moved or closed. Renders nothing for a lesson booked on its own.
+ */
+export function WeeklyLessonBadge({ lesson }: { lesson: Pick<Lesson, 'recurringLessonId'> }) {
+  if (!lesson.recurringLessonId) return null
+  return (
+    <ToneBadge tone="info" icon={Repeat}>
+      Weekly lesson
     </ToneBadge>
   )
 }

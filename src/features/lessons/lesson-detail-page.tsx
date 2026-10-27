@@ -35,6 +35,7 @@ import { Button } from '@/components/ui/button'
 import { HomeworkPanel } from '@/features/homework/components/homework-panel'
 import {
   enumLabel,
+  formatDate,
   formatDateTime,
   formatDateTimeRange,
   formatDuration,
@@ -47,7 +48,12 @@ import { AddPrepaidSheet } from './components/add-prepaid-sheet'
 import { BalanceFields } from './components/balance-fields'
 import { CloseLessonSheet } from './components/close-lesson-sheet'
 import { JournalSheet } from './components/journal-sheet'
-import { LessonStatusBadge, PaidBadge, TeacherPayoutBadge } from './components/lesson-badges'
+import {
+  LessonStatusBadge,
+  PaidBadge,
+  TeacherPayoutBadge,
+  WeeklyLessonBadge,
+} from './components/lesson-badges'
 import { LessonCrumb } from './components/lesson-crumb'
 import { OpenMaterialButton } from './components/open-material-button'
 import { ScheduleLessonSheet } from './components/schedule-lesson-sheet'
@@ -278,6 +284,29 @@ export function Component() {
               hint="Booked together with other lessons of a weekly series."
             >
               <IdValue value={lesson.seriesId} />
+            </DetailField>
+          ) : null}
+          {lesson.recurringLessonId ? (
+            <DetailField
+              label="Weekly lesson"
+              hint={
+                lesson.followsRule
+                  ? 'Still follows its weekly lesson: a change of the weekly lesson from a date moves it.'
+                  : 'Changed by hand: changes of the weekly lesson leave this lesson alone.'
+              }
+            >
+              <span className="flex flex-wrap items-center gap-2">
+                <WeeklyLessonBadge lesson={lesson} />
+                {lesson.occurrenceOn ? (
+                  <span>The date of {formatDate(lesson.occurrenceOn)}</span>
+                ) : null}
+                <Link
+                  to={`${paths.workspace(lesson)}/students/${lesson.studentId}#weekly-lessons`}
+                  className="font-medium text-primary underline-offset-4 hover:underline"
+                >
+                  Open the student’s weekly lessons
+                </Link>
+              </span>
             </DetailField>
           ) : null}
           {payment ? (
