@@ -36,7 +36,7 @@ import { dayKey } from '../lib/dates'
 import { describeError } from '../lib/error-message'
 import { useFormatters } from '../lib/use-formatters'
 import { useTeachTitle } from '../lib/use-teach-title'
-import { groupByDay, seriesFromToSchedule } from '../lessons/utils'
+import { groupByDay, seriesFromToSchedule, teacherJoin } from '../lessons/utils'
 import { useTeachSheets } from '../sheets/use-teach-sheets'
 import { paymentCounts } from '../students/utils'
 
@@ -81,6 +81,7 @@ export function Component() {
   }, [hasNextPage, isFetchingNextPage, toScheduleError, fetchNextPage])
   const seriesShortcut = seriesFromToSchedule(toSchedule.lessons, toSchedule.total)
   const balances = summary.data ?? rosterStudent
+  const join = rosterStudent ? teacherJoin(rosterStudent.meetingUrl, me.whatsappNumber) : null
   // Only a payment manager (a freelance teacher) receives the payment counts; an org teacher
   // plans from what is left to schedule.
   const payments = balances ? paymentCounts(balances) : null
@@ -126,7 +127,30 @@ export function Component() {
             <span>{student.name}</span>
           </span>
         }
-        subtitle={student.email}
+        subtitle={
+          <>
+            {student.email}
+            {/* Your meeting link with this student (D-057), from the roster row; a WhatsApp call on
+                your number opens WhatsApp (D-058). */}
+            {join ? (
+              <>
+                {' · '}
+                <a
+                  href={join.url}
+                  // The WhatsApp app opens from this tab; other links in a new one.
+                  {...(join.kind === 'openWhatsApp' ? {} : { target: '_blank', rel: 'noreferrer' })}
+                  className="text-accent-foreground underline-offset-4 hover:underline"
+                >
+                  {join.kind === 'openWhatsApp'
+                    ? t('teacher.studentDetail.whatsappCall')
+                    : join.kind === 'whatsApp'
+                      ? t('teacher.studentDetail.whatsappLink')
+                      : t('teacher.studentDetail.meetingLink')}
+                </a>
+              </>
+            ) : null}
+          </>
+        }
         actions={
           <>
             <Button
@@ -136,7 +160,7 @@ export function Component() {
               onClick={() => sheets.open({ kind: 'student', studentId })}
             >
               <Pencil aria-hidden />
-              {t('teacher.studentDetail.rename')}
+              {t('teacher.studentDetail.edit')}
             </Button>
             <Button
               type="button"

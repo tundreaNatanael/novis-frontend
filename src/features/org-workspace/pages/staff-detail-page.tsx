@@ -27,6 +27,7 @@ import { TeacherPayoutsPanel } from '@/features/teacher-payouts/components/teach
 import { enumLabel } from '@/lib/format'
 import { membershipRoleOf } from '@/lib/permissions'
 import { usePageTitle } from '@/lib/use-page-title'
+import { WhatsAppNumberValue } from '@/components/whatsapp-number-value'
 import { CourseFormSheet } from '../components/course-form-sheet'
 import { UserCrumb } from '../components/crumbs'
 import { EditUserSheet } from '../components/edit-user-sheet'
@@ -203,6 +204,14 @@ export function Component() {
               user.organization.name
             )}
           </DetailField>
+          {capabilities.canEditWhatsAppNumber(user) || user.whatsappNumber ? (
+            <DetailField
+              label="WhatsApp number"
+              hint="Their students get a WhatsApp button on their lessons that opens a chat with it."
+            >
+              <WhatsAppNumberValue number={user.whatsappNumber} />
+            </DetailField>
+          ) : null}
           <DetailField label="Created">
             <TimeValue value={user.createdAt} />
           </DetailField>

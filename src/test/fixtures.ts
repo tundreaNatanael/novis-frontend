@@ -46,6 +46,7 @@ export const superAdmin: User = {
   organization: null,
   status: 'ACTIVE',
   hasPassword: true,
+  whatsappNumber: null,
   createdAt: '2026-10-11T17:24:36Z',
 }
 
@@ -77,6 +78,7 @@ export function orgAdmin(
     }),
     status: 'ACTIVE',
     hasPassword: true,
+    whatsappNumber: null,
     createdAt: '2026-10-12T10:00:00Z',
   }
 }
@@ -116,6 +118,7 @@ export function user(overrides: Partial<User> = {}): User {
     organization: userOrganization(),
     status: 'ACTIVE',
     hasPassword: true,
+    whatsappNumber: null,
     createdAt: '2026-10-12T10:00:00Z',
     ...overrides,
   }
@@ -170,7 +173,6 @@ export function course(overrides: Partial<Course> = {}): Course {
     status: 'ACTIVE',
     teacherId: 'u-1',
     organizationId: 'org-1',
-    defaultMeetingUrl: null,
     defaultDurationMinutes: null,
     createdAt: '2026-10-12T11:00:00Z',
     updatedAt: '2026-10-12T11:00:00Z',
@@ -402,6 +404,7 @@ export function homework(overrides: Partial<Homework> = {}): Homework {
 export function rosterStudent(overrides: Partial<RosterStudent> = {}): RosterStudent {
   return {
     ...student(),
+    meetingUrl: null,
     prepaidRemaining: null,
     unpaidDue: null,
     upcomingUnpaid: null,
@@ -453,7 +456,6 @@ export function recurringLesson(overrides: Partial<RecurringLesson> = {}): Recur
     startsOn: '2026-10-20',
     endsOn: null,
     durationMinutes: 60,
-    meetingUrl: null,
     status: 'ACTIVE',
     endReason: null,
     endedAt: null,

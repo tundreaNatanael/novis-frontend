@@ -15,4 +15,6 @@ export type TeachSheetRequest =
   | { kind: 'course'; courseId?: string }
   | { kind: 'enroll'; courseId: string }
   | { kind: 'password' }
+  /** `afterSave`: the sheet to open again once the number is saved (Edit student's "Add WhatsApp number"). */
+  | { kind: 'whatsapp'; afterSave?: TeachSheetRequest }
   | { kind: 'video'; materialId: string; title: string }

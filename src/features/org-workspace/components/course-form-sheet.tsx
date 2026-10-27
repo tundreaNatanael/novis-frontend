@@ -17,7 +17,6 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import {
   longTextSchema,
-  optionalHttpsUrl,
   optionalLessonDurationSchema,
   titleSchema,
   uuidSchema,
@@ -30,7 +29,6 @@ const schema = z.object({
   description: longTextSchema,
   teacherId: uuidSchema,
   status: z.enum(['ACTIVE', 'ARCHIVED']),
-  defaultMeetingUrl: optionalHttpsUrl,
   defaultDurationMinutes: optionalLessonDurationSchema,
 })
 type FormInput = z.input<typeof schema>
@@ -81,7 +79,6 @@ export function CourseFormSheet({
     description: course?.description ?? '',
     teacherId: course?.teacherId ?? teacherId ?? fixedTeacherId ?? '',
     status: course?.status ?? 'ACTIVE',
-    defaultMeetingUrl: course?.defaultMeetingUrl ?? '',
     defaultDurationMinutes: course?.defaultDurationMinutes?.toString() ?? '',
   })
   const form = useForm<FormInput, unknown, FormValues>({
@@ -103,7 +100,6 @@ export function CourseFormSheet({
         return coursesApi.create({
           title: values.title,
           description: values.description,
-          ...(values.defaultMeetingUrl ? { defaultMeetingUrl: values.defaultMeetingUrl } : {}),
           ...(values.defaultDurationMinutes !== null
             ? { defaultDurationMinutes: values.defaultDurationMinutes }
             : {}),
@@ -113,7 +109,6 @@ export function CourseFormSheet({
       return coursesApi.update(course.id, {
         title: values.title,
         description: removable(values.description, course.description),
-        defaultMeetingUrl: removable(values.defaultMeetingUrl, course.defaultMeetingUrl),
         defaultDurationMinutes: removableLength(
           values.defaultDurationMinutes,
           course.defaultDurationMinutes,
@@ -138,7 +133,6 @@ export function CourseFormSheet({
           'description',
           'teacherId',
           'status',
-          'defaultMeetingUrl',
           'defaultDurationMinutes',
         ]),
       ),
@@ -228,25 +222,6 @@ export function CourseFormSheet({
         error={form.formState.errors.description?.message}
       >
         {(a11y) => <Textarea {...a11y} rows={3} {...form.register('description')} />}
-      </Field>
-      <Field
-        label="Default meeting link"
-        hint={
-          course?.defaultMeetingUrl
-            ? 'An absolute https:// link, copied into new lessons. Empty it to remove the link; lessons that already have it keep it.'
-            : 'Optional absolute https:// link, copied into new lessons of this course.'
-        }
-        error={form.formState.errors.defaultMeetingUrl?.message}
-      >
-        {(a11y) => (
-          <Input
-            {...a11y}
-            type="url"
-            inputMode="url"
-            placeholder="https://meet.example.com/room"
-            {...form.register('defaultMeetingUrl')}
-          />
-        )}
       </Field>
       <Field
         label="Default lesson length (minutes)"

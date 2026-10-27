@@ -7,6 +7,7 @@ import {
   lessonDurationSchema,
   optionalHttpsUrl,
   optionalLessonDurationSchema,
+  optionalWhatsAppNumber,
   passwordConfirmation,
   passwordSchema,
   prepaidCountSchema,
@@ -82,6 +83,14 @@ describe('schemas mirror API.md §1.7', () => {
     expect(optionalHttpsUrl.parse('')).toBe('')
     expect(optionalHttpsUrl.parse(' https://meet.example.com ')).toBe('https://meet.example.com')
     expect(optionalHttpsUrl.safeParse('ftp://x').success).toBe(false)
+  })
+
+  it('optionalWhatsAppNumber: empty, or + and the country code with separators allowed', () => {
+    expect(optionalWhatsAppNumber.parse('')).toBe('')
+    expect(optionalWhatsAppNumber.parse(' +40 (712) 345-678 ')).toBe('+40 (712) 345-678')
+    expect(optionalWhatsAppNumber.safeParse('0712 345 678').success).toBe(false)
+    expect(optionalWhatsAppNumber.safeParse('+40').success).toBe(false)
+    expect(optionalWhatsAppNumber.safeParse('+40 712 abc').success).toBe(false)
   })
 
   it('password confirmation points the error at the repeated field', () => {

@@ -23,9 +23,10 @@ import type {
   UpdateCourseRequest,
   UpdateHomeworkRequest,
 } from '@/api/types'
-import { usersApi } from '@/api/users'
+import { userKeys, usersApi } from '@/api/users'
 import { useMe } from '@/auth/session'
 import { checklistWithTicks, type ChecklistLine } from '@/features/homework/homework-state'
+import type { MeetingLinkChange } from '../students/utils'
 
 /**
  * Anything that changes a lesson touches lists, counts, summaries, the calendar, the roster and
@@ -164,6 +165,26 @@ export function useRenameStudent() {
         queryClient.invalidateQueries({ queryKey: studentKeys.all }),
         queryClient.invalidateQueries({ queryKey: enrollmentKeys.all }),
       ]),
+  })
+}
+
+/**
+ * The meeting link of the signed-in teacher and a student (D-057): `PUT` a link or a WhatsApp call on
+ * the teacher's number (D-058), or `DELETE` it. Every lesson of the two answers with it, so the
+ * lessons, the roster and the student's links are refreshed.
+ */
+export function useChangeMeetingLink() {
+  const me = useMe()
+  const invalidateLessons = useInvalidateLessons()
+  return useMutation({
+    mutationFn: async ({ studentId, change }: { studentId: string; change: MeetingLinkChange }) => {
+      if (change.kind === 'remove') await studentsApi.removeMeetingLink(studentId, me.id)
+      else if (change.kind === 'whatsapp')
+        await studentsApi.setMeetingLink(studentId, me.id, { whatsapp: true })
+      else if (change.kind === 'link')
+        await studentsApi.setMeetingLink(studentId, me.id, { meetingUrl: change.meetingUrl })
+    },
+    onSuccess: () => invalidateLessons(),
   })
 }
 
@@ -344,5 +365,15 @@ export function useChangePassword() {
   const me = useMe()
   return useMutation({
     mutationFn: (password: string) => usersApi.update(me.id, { password }),
+  })
+}
+
+/** `PATCH /users/{me} { whatsappNumber }` (`null` removes it); `useMe` reads the new number. */
+export function useChangeWhatsAppNumber() {
+  const me = useMe()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (whatsappNumber: string | null) => usersApi.update(me.id, { whatsappNumber }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: userKeys.me() }),
   })
 }

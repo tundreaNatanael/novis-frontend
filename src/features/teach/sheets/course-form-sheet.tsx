@@ -17,7 +17,7 @@ import { describeError } from '../lib/error-message'
 import { applyFieldErrors } from '../lib/form'
 import { makeSchemas, optionalText } from '../lib/schemas'
 
-/** New course, or edit one: title, description, default meeting link, default lesson length. */
+/** New course, or edit one: title, description, default lesson length. */
 export function CourseFormSheet({
   courseId,
   open,
@@ -38,7 +38,6 @@ export function CourseFormSheet({
     return z.object({
       title: s.name,
       description: s.longText(),
-      defaultMeetingUrl: s.optionalHttpsUrl,
       defaultDurationMinutes: s.optionalLessonMinutes,
     })
   }, [t])
@@ -48,7 +47,6 @@ export function CourseFormSheet({
     defaultValues: {
       title: '',
       description: '',
-      defaultMeetingUrl: '',
       defaultDurationMinutes: '',
     },
   })
@@ -58,7 +56,6 @@ export function CourseFormSheet({
       form.reset({
         title: course.data.title,
         description: course.data.description ?? '',
-        defaultMeetingUrl: course.data.defaultMeetingUrl ?? '',
         defaultDurationMinutes: course.data.defaultDurationMinutes?.toString() ?? '',
       })
     }
@@ -67,7 +64,7 @@ export function CourseFormSheet({
   const submit = form.handleSubmit(async (values) => {
     try {
       if (editing && courseId) {
-        // An emptied description, link or length goes out as null: the API removes it.
+        // An emptied description or length goes out as null: the API removes it.
         await update.mutateAsync({ id: courseId, body: courseUpdateBody(course.data, values) })
         toast.success(t('teacher.courseForm.saved'))
       } else {
@@ -75,7 +72,6 @@ export function CourseFormSheet({
         await create.mutateAsync({
           title: values.title,
           description: optionalText(values.description),
-          defaultMeetingUrl: optionalText(values.defaultMeetingUrl),
           defaultDurationMinutes: lessonMinutes(values.defaultDurationMinutes),
         })
         toast.success(t('teacher.courseForm.created'))
@@ -83,12 +79,7 @@ export function CourseFormSheet({
       onOpenChange(false)
     } catch (error) {
       if (
-        !applyFieldErrors(error, form.setError, [
-          'title',
-          'description',
-          'defaultMeetingUrl',
-          'defaultDurationMinutes',
-        ])
+        !applyFieldErrors(error, form.setError, ['title', 'description', 'defaultDurationMinutes'])
       ) {
         toast.error(describeError(error, t))
       }
@@ -138,21 +129,6 @@ export function CourseFormSheet({
             rows={3}
             placeholder={t('teacher.courseForm.descriptionPlaceholder')}
             {...form.register('description')}
-          />
-        )}
-      </Field>
-      <Field
-        label={`${t('teacher.courseForm.meetingLink')}${optional}`}
-        hint={t('teacher.courseForm.meetingLinkHint')}
-        error={form.formState.errors.defaultMeetingUrl?.message}
-      >
-        {(a11y) => (
-          <Input
-            {...a11y}
-            type="url"
-            inputMode="url"
-            placeholder={t('lesson.meetingLinkPlaceholder')}
-            {...form.register('defaultMeetingUrl')}
           />
         )}
       </Field>

@@ -4,9 +4,11 @@ import type {
   AddPrepaidLessonsRequest,
   CreateStudentRequest,
   LessonSummary,
+  MeetingLink,
   Page,
   PageParams,
   PrepaidLessons,
+  SetMeetingLinkRequest,
   Student,
   StudentCreated,
   StudentEnrollment,
@@ -18,7 +20,9 @@ import type {
  * Students (API.md §7, §9.4). Invalidation: `create` → `lists()` + `profiles()` + the org's member
  * lists; `update` → `detail(id)` + `lists()` + `profiles()` (a new name or email changes the
  * siblings too); `remove` → everything under `all` + member lists + `enrollmentKeys.all`;
- * `addPrepaid` → `summary(id)` + `lessonKeys.lists()`.
+ * `addPrepaid` → `summary(id)` + `lessonKeys.lists()`; `setMeetingLink` / `removeMeetingLink` →
+ * `meetingLinks(id)` + `lessonKeys.all` (every lesson of the pair answers with the link) + the
+ * teacher's roster (`teacherKeys.roster()`).
  */
 export const studentKeys = {
   all: ['students'] as const,
@@ -31,6 +35,7 @@ export const studentKeys = {
   enrollmentsOf: (id: string) => [...studentKeys.all, 'enrollments', id] as const,
   enrollments: (id: string, params: PageParams) =>
     [...studentKeys.enrollmentsOf(id), params] as const,
+  meetingLinks: (id: string) => [...studentKeys.all, 'meeting-links', id] as const,
   profiles: (id?: string) =>
     id
       ? ([...studentKeys.all, 'profiles', id] as const)
@@ -53,6 +58,13 @@ export const studentsApi = {
     http.post<PrepaidLessons>(`/students/${id}/lessons/prepaid`, body),
   enrollments: (id: string, params: PageParams, signal?: AbortSignal) =>
     http.get<Page<StudentEnrollment>>(`/students/${id}/enrollments`, pageQuery(params), signal),
+  /** The student's teachers within the caller's reach, each with the meeting link of the two (V16). */
+  meetingLinks: (id: string, signal?: AbortSignal) =>
+    http.get<MeetingLink[]>(`/students/${id}/meeting-links`, undefined, signal),
+  setMeetingLink: (studentId: string, teacherId: string, body: SetMeetingLinkRequest) =>
+    http.put<MeetingLink>(`/students/${studentId}/meeting-links/${teacherId}`, body),
+  removeMeetingLink: (studentId: string, teacherId: string) =>
+    http.delete(`/students/${studentId}/meeting-links/${teacherId}`),
   /** The other profiles of the student's email the caller may see (siblings in this organization). */
   profiles: (id: string, signal?: AbortSignal) =>
     http.get<Student[]>(`/students/${id}/profiles`, undefined, signal),

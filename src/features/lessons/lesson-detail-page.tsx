@@ -4,6 +4,7 @@ import {
   CalendarClock,
   CircleDollarSign,
   ExternalLink,
+  MessageCircle,
   NotebookPen,
   Ticket,
   Trash2,
@@ -44,6 +45,7 @@ import {
 } from '@/lib/format'
 import { deriveCapabilities, lessonRules } from '@/lib/permissions'
 import { usePageTitle } from '@/lib/use-page-title'
+import { isWhatsAppChatWith, isWhatsAppLink, whatsAppChatUrl } from '@/lib/whatsapp'
 import { AddPrepaidSheet } from './components/add-prepaid-sheet'
 import { BalanceFields } from './components/balance-fields'
 import { CloseLessonSheet } from './components/close-lesson-sheet'
@@ -188,7 +190,22 @@ export function Component() {
               <Button asChild variant="outline">
                 <a href={lesson.meetingUrl} target="_blank" rel="noreferrer">
                   <ExternalLink aria-hidden />
-                  Join lesson
+                  {isWhatsAppLink(lesson.meetingUrl) ? 'Join on WhatsApp' : 'Join lesson'}
+                </a>
+              </Button>
+            ) : null}
+            {/* Hidden when Join already opens this chat (a WhatsApp call on the teacher's number, D-058). */}
+            {teacher?.whatsappNumber &&
+            !isWhatsAppChatWith(lesson.meetingUrl, teacher.whatsappNumber) ? (
+              <Button asChild variant="outline">
+                <a
+                  href={whatsAppChatUrl(teacher.whatsappNumber)}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={`Message ${teacher.name} on WhatsApp`}
+                >
+                  <MessageCircle aria-hidden />
+                  WhatsApp
                 </a>
               </Button>
             ) : null}

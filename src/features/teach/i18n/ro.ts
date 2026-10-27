@@ -67,6 +67,7 @@ export const ro = {
     nameLength: 'Folosește între 1 și 200 de caractere',
     tooLong: 'Folosește cel mult %{max} caractere',
     httpsUrl: 'Introdu un link complet https://',
+    whatsappNumber: 'Scrie numărul cu + și prefixul țării, de ex. +40 712 345 678',
     prepaidRange: 'Alege între 1 și 50 de lecții',
     itemEmpty: 'Scrie ceva pentru acest punct',
     itemsRequired: 'Adaugă cel puțin un punct',
@@ -107,6 +108,8 @@ export const ro = {
     noJournal: 'Fără jurnal pentru această lecție.',
     noMaterials: 'Niciun material atașat.',
     join: 'Intră în lecție',
+    joinWhatsApp: 'Intră pe WhatsApp',
+    openWhatsApp: 'Deschide WhatsApp',
     joinMissing: 'Încă nu există link',
     joinFailed: 'Nu am putut deschide linkul.',
     course: 'Curs',
@@ -213,7 +216,10 @@ export const ro = {
       homework: 'Teme',
       noHomework: 'Nicio temă încă.',
       assignHomework: 'Dă temă',
-      rename: 'Redenumește',
+      edit: 'Editează',
+      meetingLink: 'Link întâlnire',
+      whatsappLink: 'Link WhatsApp',
+      whatsappCall: 'Apel WhatsApp',
       remove: 'Elimină elevul',
       removeConfirmTitle: 'Elimini %{name}?',
       removeConfirmBody:
@@ -393,8 +399,6 @@ export const ro = {
       when: 'Data & ora',
       scheduled: 'Setează o dată',
       scheduledHint: 'Dezactivează pentru o lecție fără dată.',
-      meetingLink: 'Link întâlnire',
-      meetingLinkHint: 'Lasă gol pentru a folosi linkul cursului.',
       usePrepaid: 'Folosește un credit plătit',
       usePrepaidHint: 'Se folosește cel mai vechi credit neprogramat, dacă există.',
       submit: 'Programează',
@@ -422,7 +426,6 @@ export const ro = {
     schedule: {
       title: 'Reprogramează',
       when: 'Noua dată & oră',
-      meetingLink: 'Link întâlnire',
       submit: 'Salvează data',
       unschedule: 'Scoate data',
       unscheduleConfirmTitle: 'Scoți data?',
@@ -491,7 +494,7 @@ export const ro = {
     },
     studentForm: {
       addTitle: 'Adaugă elev',
-      editTitle: 'Redenumește elevul',
+      editTitle: 'Editează elevul',
       name: 'Nume',
       namePlaceholder: 'Numele elevului sau al părintelui',
       email: 'Email',
@@ -503,6 +506,14 @@ export const ro = {
       added: 'Elev adăugat',
       profileCreated: 'Profil nou creat pentru %{name}',
       saved: 'Elev salvat',
+      meetingLink: 'Link întâlnire',
+      meetingLinkHint:
+        'Linkul tău cu acest elev: un apel WhatsApp, Meet sau Zoom. Fiecare lecție dintre voi îl deschide. Lasă gol ca să-l ștergi.',
+      whatsappCall: 'Apel WhatsApp',
+      whatsappCallHint:
+        'Fiecare lecție dintre voi deschide o conversație WhatsApp cu numărul tău, %{number}, de unde suni.',
+      whatsappCallNeedsNumber: 'Adaugă-ți numărul de WhatsApp ca să oferi apeluri WhatsApp.',
+      addWhatsappNumber: 'Adaugă numărul de WhatsApp',
       roleConflict:
         'Acest email este deja folosit în altă parte în Novis (de un elev cu acest nume la altă școală sau la alt profesor, ori de un cont de personal). Folosește alt email sau alt nume.',
       invitePending:
@@ -523,8 +534,6 @@ export const ro = {
       titlePlaceholder: 'Pian — începători',
       description: 'Descriere',
       descriptionPlaceholder: 'Despre ce este acest curs',
-      meetingLink: 'Link implicit de întâlnire',
-      meetingLinkHint: 'Se copiază în lecțiile programate fără link propriu.',
       defaultLength: 'Durata implicită a lecției (min)',
       defaultLengthHint: 'Se aplică lecțiilor noi ale cursului. Gol înseamnă 60 de minute.',
       defaultLengthPlaceholder: '60',
@@ -551,7 +560,6 @@ export const ro = {
       archiveConfirmTitle: 'Arhivezi acest curs?',
       archiveConfirmBody: 'Lecțiile și plățile rămân. Elevii pierd accesul la curs.',
       archived: 'Curs arhivat',
-      meetingLink: 'Link întâlnire',
       defaultLength: 'Lecțiile durează %{length}',
     },
     enroll: {
@@ -568,6 +576,16 @@ export const ro = {
       account: 'Cont',
       preferences: 'Preferințe',
       signedInAs: 'Conectat ca profesor',
+    },
+    whatsapp: {
+      title: 'Număr de WhatsApp',
+      number: 'Număr de WhatsApp',
+      none: 'Nesetat',
+      placeholder: '+40 712 345 678',
+      hint: 'Cu + și prefixul țării. Elevii tăi primesc pe lecții un buton WhatsApp care deschide o conversație cu tine. Lasă gol ca să-l ștergi.',
+      submit: 'Salvează',
+      saved: 'Numărul de WhatsApp a fost salvat',
+      removed: 'Numărul de WhatsApp a fost șters',
     },
     changePassword: {
       title: 'Schimbă parola',

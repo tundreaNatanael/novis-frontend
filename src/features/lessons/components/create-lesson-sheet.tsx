@@ -18,7 +18,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { fromDateTimeLocal } from '@/lib/format'
 import { deriveCapabilities } from '@/lib/permissions'
-import { lessonDurationSchema, optionalHttpsUrl } from '@/lib/schemas'
+import { lessonDurationSchema } from '@/lib/schemas'
 import { FREELANCE, useLessonFilterOptions } from '../hooks/use-lesson-filter-options'
 import type { FixedScope } from './lesson-filters'
 import { OverlapConfirmDialog } from './overlap-confirm-dialog'
@@ -32,7 +32,6 @@ const schema = z.object({
   courseId: z.string(),
   scheduledAt: z.string(),
   durationMinutes: lessonDurationSchema,
-  meetingUrl: optionalHttpsUrl,
   usePrepaid: z.boolean(),
 })
 type FormInput = z.input<typeof schema>
@@ -47,8 +46,8 @@ interface CreateLessonSheetProps {
 }
 
 /**
- * `POST /lessons`: teacher → that teacher's student → optional course, date, length and meeting
- * link. The length follows the chosen course's default (else 60 minutes) until it is edited.
+ * `POST /lessons`: teacher → that teacher's student → optional course, date and length (the
+ * meeting link is the teacher and student's, D-057). The length follows the chosen course's default (else 60 minutes) until it is edited.
  * `usePrepaid` (default on) spends one of the student's prepaid lessons when a dated lesson
  * matches; only a payment manager may turn it off, so only they see the box. A time that overlaps
  * another lesson of the teacher or the student (`409 SCHEDULE_CONFLICT`) is confirmed, then sent
@@ -72,7 +71,6 @@ export function CreateLessonSheet({
     courseId: preset?.courseId ?? '',
     scheduledAt: '',
     durationMinutes: DEFAULT_LENGTH,
-    meetingUrl: '',
     usePrepaid: true,
   })
   const form = useForm<FormInput, unknown, FormValues>({
@@ -115,7 +113,6 @@ export function CreateLessonSheet({
           ? { scheduledAt: fromDateTimeLocal(values.scheduledAt) ?? undefined }
           : {}),
         durationMinutes: values.durationMinutes,
-        ...(values.meetingUrl ? { meetingUrl: values.meetingUrl } : {}),
         ...(canManageStudentPayments ? { usePrepaid: values.usePrepaid } : {}),
         ...(allowOverlap ? { allowOverlap: true } : {}),
       }),
@@ -152,7 +149,6 @@ export function CreateLessonSheet({
           'courseId',
           'scheduledAt',
           'durationMinutes',
-          'meetingUrl',
         ]),
       )
     },
@@ -266,7 +262,7 @@ export function CreateLessonSheet({
         </Field>
         <Field
           label="Course"
-          hint="Optional grouping. Must be one of the teacher’s courses; its default meeting link is used when none is given."
+          hint="Optional grouping. Must be one of the teacher’s courses; its default length is used when none is given."
           error={form.formState.errors.courseId?.message}
         >
           {(a11y) => (
@@ -319,21 +315,6 @@ export function CreateLessonSheet({
               max={240}
               step={5}
               {...form.register('durationMinutes')}
-            />
-          )}
-        </Field>
-        <Field
-          label="Meeting link"
-          hint="Optional absolute https:// link shown as “Join lesson”."
-          error={form.formState.errors.meetingUrl?.message}
-        >
-          {(a11y) => (
-            <Input
-              {...a11y}
-              type="url"
-              inputMode="url"
-              placeholder="https://meet.example.com/room"
-              {...form.register('meetingUrl')}
             />
           )}
         </Field>

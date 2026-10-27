@@ -70,6 +70,7 @@ export const en = {
     nameLength: 'Use between 1 and 200 characters',
     tooLong: 'Use at most %{max} characters',
     httpsUrl: 'Enter a full https:// link',
+    whatsappNumber: 'Enter the number with + and the country code, e.g. +40 712 345 678',
     prepaidRange: 'Choose between 1 and 50 lessons',
     itemEmpty: 'Write something for this item',
     itemsRequired: 'Add at least one item',
@@ -111,6 +112,10 @@ export const en = {
     noJournal: 'No journal for this lesson.',
     noMaterials: 'No materials attached.',
     join: 'Join lesson',
+    /** Join when the meeting link is a WhatsApp call or chat link. */
+    joinWhatsApp: 'Join on WhatsApp',
+    /** The teacher's Join for a WhatsApp call on their own number (D-058): it opens WhatsApp. */
+    openWhatsApp: 'Open WhatsApp',
     joinMissing: 'No meeting link yet',
     joinFailed: "Couldn't open the meeting link.",
     course: 'Course',
@@ -212,7 +217,10 @@ export const en = {
       homework: 'Homework',
       noHomework: 'No homework yet.',
       assignHomework: 'Assign',
-      rename: 'Rename',
+      edit: 'Edit',
+      meetingLink: 'Meeting link',
+      whatsappLink: 'WhatsApp link',
+      whatsappCall: 'WhatsApp call',
       remove: 'Remove student',
       removeConfirmTitle: 'Remove %{name}?',
       removeConfirmBody:
@@ -391,8 +399,6 @@ export const en = {
       when: 'Date & time',
       scheduled: 'Set a date',
       scheduledHint: 'Turn off to create an undated lesson.',
-      meetingLink: 'Meeting link',
-      meetingLinkHint: 'Leave empty to use the course link.',
       usePrepaid: 'Use a prepaid credit',
       usePrepaidHint: 'The oldest unscheduled credit is used, if there is one.',
       submit: 'Book lesson',
@@ -420,7 +426,6 @@ export const en = {
     schedule: {
       title: 'Reschedule',
       when: 'New date & time',
-      meetingLink: 'Meeting link',
       submit: 'Save date',
       unschedule: 'Remove the date',
       unscheduleConfirmTitle: 'Remove the date?',
@@ -487,7 +492,7 @@ export const en = {
     },
     studentForm: {
       addTitle: 'Add student',
-      editTitle: 'Rename student',
+      editTitle: 'Edit student',
       name: 'Name',
       namePlaceholder: 'Student or parent name',
       email: 'Email',
@@ -499,6 +504,14 @@ export const en = {
       added: 'Student added',
       profileCreated: 'New profile created for %{name}',
       saved: 'Student saved',
+      meetingLink: 'Meeting link',
+      meetingLinkHint:
+        'Your link with this student: a WhatsApp call, Meet or Zoom link. Every lesson between you two opens it. Leave empty to remove it.',
+      whatsappCall: 'WhatsApp call',
+      whatsappCallHint:
+        'Every lesson between you two opens a WhatsApp chat with your number, %{number}, where you call.',
+      whatsappCallNeedsNumber: 'Add your WhatsApp number to offer WhatsApp calls.',
+      addWhatsappNumber: 'Add WhatsApp number',
       roleConflict:
         'This email is already used elsewhere in Novis (a student of this name at another school or teacher, or a staff account). Use a different email or name.',
       invitePending:
@@ -519,8 +532,6 @@ export const en = {
       titlePlaceholder: 'Piano — beginners',
       description: 'Description',
       descriptionPlaceholder: 'What this course is about',
-      meetingLink: 'Default meeting link',
-      meetingLinkHint: 'Copied into lessons booked without their own link.',
       defaultLength: 'Default lesson length (min)',
       defaultLengthHint: 'Given to new lessons of this course. Empty means 60 minutes.',
       defaultLengthPlaceholder: '60',
@@ -547,7 +558,6 @@ export const en = {
       archiveConfirmTitle: 'Archive this course?',
       archiveConfirmBody: 'Lessons and payments are kept. Students lose the course view.',
       archived: 'Course archived',
-      meetingLink: 'Meeting link',
       defaultLength: 'Lessons last %{length}',
     },
     enroll: {
@@ -564,6 +574,16 @@ export const en = {
       account: 'Account',
       preferences: 'Preferences',
       signedInAs: 'Signed in as a teacher',
+    },
+    whatsapp: {
+      title: 'WhatsApp number',
+      number: 'WhatsApp number',
+      none: 'Not set',
+      placeholder: '+40 712 345 678',
+      hint: 'With + and the country code. Your students get a WhatsApp button on their lessons that opens a chat with you. Leave empty to remove it.',
+      submit: 'Save',
+      saved: 'WhatsApp number saved',
+      removed: 'WhatsApp number removed',
     },
     changePassword: {
       title: 'Change password',

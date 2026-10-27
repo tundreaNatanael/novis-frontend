@@ -4,6 +4,22 @@
  */
 
 export interface paths {
+    "/students/{studentId}/meeting-links/{teacherId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["set"];
+        post?: never;
+        delete: operations["remove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/teacher-payouts/{id}/void": {
         parameters: {
             query?: never;
@@ -884,6 +900,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/students/{studentId}/meeting-links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_10"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/students/{studentId}/lessons/summary": {
         parameters: {
             query?: never;
@@ -907,7 +939,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_10"];
+        get: operations["list_11"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1019,7 +1051,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_11"];
+        get: operations["list_12"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1035,7 +1067,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_12"];
+        get: operations["list_13"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1051,7 +1083,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_13"];
+        get: operations["list_14"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1067,7 +1099,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_14"];
+        get: operations["list_15"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1182,7 +1214,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete: operations["remove"];
+        delete: operations["remove_1"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1256,6 +1288,18 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        SetMeetingLinkRequest: {
+            meetingUrl?: string;
+            whatsapp?: boolean;
+        };
+        MeetingLinkResponse: {
+            /** Format: uuid */
+            teacherId?: string;
+            teacherName?: string;
+            meetingUrl?: string;
+            whatsapp?: boolean;
+            teacherWhatsappNumber?: string;
+        };
         VoidTeacherPayoutRequest: {
             reason: string;
         };
@@ -1415,7 +1459,6 @@ export interface components {
             intervalWeeks: number;
             /** Format: int32 */
             durationMinutes?: number;
-            meetingUrl?: string;
             allowOverlap?: boolean;
             dryRun?: boolean;
         };
@@ -1466,7 +1509,6 @@ export interface components {
             endsOn?: string;
             /** Format: int32 */
             durationMinutes?: number;
-            meetingUrl?: string;
             /** @enum {string} */
             status?: "ACTIVE" | "ENDED";
             /** @enum {string} */
@@ -1637,7 +1679,6 @@ export interface components {
             scheduledAt?: string;
             /** Format: int32 */
             durationMinutes?: number;
-            meetingUrl?: string;
             usePrepaid?: boolean;
             allowOverlap?: boolean;
         };
@@ -1668,7 +1709,6 @@ export interface components {
             count: number;
             /** Format: int32 */
             durationMinutes?: number;
-            meetingUrl?: string;
             allowOverlap?: boolean;
             dryRun?: boolean;
         };
@@ -1774,6 +1814,7 @@ export interface components {
             /** @enum {string} */
             status?: "ACTIVE" | "DISABLED";
             hasPassword?: boolean;
+            whatsappNumber?: string;
             /** Format: date-time */
             createdAt?: string;
         };
@@ -1784,7 +1825,6 @@ export interface components {
             organizationId?: string;
             /** Format: uuid */
             teacherId?: string;
-            defaultMeetingUrl?: string;
             /** Format: int32 */
             defaultDurationMinutes?: number;
         };
@@ -1799,7 +1839,6 @@ export interface components {
             teacherId?: string;
             /** Format: uuid */
             organizationId?: string;
-            defaultMeetingUrl?: string;
             /** Format: int32 */
             defaultDurationMinutes?: number;
             /** Format: date-time */
@@ -1898,6 +1937,7 @@ export interface components {
             /** @enum {string} */
             status?: "ACTIVE" | "DISABLED";
             password?: string;
+            whatsappNumber?: string;
         };
         UpdateStudentRequest: {
             name?: string;
@@ -1928,7 +1968,6 @@ export interface components {
             intervalWeeks?: number;
             /** Format: int32 */
             durationMinutes?: number;
-            meetingUrl?: string;
             allowOverlap?: boolean;
             dryRun?: boolean;
         };
@@ -1946,7 +1985,6 @@ export interface components {
             scheduledAt?: string;
             /** Format: int32 */
             durationMinutes?: number;
-            meetingUrl?: string;
             allowOverlap?: boolean;
         };
         UpdatePaymentRequest: {
@@ -1978,6 +2016,7 @@ export interface components {
             email?: string;
             /** @enum {string} */
             status?: "ACTIVE" | "DISABLED";
+            whatsappNumber?: string;
         };
         UpdateCourseRequest: {
             title?: string;
@@ -1986,7 +2025,6 @@ export interface components {
             status?: "ACTIVE" | "ARCHIVED";
             /** Format: uuid */
             teacherId?: string;
-            defaultMeetingUrl?: string;
             /** Format: int32 */
             defaultDurationMinutes?: number;
         };
@@ -2028,6 +2066,7 @@ export interface components {
             name?: string;
             /** @enum {string} */
             status?: "ACTIVE" | "DISABLED";
+            meetingUrl?: string;
             /** Format: int64 */
             prepaidRemaining?: number;
             /** Format: int64 */
@@ -2322,6 +2361,12 @@ export interface components {
             totalPages?: number;
             last?: boolean;
         };
+        MyTeacherResponse: {
+            /** Format: uuid */
+            id?: string;
+            name?: string;
+            whatsappNumber?: string;
+        };
         StudentDashboardResponse: {
             nextLesson?: components["schemas"]["LessonResponse"];
             /** Format: int64 */
@@ -2334,6 +2379,7 @@ export interface components {
             toSchedule?: number;
             lessonTotals?: components["schemas"]["LessonTotalsResponse"];
             courses?: components["schemas"]["CourseResponse"][];
+            teachers?: components["schemas"]["MyTeacherResponse"][];
         };
         SignedUrlResponse: {
             url?: string;
@@ -2385,6 +2431,54 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    set: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                studentId: string;
+                teacherId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetMeetingLinkRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MeetingLinkResponse"];
+                };
+            };
+        };
+    };
+    remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                studentId: string;
+                teacherId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     voidPayout: {
         parameters: {
             query?: never;
@@ -4296,6 +4390,28 @@ export interface operations {
             };
         };
     };
+    list_10: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                studentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MeetingLinkResponse"][];
+                };
+            };
+        };
+    };
     summary: {
         parameters: {
             query?: {
@@ -4320,7 +4436,7 @@ export interface operations {
             };
         };
     };
-    list_10: {
+    list_11: {
         parameters: {
             query: {
                 pageable: components["schemas"]["Pageable"];
@@ -4496,7 +4612,7 @@ export interface operations {
             };
         };
     };
-    list_11: {
+    list_12: {
         parameters: {
             query?: never;
             header?: never;
@@ -4516,7 +4632,7 @@ export interface operations {
             };
         };
     };
-    list_12: {
+    list_13: {
         parameters: {
             query?: never;
             header?: never;
@@ -4536,7 +4652,7 @@ export interface operations {
             };
         };
     };
-    list_13: {
+    list_14: {
         parameters: {
             query: {
                 pageable: components["schemas"]["Pageable"];
@@ -4558,7 +4674,7 @@ export interface operations {
             };
         };
     };
-    list_14: {
+    list_15: {
         parameters: {
             query: {
                 pageable: components["schemas"]["Pageable"];
@@ -4737,7 +4853,7 @@ export interface operations {
             };
         };
     };
-    remove: {
+    remove_1: {
         parameters: {
             query?: never;
             header?: never;

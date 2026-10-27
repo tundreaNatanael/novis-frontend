@@ -170,7 +170,8 @@ list is searched on the server (`q` debounced with `useDebouncedValue`, the only
 not filter the loaded page), Disable / Re-enable are explicit confirmed actions, Delete asks for
 the email and explains the cascade, and the teacher workspace shows a 404 page for any other id.
 `src/api/schema.d.ts` is generated from the backend (`npm run api:types`, last run on 2026-10-27
-after recurring lessons arrived: `RecurringLessonResponse` and its routes, `recurringLessonId` /
+after `MeetingLink.whatsapp` / `teacherWhatsappNumber` and `SetMeetingLinkRequest.whatsapp`; before that after `User.whatsappNumber`, `Student` / `StudentCreated` / `RosterStudent.meetingUrl` and
+`StudentDashboard.teachers` arrived, then the pair's `MeetingLink` and the removal of the lesson / course links; before that after recurring lessons arrived: `RecurringLessonResponse` and its routes, `recurringLessonId` /
 `occurrenceOn` / `followsRule` on lessons and calendar rows, `projected` on calendar rows; before
 that on 2026-10-25 after `MaterialResponse` gained `contentType` / `sizeBytes` and `POST /materials/{id}/complete`
 appeared; before that, after `StudentFinanceRowResponse` gained `active`; before that, the student profiles on one email:
@@ -237,7 +238,18 @@ teacher (Today, calendar, a lesson, students, courses, profile, both themes and 
 and phone widths).
 Tests: Vitest + MSW over
 the real route tree (`src/test/render.tsx`), Playwright in `e2e/` (API sign-in fixture, live
-smoke flow, phone checks, screenshots + axe; nothing for `/teach` yet). Open follow-ups are the **B** items in
+smoke flow, phone checks, screenshots + axe; nothing for `/teach` yet). **WhatsApp** (D-056 – D-058): a teacher's `whatsappNumber` (the workspace's Profile sheet, Edit
+account for an org teacher, the freelance profile; `canEditWhatsAppNumber`), a **WhatsApp** chat
+button on the console's lesson detail, "Join on WhatsApp" for WhatsApp links (`src/lib/whatsapp.ts`),
+and the meeting link of a teacher and a student (a Meeting links panel on the console's student
+page, the workspace's Edit student), which every lesson of the two answers with; lessons, weekly
+lessons and courses have no link fields any more (D-057). That link can be a **WhatsApp call** on the
+teacher's number (D-058: a switch in Edit student with "Add WhatsApp number" when there is none, a
+box in the console's sheet); the teacher's own Join then reads "Open WhatsApp" (`teacherJoin`). Walked through in the browser against a temporary API: the
+workspace's Profile row and sheet (ro, dark), its validation, saving and removing; Edit student's
+WhatsApp call switch without a number (disabled, Add WhatsApp number and back), turned on, and the
+lesson page's and calendar dialog's "Deschide WhatsApp" (ro). The console's Meeting links box was
+checked by tests only. Open follow-ups are the **B** items in
 `docs/BACKEND_GAPS.md` (G17 refresh grace window, G19 names on lesson rows, G21 a teacher who left
 has no page for the organization's admin, G22 a CORS rule on the bucket for browser uploads) and
 the README's Known limitations.

@@ -4,10 +4,8 @@ import { toast } from 'sonner'
 import { isApiError } from '@/api/errors'
 import type { CreateLessonRequest, CreateLessonSeriesRequest } from '@/api/types'
 import { useMe } from '@/auth/session'
-import { Field } from '@/components/form/field'
 import { SelectField } from '@/components/form/select-field'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
 import { DateTimeField, Segmented, Stepper, SwitchRow } from '../components/form-controls'
@@ -21,8 +19,7 @@ import { useFullRoster } from '../data/roster'
 import { useT } from '../i18n/use-i18n'
 import { teachCapabilities } from '../lib/capabilities'
 import { browserTimeZone, nextQuarterHour, toIsoWithOffset } from '../lib/dates'
-import { describeError, fieldErrorOf } from '../lib/error-message'
-import { makeSchemas } from '../lib/schemas'
+import { describeError } from '../lib/error-message'
 import { defaultLessonLength, LESSON_LENGTH, SERIES_COUNT, seriesBody } from '../lessons/utils'
 import { OverlapDialog } from './overlap-dialog'
 import { useTeachSheets } from './use-teach-sheets'
@@ -65,7 +62,6 @@ export function BookLessonSheet({
   const me = useMe()
   const sheets = useTeachSheets()
   const { canManageStudentPayments } = teachCapabilities(me)
-  const schemas = useMemo(() => makeSchemas(t), [t])
   const roster = useFullRoster()
   const courses = useTeacherCourses()
   const book = useBookLesson()
@@ -85,9 +81,8 @@ export function BookLessonSheet({
   const [count, setCount] = useState(() =>
     Math.min(Math.max(initialCount ?? SERIES_COUNT.initial, SERIES_COUNT.min), SERIES_COUNT.max),
   )
-  const [meetingUrl, setMeetingUrl] = useState('')
   const [usePrepaid, setUsePrepaid] = useState(true)
-  const [errors, setErrors] = useState<{ meetingUrl?: string; student?: string }>({})
+  const [errors, setErrors] = useState<{ student?: string }>({})
   const [pending, setPending] = useState<Pending | null>(null)
 
   const effectiveStudentId = studentId || roster.students[0]?.id || ''
@@ -125,9 +120,7 @@ export function BookLessonSheet({
   const plan = useSeriesPlan(useDebouncedValue(planBody, 300))
 
   const failed = (error: unknown) => {
-    const link = fieldErrorOf(error, 'meetingUrl')
-    if (link) setErrors({ meetingUrl: link })
-    else toast.error(describeError(error, t))
+    toast.error(describeError(error, t))
   }
 
   const bookedOne = (paidWithCredit: boolean) => {
@@ -166,10 +159,8 @@ export function BookLessonSheet({
   const submit = () => {
     const nextErrors: typeof errors = {}
     if (!effectiveStudentId) nextErrors.student = t('validation.required')
-    const url = schemas.optionalHttpsUrl.safeParse(meetingUrl)
-    if (!url.success) nextErrors.meetingUrl = url.error.issues[0]?.message
     setErrors(nextErrors)
-    if (nextErrors.student || !url.success) return
+    if (nextErrors.student) return
 
     if (series) {
       void bookAll(
@@ -181,7 +172,6 @@ export function BookLessonSheet({
           intervalWeeks,
           count,
           durationMinutes,
-          meetingUrl: url.data,
         }),
       )
       return
@@ -191,7 +181,6 @@ export function BookLessonSheet({
     if (canManageStudentPayments) body.usePrepaid = usePrepaid
     if (selectedCourseId) body.courseId = selectedCourseId
     if (scheduled) body.scheduledAt = toIsoWithOffset(date)
-    if (url.data.length > 0) body.meetingUrl = url.data
     void bookOne(body)
   }
 
@@ -340,22 +329,6 @@ export function BookLessonSheet({
                 <p className="text-xs text-muted-foreground">{t('teacher.book.seriesHint')}</p>
               </>
             ) : null}
-            <Field
-              label={t('teacher.book.meetingLink')}
-              hint={t('teacher.book.meetingLinkHint')}
-              error={errors.meetingUrl}
-            >
-              {(a11y) => (
-                <Input
-                  {...a11y}
-                  type="url"
-                  inputMode="url"
-                  placeholder={t('lesson.meetingLinkPlaceholder')}
-                  value={meetingUrl}
-                  onChange={(event) => setMeetingUrl(event.target.value)}
-                />
-              )}
-            </Field>
             {canManageStudentPayments && !series ? (
               <SwitchRow
                 label={t('teacher.book.usePrepaid')}

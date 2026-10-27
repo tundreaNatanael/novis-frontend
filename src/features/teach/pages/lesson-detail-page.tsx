@@ -8,6 +8,7 @@ import {
   Library,
   NotebookPen,
   Paperclip,
+  Phone,
   Ticket,
   Trash2,
   Video,
@@ -40,10 +41,10 @@ import { useT } from '../i18n/use-i18n'
 import { teachCapabilities } from '../lib/capabilities'
 import { parseLocalDate } from '../lib/dates'
 import { describeError } from '../lib/error-message'
-import { openInNewTab } from '../lib/open-url'
+import { openApp, openInNewTab } from '../lib/open-url'
 import { useFormatters } from '../lib/use-formatters'
 import { useTeachTitle } from '../lib/use-teach-title'
-import { canClose, canDelete, canEditJournal, isCharged } from '../lessons/utils'
+import { canClose, canDelete, canEditJournal, isCharged, teacherJoin } from '../lessons/utils'
 import { useOpenMaterial } from '../materials/use-open-material'
 import { useTeachSheets } from '../sheets/use-teach-sheets'
 
@@ -98,6 +99,8 @@ export function Component() {
   const name = studentName(lesson.studentId)
   const course = courseTitle(lesson.courseId)
   const pendingScheduled = lesson.status === 'PENDING' && lesson.scheduledAt !== null
+  // A WhatsApp call on your own number opens the WhatsApp app, not a chat with yourself (D-058).
+  const join = teacherJoin(lesson.meetingUrl, me.whatsappNumber)
   const studentPayment = lesson.studentPayment
   // Recording a payment is an action (the capability); showing one follows the data.
   const paymentToggle = canManageStudentPayments ? studentPayment : null
@@ -141,17 +144,23 @@ export function Component() {
               leading={<TeachAvatar name={name ?? '?'} />}
               className="-mx-4 rounded-xl"
             />
-            {pendingScheduled && lesson.meetingUrl ? (
+            {pendingScheduled && join ? (
               <Button
                 type="button"
                 size="lg"
                 className="w-full rounded-full bg-held text-primary-foreground hover:bg-held/90"
                 onClick={() => {
-                  if (!openInNewTab(lesson.meetingUrl ?? '')) toast.error(t('lesson.joinFailed'))
+                  const opened =
+                    join.kind === 'openWhatsApp' ? openApp(join.url) : openInNewTab(join.url)
+                  if (!opened) toast.error(t('lesson.joinFailed'))
                 }}
               >
-                <Video aria-hidden />
-                {t('lesson.join')}
+                {join.kind === 'link' ? <Video aria-hidden /> : <Phone aria-hidden />}
+                {join.kind === 'openWhatsApp'
+                  ? t('lesson.openWhatsApp')
+                  : join.kind === 'whatsApp'
+                    ? t('lesson.joinWhatsApp')
+                    : t('lesson.join')}
               </Button>
             ) : null}
           </TeachCard>
@@ -307,20 +316,23 @@ export function Component() {
             {teacherPaidOn ? (
               <p>{t('teacher.lessonDetail.paidToYouOn', { date: fmt.longDate(teacherPaidOn) })}</p>
             ) : null}
-            {lesson.meetingUrl ? (
+            {join ? (
               <p className="truncate">
                 {t('lesson.meetingLink')}:{' '}
                 <a
-                  href={lesson.meetingUrl}
-                  target="_blank"
-                  rel="noreferrer"
+                  href={join.url}
+                  // The WhatsApp app opens from this tab; other links in a new one.
+                  {...(join.kind === 'openWhatsApp' ? {} : { target: '_blank', rel: 'noreferrer' })}
                   className="text-accent-foreground underline-offset-4 hover:underline"
                 >
-                  {lesson.meetingUrl}
+                  {/* Not the chat with yourself: a WhatsApp call on your number (D-058). */}
+                  {join.kind === 'openWhatsApp'
+                    ? t('teacher.studentDetail.whatsappCall')
+                    : join.url}
                 </a>
               </p>
             ) : null}
-            {!studentPayment?.paidAt && !lesson.closedAt && !lesson.meetingUrl ? (
+            {!studentPayment?.paidAt && !lesson.closedAt && !join ? (
               <p>{t('lesson.joinMissing')}</p>
             ) : null}
           </TeachCard>

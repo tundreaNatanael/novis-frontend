@@ -14,6 +14,7 @@ import { SectionHeader } from '@/components/section-header'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { ResetLinkDialog } from '@/features/org-workspace/components/reset-link-dialog'
+import { WhatsAppNumberValue } from '@/components/whatsapp-number-value'
 import { DeleteFreelanceTeacherDialog } from '../components/delete-freelance-teacher-dialog'
 import { EditFreelanceTeacherSheet } from '../components/edit-freelance-teacher-sheet'
 import { FreelanceStatusDialog } from '../components/freelance-status-dialog'
@@ -103,6 +104,12 @@ export function Component() {
             </span>
           </DetailField>
           <DetailField label="Password">{teacher.hasPassword ? 'Set' : 'Not set'}</DetailField>
+          <DetailField
+            label="WhatsApp number"
+            hint="Their students get a WhatsApp button on their lessons that opens a chat with it."
+          >
+            <WhatsAppNumberValue number={teacher.whatsappNumber} />
+          </DetailField>
           <DetailField label="Created">
             <TimeValue value={teacher.createdAt} />
           </DetailField>

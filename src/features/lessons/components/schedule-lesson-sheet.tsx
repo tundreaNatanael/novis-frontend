@@ -15,26 +15,15 @@ import { applyServerErrors } from '@/components/form/server-errors'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { fromDateTimeLocal, toDateTimeLocal } from '@/lib/format'
-import { lessonDurationSchema, optionalHttpsUrl } from '@/lib/schemas'
+import { lessonDurationSchema } from '@/lib/schemas'
 import { OverlapConfirmDialog } from './overlap-confirm-dialog'
 
 const schema = z.object({
   scheduledAt: z.string().min(1, 'Choose a date and time'),
   durationMinutes: lessonDurationSchema,
-  meetingUrl: optionalHttpsUrl,
 })
 type FormInput = z.input<typeof schema>
 type FormValues = z.output<typeof schema>
-
-/**
- * The link part of the `PATCH /lessons/{id}/schedule` body: left out while unchanged, so a save
- * never overwrites a link changed elsewhere meanwhile; the typed link when it changed; `null` when
- * the lesson's link was emptied (the API removes it).
- */
-function linkChange(value: string, current: string | null) {
-  if (value === (current ?? '')) return {}
-  return { meetingUrl: value || null }
-}
 
 /** The length goes out only when it changed (an omitted length stays; it is never `null`). */
 function lengthChange(value: number, current: number) {
@@ -45,7 +34,6 @@ function defaultsFor(lesson: Lesson): FormInput {
   return {
     scheduledAt: toDateTimeLocal(lesson.scheduledAt),
     durationMinutes: lesson.durationMinutes,
-    meetingUrl: lesson.meetingUrl ?? '',
   }
 }
 
@@ -56,8 +44,8 @@ interface Props {
 }
 
 /**
- * `PATCH /lessons/{id}/schedule`: set or move the date, change the length, change or remove the
- * meeting link; `scheduledAt: null` unschedules. Pending lessons only. A new slot that overlaps
+ * `PATCH /lessons/{id}/schedule`: set or move the date and change the length; `scheduledAt: null`
+ * unschedules (the meeting link is the teacher and student's, D-057). Pending lessons only. A new slot that overlaps
  * another lesson of the teacher or the student (`409 SCHEDULE_CONFLICT`) is confirmed, then sent
  * again with `allowOverlap`.
  */
@@ -93,7 +81,6 @@ export function ScheduleLessonSheet({ lesson, open, onOpenChange }: Props) {
       lessonsApi.schedule(lesson.id, {
         scheduledAt: fromDateTimeLocal(values.scheduledAt),
         ...lengthChange(values.durationMinutes, lesson.durationMinutes),
-        ...linkChange(values.meetingUrl, lesson.meetingUrl),
         ...(allowOverlap ? { allowOverlap: true } : {}),
       }),
     onSuccess: async () => {
@@ -108,9 +95,7 @@ export function ScheduleLessonSheet({ lesson, open, onOpenChange }: Props) {
         setOverlapping(values)
         return
       }
-      setFormError(
-        applyServerErrors(error, form.setError, ['scheduledAt', 'durationMinutes', 'meetingUrl']),
-      )
+      setFormError(applyServerErrors(error, form.setError, ['scheduledAt', 'durationMinutes']))
     },
   })
   const unschedule = useMutation({
@@ -175,25 +160,6 @@ export function ScheduleLessonSheet({ lesson, open, onOpenChange }: Props) {
               max={240}
               step={5}
               {...form.register('durationMinutes')}
-            />
-          )}
-        </Field>
-        <Field
-          label="Meeting link"
-          hint={
-            lesson.meetingUrl
-              ? 'An absolute https:// link. Empty it to remove the link.'
-              : 'Optional absolute https:// link.'
-          }
-          error={form.formState.errors.meetingUrl?.message}
-        >
-          {(a11y) => (
-            <Input
-              {...a11y}
-              type="url"
-              inputMode="url"
-              placeholder="https://meet.example.com/room"
-              {...form.register('meetingUrl')}
             />
           )}
         </Field>

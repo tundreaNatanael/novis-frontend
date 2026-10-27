@@ -13,6 +13,7 @@ import {
   scheduleBody,
   seriesBody,
   seriesFromToSchedule,
+  teacherJoin,
 } from './utils'
 
 const now = new Date('2026-03-12T12:00:00Z')
@@ -104,23 +105,15 @@ describe('groupByDay', () => {
 
 describe('scheduleBody', () => {
   const at = '2026-03-20T10:00:00+02:00'
-  const LINK = 'https://meet.example.com/piano'
 
-  it('sends the date and the link as typed, removes an emptied link with null, leaves an empty one out', () => {
-    expect(scheduleBody(lesson({ meetingUrl: LINK }), at, LINK)).toStrictEqual({
+  it('sends the date, and the length only when it changed (never a link, D-057)', () => {
+    expect(
+      scheduleBody(lesson({ meetingUrl: 'https://meet.example.com/piano' }), at),
+    ).toStrictEqual({
       scheduledAt: at,
-      meetingUrl: LINK,
     })
-    expect(scheduleBody(lesson({ meetingUrl: LINK }), at, '  ')).toStrictEqual({
-      scheduledAt: at,
-      meetingUrl: null,
-    })
-    expect(scheduleBody(lesson({ meetingUrl: null }), at, '')).toStrictEqual({ scheduledAt: at })
-  })
-
-  it('sends the length only when it changed', () => {
-    expect(scheduleBody(lesson({}), at, '', 60)).toStrictEqual({ scheduledAt: at })
-    expect(scheduleBody(lesson({}), at, '', 90)).toStrictEqual({
+    expect(scheduleBody(lesson({}), at, 60)).toStrictEqual({ scheduledAt: at })
+    expect(scheduleBody(lesson({}), at, 90)).toStrictEqual({
       scheduledAt: at,
       durationMinutes: 90,
     })
@@ -143,7 +136,6 @@ describe('series', () => {
       intervalWeeks: 1,
       count: 4,
       durationMinutes: 45,
-      meetingUrl: ' https://meet.example.com/x ',
     })
     expect(body).toMatchObject({
       studentId: 's',
@@ -153,8 +145,8 @@ describe('series', () => {
       intervalWeeks: 1,
       count: 4,
       durationMinutes: 45,
-      meetingUrl: 'https://meet.example.com/x',
     })
+    expect(body).not.toHaveProperty('meetingUrl')
   })
 
   it('offers "schedule all" for two or more lessons of one course, once they are all loaded', () => {
@@ -184,5 +176,31 @@ describe('series', () => {
         60,
       )?.count,
     ).toBe(52)
+  })
+})
+
+describe('teacherJoin (D-058)', () => {
+  it('opens WhatsApp instead of a chat with the teacher themself', () => {
+    expect(teacherJoin('https://wa.me/40712345678', '+40712345678')).toEqual({
+      url: 'whatsapp://',
+      kind: 'openWhatsApp',
+    })
+  })
+
+  it('opens any other link as it is', () => {
+    expect(teacherJoin('https://wa.me/40799999999', '+40712345678')).toEqual({
+      url: 'https://wa.me/40799999999',
+      kind: 'whatsApp',
+    })
+    expect(teacherJoin('https://call.whatsapp.com/video/x', null)?.kind).toBe('whatsApp')
+    expect(teacherJoin('https://meet.example.com/x', '+40712345678')).toEqual({
+      url: 'https://meet.example.com/x',
+      kind: 'link',
+    })
+  })
+
+  it('has nothing to open without a link, whatever the number', () => {
+    expect(teacherJoin(null, '+40712345678')).toBeNull()
+    expect(teacherJoin(null, null)).toBeNull()
   })
 })

@@ -17,7 +17,7 @@ import { applyServerErrors } from '@/components/form/server-errors'
 import { Input } from '@/components/ui/input'
 import { OverlapConfirmDialog } from '@/features/lessons/components/overlap-confirm-dialog'
 import { formatDate } from '@/lib/format'
-import { lessonDurationSchema, optionalHttpsUrl } from '@/lib/schemas'
+import { lessonDurationSchema } from '@/lib/schemas'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
 import {
   REPEAT_OPTIONS,
@@ -39,7 +39,6 @@ const schema = z.object({
   localTime: z.string().regex(/^\d{2}:\d{2}$/, 'Choose a time'),
   intervalWeeks: z.enum(['1', '2']).transform((value) => (value === '2' ? 2 : 1) as 1 | 2),
   durationMinutes: lessonDurationSchema,
-  meetingUrl: optionalHttpsUrl,
 })
 type FormInput = z.input<typeof schema>
 type FormValues = z.output<typeof schema>
@@ -56,7 +55,6 @@ function defaultsFor(rule: RecurringLesson): FormInput {
     localTime: rule.localTime,
     intervalWeeks: rule.intervalWeeks === 2 ? '2' : '1',
     durationMinutes: rule.durationMinutes,
-    meetingUrl: rule.meetingUrl ?? '',
   }
 }
 
@@ -67,7 +65,6 @@ function toBody(rule: RecurringLesson, values: FormValues): UpdateRecurringLesso
     localTime: values.localTime,
     intervalWeeks: values.intervalWeeks,
     durationMinutes: values.durationMinutes,
-    meetingUrl: values.meetingUrl,
   })
 }
 
@@ -159,7 +156,6 @@ export function EditWeeklyLessonSheet({ rule, studentName, open, onOpenChange }:
           'localTime',
           'intervalWeeks',
           'durationMinutes',
-          'meetingUrl',
         ]),
       )
     },
@@ -263,25 +259,6 @@ export function EditWeeklyLessonSheet({ rule, studentName, open, onOpenChange }:
               max={240}
               step={5}
               {...form.register('durationMinutes')}
-            />
-          )}
-        </Field>
-        <Field
-          label="Meeting link"
-          hint={
-            rule.meetingUrl
-              ? 'Emptying the field removes the link from the lessons that follow the rule.'
-              : 'Optional absolute https:// link every lesson gets as “Join lesson”.'
-          }
-          error={form.formState.errors.meetingUrl?.message}
-        >
-          {(a11y) => (
-            <Input
-              {...a11y}
-              type="url"
-              inputMode="url"
-              placeholder="https://meet.example.com/room"
-              {...form.register('meetingUrl')}
             />
           )}
         </Field>

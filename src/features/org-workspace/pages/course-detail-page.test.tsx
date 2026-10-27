@@ -9,7 +9,6 @@ import { server } from '@/test/server'
 
 // The edit form checks the teacher id as a UUID.
 const TEACHER_ID = '6f0c2a8e-1b7d-4c3e-9a5f-2d8b7e4c1a90'
-const LINK = 'https://meet.example.com/piano'
 
 /** The value next to a label of the Details panel. */
 const detail = (label: string) => screen.getByText(label, { selector: 'dt' }).nextElementSibling
@@ -26,11 +25,7 @@ describe('editing a course', () => {
   beforeEach(() => {
     signedInAs(superAdmin)
     patched = []
-    current = course({
-      teacherId: TEACHER_ID,
-      description: 'Weekly lessons',
-      defaultMeetingUrl: LINK,
-    })
+    current = course({ teacherId: TEACHER_ID, description: 'Weekly lessons' })
     server.use(
       http.get(api('/orgs/org-1'), () => HttpResponse.json(organization())),
       http.get(api('/orgs/org-1/members'), () =>
@@ -48,26 +43,19 @@ describe('editing a course', () => {
     )
   })
 
-  it('removes an emptied description and default meeting link with null', async () => {
+  it('removes an emptied description with null and has no meeting link (V16)', async () => {
     const { user: actor } = renderApp('/platform/orgs/org-1/courses/c-1')
-    expect(await screen.findByRole('link', { name: LINK })).toBeInTheDocument()
-    expect(detail('Description')).toHaveTextContent('Weekly lessons')
+    expect(await screen.findByText('Weekly lessons', { selector: 'span' })).toBeInTheDocument()
+    expect(screen.queryByText('Default meeting link')).not.toBeInTheDocument()
 
     const dialog = await openEdit(actor)
-    expect(
-      within(dialog).getByText(/Empty it to remove the link; lessons that already have it keep it/),
-    ).toBeInTheDocument()
+    expect(within(dialog).queryByLabelText('Default meeting link')).not.toBeInTheDocument()
     await actor.clear(within(dialog).getByLabelText('Description'))
-    await actor.clear(within(dialog).getByLabelText('Default meeting link'))
     await actor.click(within(dialog).getByRole('button', { name: 'Save changes' }))
 
     expect(await screen.findByText('Course updated')).toBeInTheDocument()
-    expect(patched).toEqual([
-      { title: 'Piano — beginners', description: null, defaultMeetingUrl: null, status: 'ACTIVE' },
-    ])
-    await waitFor(() => expect(screen.queryByRole('link', { name: LINK })).not.toBeInTheDocument())
-    expect(detail('Description')).toHaveTextContent(/^—$/)
-    expect(detail('Default meeting link')).toHaveTextContent(/^—/)
+    expect(patched).toEqual([{ title: 'Piano — beginners', description: null, status: 'ACTIVE' }])
+    await waitFor(() => expect(detail('Description')).toHaveTextContent(/^—$/))
   })
 
   it('leaves out a field that was and stays empty, and sends a typed one', async () => {
@@ -75,11 +63,6 @@ describe('editing a course', () => {
     const { user: actor } = renderApp('/platform/orgs/org-1/courses/c-1')
 
     const dialog = await openEdit(actor)
-    expect(
-      within(dialog).getByText(
-        'Optional absolute https:// link, copied into new lessons of this course.',
-      ),
-    ).toBeInTheDocument()
     await actor.type(within(dialog).getByLabelText('Description'), 'Scales first')
     await actor.click(within(dialog).getByRole('button', { name: 'Save changes' }))
 
@@ -87,7 +70,6 @@ describe('editing a course', () => {
     expect(patched).toEqual([
       { title: 'Piano — beginners', description: 'Scales first', status: 'ACTIVE' },
     ])
-    expect(patched[0]).not.toHaveProperty('defaultMeetingUrl')
     expect(await screen.findByText('Scales first', { selector: 'span' })).toBeInTheDocument()
   })
 

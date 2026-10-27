@@ -77,7 +77,7 @@ describe('the weekday and time of a moment', () => {
 })
 
 describe('the set-up body', () => {
-  it('sends the first lesson as an instant with the course and link only when given', () => {
+  it('sends the first lesson as an instant with the course only when given', () => {
     expect(
       recurringBody({
         studentId: 's-1',
@@ -87,7 +87,6 @@ describe('the set-up body', () => {
         timeZone: 'Europe/Bucharest',
         intervalWeeks: 1,
         durationMinutes: 60,
-        meetingUrl: '',
       }),
     ).toEqual({
       studentId: 's-1',
@@ -105,9 +104,8 @@ describe('the set-up body', () => {
         timeZone: 'Europe/Bucharest',
         intervalWeeks: 2,
         durationMinutes: 45,
-        meetingUrl: 'https://meet.example.com/a',
       }),
-    ).toMatchObject({ courseId: 'c-1', intervalWeeks: 2, meetingUrl: 'https://meet.example.com/a' })
+    ).toMatchObject({ courseId: 'c-1', intervalWeeks: 2 })
     expect(
       recurringBody({
         studentId: 's-1',
@@ -116,21 +114,19 @@ describe('the set-up body', () => {
         timeZone: 'UTC',
         intervalWeeks: 1,
         durationMinutes: 60,
-        meetingUrl: '',
       }),
     ).toBeNull()
   })
 })
 
 describe('the change body', () => {
-  const rule = recurringLesson({ meetingUrl: 'https://meet.example.com/old' })
+  const rule = recurringLesson()
   const same = {
     effectiveFrom: '2026-11-03',
     weekday: 'TUESDAY' as const,
     localTime: '17:00',
     intervalWeeks: 1 as const,
     durationMinutes: 60,
-    meetingUrl: 'https://meet.example.com/old',
   }
 
   it('is nothing while nothing changed', () => {
@@ -146,20 +142,6 @@ describe('the change body', () => {
       intervalWeeks: 2,
       durationMinutes: 45,
     })
-  })
-
-  it('removes an emptied link with null and sends a new one as typed', () => {
-    expect(recurringChangeBody(rule, { ...same, meetingUrl: '  ' })).toEqual({
-      effectiveFrom: '2026-11-03',
-      meetingUrl: null,
-    })
-    expect(
-      recurringChangeBody(rule, { ...same, meetingUrl: 'https://meet.example.com/new' }),
-    ).toEqual({ effectiveFrom: '2026-11-03', meetingUrl: 'https://meet.example.com/new' })
-    // A rule without a link and an empty field: nothing to send.
-    expect(
-      recurringChangeBody(recurringLesson({ meetingUrl: null }), { ...same, meetingUrl: '' }),
-    ).toBeNull()
   })
 })
 

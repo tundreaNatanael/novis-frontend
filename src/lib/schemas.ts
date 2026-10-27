@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { isWhatsAppNumber } from './whatsapp'
 
 /** Field rules mirroring the backend (API.md §1.7). Server `fieldErrors` still win. */
 export const emailSchema = z
@@ -70,6 +71,18 @@ export const optionalHttpsUrl = z
   .max(2048, 'Links are at most 2048 characters')
   .refine((value) => value === '' || (/^https:\/\/\S+$/.test(value) && URL.canParse(value)), {
     message: 'Enter an absolute https:// link',
+  })
+
+/**
+ * A teacher's WhatsApp number being typed: empty means none; otherwise an international number
+ * (`+`, the country code and the number; spaces, dashes, dots and parentheses allowed).
+ */
+export const optionalWhatsAppNumber = z
+  .string()
+  .trim()
+  .max(32, 'Numbers are at most 32 characters')
+  .refine((value) => value === '' || isWhatsAppNumber(value), {
+    message: 'Enter the number with + and the country code, e.g. +40 712 345 678',
   })
 
 export const prepaidCountSchema = z.coerce

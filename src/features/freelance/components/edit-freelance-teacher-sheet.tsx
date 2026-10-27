@@ -13,14 +13,20 @@ import { FormError } from '@/components/form/form-error'
 import { FormSheet } from '@/components/form/form-sheet'
 import { applyServerErrors } from '@/components/form/server-errors'
 import { Input } from '@/components/ui/input'
-import { emailSchema, nameSchema } from '@/lib/schemas'
+import { emailSchema, nameSchema, optionalWhatsAppNumber } from '@/lib/schemas'
+import { whatsAppNumberChange } from '@/lib/whatsapp'
 
-const schema = z.object({ name: nameSchema, email: emailSchema })
+const schema = z.object({
+  name: nameSchema,
+  email: emailSchema,
+  whatsappNumber: optionalWhatsAppNumber,
+})
 type FormValues = z.infer<typeof schema>
 
 /**
- * `PATCH /freelance-teachers/{id}` with the changed name and email only. Status has its own
- * Disable / Re-enable action (`FreelanceStatusDialog`).
+ * `PATCH /freelance-teachers/{id}` with the changed name, email and WhatsApp number only (an
+ * emptied number goes out as `null`). Status has its own Disable / Re-enable action
+ * (`FreelanceStatusDialog`).
  */
 export function EditFreelanceTeacherSheet({
   teacher,
@@ -33,16 +39,23 @@ export function EditFreelanceTeacherSheet({
 }) {
   const queryClient = useQueryClient()
   const [formError, setFormError] = useState<string | null>(null)
+  const initialValues = (): FormValues => ({
+    name: teacher.name,
+    email: teacher.email,
+    whatsappNumber: teacher.whatsappNumber ?? '',
+  })
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { name: teacher.name, email: teacher.email },
+    defaultValues: initialValues(),
   })
 
   useEffect(() => {
     if (open) {
-      form.reset({ name: teacher.name, email: teacher.email })
+      form.reset(initialValues())
       setFormError(null)
     }
+    // initialValues reads only `teacher`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, teacher, form])
 
   const mutation = useMutation({
@@ -50,6 +63,7 @@ export function EditFreelanceTeacherSheet({
       freelanceTeachersApi.update(teacher.id, {
         ...(values.name !== teacher.name ? { name: values.name } : {}),
         ...(values.email !== teacher.email ? { email: values.email } : {}),
+        ...whatsAppNumberChange(values.whatsappNumber, teacher.whatsappNumber),
       }),
     onSuccess: async () => {
       await Promise.all([
@@ -69,7 +83,8 @@ export function EditFreelanceTeacherSheet({
           message: 'Another account already uses this email.',
         })
         setFormError(null)
-      } else setFormError(applyServerErrors(error, form.setError, ['name', 'email']))
+      } else
+        setFormError(applyServerErrors(error, form.setError, ['name', 'email', 'whatsappNumber']))
     },
   })
 
@@ -97,6 +112,22 @@ export function EditFreelanceTeacherSheet({
         error={form.formState.errors.email?.message}
       >
         {(a11y) => <Input {...a11y} type="email" inputMode="email" {...form.register('email')} />}
+      </Field>
+      <Field
+        label="WhatsApp number"
+        hint="With + and the country code. Their students get a WhatsApp button that opens a chat with it. Leave empty to remove it."
+        error={form.formState.errors.whatsappNumber?.message}
+      >
+        {(a11y) => (
+          <Input
+            {...a11y}
+            type="tel"
+            inputMode="tel"
+            autoComplete="off"
+            placeholder="+40 712 345 678"
+            {...form.register('whatsappNumber')}
+          />
+        )}
       </Field>
     </FormSheet>
   )

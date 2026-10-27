@@ -1,11 +1,9 @@
 import { CalendarCheck, Loader2 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 import { isApiError } from '@/api/errors'
 import type { Lesson, ScheduleLessonRequest } from '@/api/types'
-import { Field } from '@/components/form/field'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { TeachConfirmDialog } from '../components/confirm-dialog'
 import { DateTimeField, Stepper } from '../components/form-controls'
 import { ErrorState, SkeletonCard } from '../components/states'
@@ -15,7 +13,6 @@ import { useScheduleLesson } from '../data/mutations'
 import { useT } from '../i18n/use-i18n'
 import { nextQuarterHour, toIsoWithOffset } from '../lib/dates'
 import { describeError } from '../lib/error-message'
-import { makeSchemas } from '../lib/schemas'
 import { LESSON_LENGTH, scheduleBody } from '../lessons/utils'
 import { OverlapDialog } from './overlap-dialog'
 
@@ -56,14 +53,11 @@ function ScheduleForm({
   onOpenChange: (open: boolean) => void
 }) {
   const t = useT()
-  const schemas = useMemo(() => makeSchemas(t), [t])
   const schedule = useScheduleLesson()
   const [date, setDate] = useState(() =>
     lesson.scheduledAt ? new Date(lesson.scheduledAt) : nextQuarterHour(),
   )
   const [durationMinutes, setDurationMinutes] = useState(lesson.durationMinutes)
-  const [meetingUrl, setMeetingUrl] = useState(lesson.meetingUrl ?? '')
-  const [error, setError] = useState<string | undefined>()
   const [pending, setPending] = useState<ScheduleLessonRequest | null>(null)
   const [unscheduling, setUnscheduling] = useState(false)
   const title = lesson.scheduledAt
@@ -82,13 +76,7 @@ function ScheduleForm({
   }
 
   const save = () => {
-    const url = schemas.optionalHttpsUrl.safeParse(meetingUrl)
-    if (!url.success) {
-      setError(url.error.issues[0]?.message)
-      return
-    }
-    setError(undefined)
-    void send(scheduleBody(lesson, toIsoWithOffset(date), url.data, durationMinutes))
+    void send(scheduleBody(lesson, toIsoWithOffset(date), durationMinutes))
   }
 
   return (
@@ -141,18 +129,6 @@ function ScheduleForm({
           step={LESSON_LENGTH.step}
           onChange={setDurationMinutes}
         />
-        <Field label={t('teacher.schedule.meetingLink')} error={error}>
-          {(a11y) => (
-            <Input
-              {...a11y}
-              type="url"
-              inputMode="url"
-              placeholder={t('lesson.meetingLinkPlaceholder')}
-              value={meetingUrl}
-              onChange={(event) => setMeetingUrl(event.target.value)}
-            />
-          )}
-        </Field>
       </TeachSheet>
       <OverlapDialog
         open={pending !== null}

@@ -13,6 +13,7 @@ import type { TeachSheetRequest } from './sheet-types'
 import { StudentFormSheet } from './student-form-sheet'
 import { TeachSheetsContext, type TeachSheets } from './use-teach-sheets'
 import { VideoPlayerDialog } from './video-player-dialog'
+import { WhatsAppNumberSheet } from './whatsapp-number-sheet'
 
 /** How long a closing sheet stays mounted for its exit animation. */
 const EXIT_MS = 250
@@ -123,6 +124,14 @@ function SheetFor({
       return <EnrollSheet courseId={request.courseId} open={open} onOpenChange={onOpenChange} />
     case 'password':
       return <ChangePasswordSheet open={open} onOpenChange={onOpenChange} />
+    case 'whatsapp':
+      return (
+        <WhatsAppNumberSheet
+          afterSave={request.afterSave}
+          open={open}
+          onOpenChange={onOpenChange}
+        />
+      )
     case 'video':
       return (
         <VideoPlayerDialog

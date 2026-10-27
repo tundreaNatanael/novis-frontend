@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import type { CalendarLesson } from '@/api/types'
 import type { RouteHandle } from '@/app/route-handle'
+import { useMe } from '@/auth/session'
 import { Button } from '@/components/ui/button'
 import { closeOutcome, type LessonAction } from '../calendar/actions'
 import {
@@ -32,10 +33,10 @@ import { ToFinishBanner } from '../components/to-finish-banner'
 import { useToFinish } from '../data/lessons'
 import { useT } from '../i18n/use-i18n'
 import { startOfDay, startOfMonth, toIsoWithOffset } from '../lib/dates'
-import { openInNewTab } from '../lib/open-url'
+import { openApp, openInNewTab } from '../lib/open-url'
 import { useFormatters } from '../lib/use-formatters'
 import { useTeachTitle } from '../lib/use-teach-title'
-import { isLessonSegment, type LessonSegment } from '../lessons/utils'
+import { isLessonSegment, teacherJoin, type LessonSegment } from '../lessons/utils'
 import { useTeachSheets } from '../sheets/use-teach-sheets'
 
 export const handle: RouteHandle = { title: 'Calendar' }
@@ -49,6 +50,7 @@ export const handle: RouteHandle = { title: 'Calendar' }
  */
 export function Component() {
   const t = useT()
+  const me = useMe()
   const fmt = useFormatters()
   const navigate = useNavigate()
   const sheets = useTeachSheets()
@@ -115,10 +117,18 @@ export function Component() {
       case 'canceledLate':
         close.mutate({ id: lesson.id, status: closeOutcome[action] })
         return
-      case 'join':
-        if (lesson.meetingUrl && !openInNewTab(lesson.meetingUrl))
-          toast.error(t('lesson.joinFailed'))
+      case 'join': {
+        // A WhatsApp call on your own number opens the WhatsApp app (D-058).
+        const target = teacherJoin(lesson.meetingUrl, me.whatsappNumber)
+        const opened =
+          target?.kind === 'openWhatsApp'
+            ? openApp(target.url)
+            : target
+              ? openInNewTab(target.url)
+              : true
+        if (!opened) toast.error(t('lesson.joinFailed'))
         return
+      }
       case 'reschedule':
         sheets.open({ kind: 'schedule', lessonId: lesson.id })
         return

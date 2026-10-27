@@ -14,12 +14,14 @@ import { SelectField } from '@/components/form/select-field'
 import { applyServerErrors } from '@/components/form/server-errors'
 import { Input } from '@/components/ui/input'
 import type { Capabilities } from '@/lib/permissions'
-import { emailSchema, nameSchema } from '@/lib/schemas'
+import { emailSchema, nameSchema, optionalWhatsAppNumber } from '@/lib/schemas'
+import { whatsAppNumberChange } from '@/lib/whatsapp'
 
 const schema = z.object({
   name: nameSchema,
   email: emailSchema,
   status: z.enum(['ACTIVE', 'DISABLED']),
+  whatsappNumber: optionalWhatsAppNumber,
 })
 type FormValues = z.infer<typeof schema>
 
@@ -30,22 +32,34 @@ interface EditUserSheetProps {
   onOpenChange: (open: boolean) => void
 }
 
-/** `PATCH /users/{id}`: name for anyone allowed to edit, email / status only where the server lets this caller. */
+/**
+ * `PATCH /users/{id}`: name for anyone allowed to edit, email / status only where the server lets
+ * this caller, a teacher's WhatsApp number (emptied → removed).
+ */
 export function EditUserSheet({ user, capabilities, open, onOpenChange }: EditUserSheetProps) {
   const queryClient = useQueryClient()
   const [formError, setFormError] = useState<string | null>(null)
   const canEmail = capabilities.canEditEmail(user)
   const canStatus = capabilities.canEditStatus
+  const canWhatsApp = capabilities.canEditWhatsAppNumber(user)
+  const initialValues = (): FormValues => ({
+    name: user.name,
+    email: user.email,
+    status: user.status,
+    whatsappNumber: user.whatsappNumber ?? '',
+  })
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { name: user.name, email: user.email, status: user.status },
+    defaultValues: initialValues(),
   })
 
   useEffect(() => {
     if (open) {
-      form.reset({ name: user.name, email: user.email, status: user.status })
+      form.reset(initialValues())
       setFormError(null)
     }
+    // initialValues reads only `user`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, user, form])
 
   const mutation = useMutation({
@@ -54,6 +68,7 @@ export function EditUserSheet({ user, capabilities, open, onOpenChange }: EditUs
         ...(values.name !== user.name ? { name: values.name } : {}),
         ...(canEmail && values.email !== user.email ? { email: values.email } : {}),
         ...(canStatus && values.status !== user.status ? { status: values.status } : {}),
+        ...(canWhatsApp ? whatsAppNumberChange(values.whatsappNumber, user.whatsappNumber) : {}),
       }),
     onSuccess: async () => {
       await Promise.all([
@@ -64,7 +79,9 @@ export function EditUserSheet({ user, capabilities, open, onOpenChange }: EditUs
       onOpenChange(false)
     },
     onError: (error) =>
-      setFormError(applyServerErrors(error, form.setError, ['name', 'email', 'status'])),
+      setFormError(
+        applyServerErrors(error, form.setError, ['name', 'email', 'status', 'whatsappNumber']),
+      ),
   })
 
   return (
@@ -119,6 +136,24 @@ export function EditUserSheet({ user, capabilities, open, onOpenChange }: EditUs
                   ]}
                 />
               )}
+            />
+          )}
+        </Field>
+      ) : null}
+      {canWhatsApp ? (
+        <Field
+          label="WhatsApp number"
+          hint="With + and the country code. Their students get a WhatsApp button that opens a chat with it. Leave empty to remove it."
+          error={form.formState.errors.whatsappNumber?.message}
+        >
+          {(a11y) => (
+            <Input
+              {...a11y}
+              type="tel"
+              inputMode="tel"
+              autoComplete="off"
+              placeholder="+40 712 345 678"
+              {...form.register('whatsappNumber')}
             />
           )}
         </Field>

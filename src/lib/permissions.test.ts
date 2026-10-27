@@ -32,6 +32,7 @@ function user(overrides: Partial<User>): User {
     organization: null,
     status: 'ACTIVE',
     hasPassword: true,
+    whatsappNumber: null,
     createdAt: '2026-01-01T00:00:00Z',
     ...overrides,
   }
@@ -138,6 +139,21 @@ describe('deriveCapabilities', () => {
     expect(elsewhere.canManageStudentPayments).toBe(false)
     expect(elsewhere.canManageTeacherPayouts).toBe(false)
     expect(elsewhere.canManageHomework).toBe(false)
+  })
+
+  it('lets whoever edits a teacher account set its WhatsApp number, and only teacher accounts (D-056)', () => {
+    const root = deriveCapabilities(superAdmin, org)
+    expect(root.canEditWhatsAppNumber(teacherOnly)).toBe(true)
+    expect(root.canEditWhatsAppNumber(freelancer)).toBe(true)
+    expect(root.canEditWhatsAppNumber(admin)).toBe(false)
+    expect(root.canEditWhatsAppNumber(superAdmin)).toBe(false)
+
+    const inOwnOrg = deriveCapabilities(admin, org)
+    expect(inOwnOrg.canEditWhatsAppNumber(teacherOnly)).toBe(true)
+    expect(inOwnOrg.canEditWhatsAppNumber(teacherElsewhere)).toBe(false)
+    expect(inOwnOrg.canEditWhatsAppNumber(admin)).toBe(false)
+    expect(inOwnOrg.canEditWhatsAppNumber(studentHere)).toBe(false)
+    expect(inOwnOrg.canEditWhatsAppNumber(freelancer)).toBe(false)
   })
 
   it('leaves teacher payouts to the organization’s admins and the super-admin', () => {

@@ -764,3 +764,75 @@ never "payment" (D-047). The totals refresh with anything that changes a lesson 
 recording a payout happens in the console, so a teacher sees it on the next load. A paid late
 cancellation counts in "Paid" but not in "Held", by the backend's definition, so it adds one to the
 balance.
+
+## D-056 · 2026-10-27 · A teacher's WhatsApp number, and Join on WhatsApp
+
+**Decision.** A teacher may share a WhatsApp number (`User.whatsappNumber`, E.164; API.md §5). The
+teacher sets it on their own Profile in the workspace (a row and a sheet, `PATCH /users/{me}`); an
+org admin sets it on a teacher's page (Edit account, teachers only: `canEditWhatsAppNumber`) and the
+super-admin on a freelance teacher's profile (`PATCH /freelance-teachers/{id}`). Everyone who looks at
+a lesson but is not its teacher gets a **WhatsApp** button that opens a chat with the teacher
+(`https://wa.me/<digits>`, `src/lib/whatsapp.ts`): in the console, the lesson detail header next to
+"Join lesson"; students get it in the mobile app. The teacher's own Join keeps opening the lesson's
+call link, and any Join reads **Join on WhatsApp** when that link is a WhatsApp call or chat link
+(`isWhatsAppLink`: `call.whatsapp.com`, `wa.me`, `chat.whatsapp.com`…). The number is typed with `+`
+and the country code; spaces, dashes, dots and parentheses are fine (the API stores E.164); an
+emptied field goes out as `null` and removes it, an unchanged one is left out (`whatsAppNumberChange`).
+**Context.** The product owner wanted a WhatsApp option next to the meeting link when joining a
+lesson, "simple": the teacher or the admin adds the teacher's number, the button opens a chat with
+it, and the teacher's own Join goes to the call link.
+**Alternatives.** A button that only launches WhatsApp — rejected: it lands nowhere. A chat button for
+the teacher too — rejected: it would open a chat with themselves (the student's number is not stored).
+A WhatsApp brand logo — rejected: lucide has none and the console draws no logos; `MessageCircle`
+with the word "WhatsApp" says it.
+**Consequences.** `wa.me` opens WhatsApp Desktop or WhatsApp Web on a computer and the app on a phone;
+nothing is checked on the client beyond the format. A local number (`07…`) is refused, since `wa.me`
+needs the country code.
+
+## D-057 · 2026-10-27 · The meeting link belongs to a teacher and a student
+
+**Decision.** The meeting link (a WhatsApp call, Meet or Zoom link) is how a student connects with
+a teacher, so it lives on the pair (`MeetingLink`, API.md §3, §7): one link per teacher and student.
+Lessons, weekly lessons and courses carry none any more — New lesson, Reschedule, Set up / Change
+weekly lesson and the course forms (console and workspace) lost their link fields, and the course
+pages their link. The org admin sets it on a student's page in a **Meeting links** panel, one row per
+teacher of the student (`GET /students/{id}/meeting-links`, Set / Edit / Remove with `PUT` /
+`DELETE …/meeting-links/{teacherId}`); a teacher sets theirs in the workspace's **Edit student** sheet
+(`PUT` / `DELETE …/meeting-links/{me}`, only when it changed), and the student's page links it from
+`RosterStudent.meetingUrl`. Every lesson of the pair answers with it as its read-only `meetingUrl`,
+so Join (and "Join on WhatsApp", D-056) works unchanged; writing a link refreshes the lesson queries.
+**Context.** The product owner: "the meeting link (WhatsApp, Meet, Zoom) … means how the student
+connects with the teacher and it should be between them", set by the teacher or the admin; the
+per-lesson link was to go. Old lesson and course links were dropped by the backend, not carried over
+(the product owner's choice).
+**Alternatives.** A link per student profile shared by all of the student's teachers (built first,
+replaced the same day): a student with a piano and a guitar teacher needs two links. Keeping a
+per-lesson override — rejected for now (listed as a follow-up). Copying the pair's link into lessons
+when booked — rejected: lessons already booked, weekly ones eight weeks ahead, would keep an old link.
+**Consequences.** A stale client that still sends a lesson or course link gets a `400` (the backend's
+tombstones), not a silent drop. A lesson whose teacher and student have no link shows no Join button.
+
+## D-058 · 2026-10-27 · A WhatsApp call on the teacher's number as the meeting link
+
+**Decision.** Where the pair's meeting link is set, it can be a **WhatsApp call** instead of a link
+(`PUT …/meeting-links/{teacherId} { whatsapp: true }`, backend V17): every lesson of the two then
+answers with the chat with the teacher's current number (`https://wa.me/<digits>`), where they call.
+The workspace's Edit student shows it as a switch above the link field, read from the teacher's row
+of `GET /students/{id}/meeting-links`; the console's Meeting links sheet as a box, from that row's
+`teacherWhatsappNumber`. Without a number the option is off: the workspace offers **Add WhatsApp
+number**, which opens that sheet and returns to Edit student once saved; the console links to the
+teacher's page, where the number is edited. The teacher's own Join reads **Open WhatsApp** and opens
+the WhatsApp app (`whatsapp://`, from the same tab), since the chat would be with themself; the console's lesson page hides
+its separate WhatsApp button when Join already opens the same chat.
+**Context.** The product owner: "add the option to toggle whatsapp call on, so the link will the
+whatsapp link and their number. If there is no phone number for the teacher, then leave the link
+option or the option to go to settings and set a phone number"; for the teacher's own Join they chose
+"just open WhatsApp".
+**Alternatives.** Hiding Join for the teacher on these lessons (they call from WhatsApp anyway) — not
+chosen; WhatsApp's own call links (`call.whatsapp.com`) stay possible as an ordinary link. Copying the
+number into the link when set — rejected by the backend: a new number would not reach booked lessons.
+**Consequences.** The link follows the number: a teacher who removes their number leaves their
+WhatsApp-call students with no Join until it is set again (no warning yet, listed as a follow-up).
+A switch that is on while the number is gone can still be switched off. Without a link both sides
+show "No meeting link yet": a shared number alone is no way in (a fallback to it was tried and
+dropped, since switching the WhatsApp call off then changed nothing for either side).

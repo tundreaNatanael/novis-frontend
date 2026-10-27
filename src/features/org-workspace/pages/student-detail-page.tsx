@@ -33,6 +33,7 @@ import { BalanceFields } from '@/features/lessons/components/balance-fields'
 import { useLessonPaths } from '@/features/lessons/lesson-paths'
 import { WeeklyLessonsPanel } from '@/features/recurring/components/weekly-lessons-panel'
 import { EditStudentSheet } from '../components/edit-student-sheet'
+import { MeetingLinksPanel } from '../components/meeting-links-panel'
 import { useWorkspaceScope } from '../use-org-workspace'
 
 export const handle: RouteHandle = {
@@ -252,6 +253,7 @@ export function Component() {
               ))
             )}
           </DetailPanel>
+          {capabilities.canManageLessons ? <MeetingLinksPanel studentId={studentId} /> : null}
           {capabilities.canManageLessons ? (
             <WeeklyLessonsPanel
               studentId={studentId}

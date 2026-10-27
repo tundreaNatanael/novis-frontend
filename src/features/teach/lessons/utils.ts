@@ -1,7 +1,7 @@
 import type { Course, CreateLessonSeriesRequest, Lesson, ScheduleLessonRequest } from '@/api/types'
+import { isWhatsAppChatWith, isWhatsAppLink, WHATSAPP_APP_URL } from '@/lib/whatsapp'
 import type { TeachCapabilities } from '../lib/capabilities'
 import { toIsoWithOffset } from '../lib/dates'
-import { optionalText } from '../lib/schemas'
 import type { TranslationKey } from '../i18n/types'
 import type { Tone } from '../components/tone'
 
@@ -87,28 +87,22 @@ export function defaultLessonLength(
 }
 
 /**
- * The `PATCH /lessons/{id}/schedule` body of the schedule sheet: the date, the length when it
- * changed (an omitted one stays), and the meeting link as typed (trimmed). A link the lesson had
- * and the field lost goes out as `null` (the API removes it); no link before and none typed
- * leaves it out.
+ * The `PATCH /lessons/{id}/schedule` body of the schedule sheet: the date, and the length when it
+ * changed (an omitted one stays). The meeting link is the teacher and student's (D-057).
  */
 export function scheduleBody(
-  lesson: Pick<Lesson, 'meetingUrl' | 'durationMinutes'>,
+  lesson: Pick<Lesson, 'durationMinutes'>,
   scheduledAt: string,
-  meetingUrl: string,
   durationMinutes: number = lesson.durationMinutes,
 ): ScheduleLessonRequest {
   const body: ScheduleLessonRequest = { scheduledAt }
   if (durationMinutes !== lesson.durationMinutes) body.durationMinutes = durationMinutes
-  const link = optionalText(meetingUrl)
-  if (link || lesson.meetingUrl) body.meetingUrl = link ?? null
   return body
 }
 
 /**
  * The `POST /lessons/series` body of the book sheet: the first date with the browser's offset,
- * the browser's IANA time zone (so the dates keep their local time across DST) and the link only
- * when typed.
+ * the browser's IANA time zone (so the dates keep their local time across DST) and the length.
  */
 export function seriesBody(draft: {
   studentId: string
@@ -118,7 +112,6 @@ export function seriesBody(draft: {
   intervalWeeks: 1 | 2
   count: number
   durationMinutes: number
-  meetingUrl?: string
 }): CreateLessonSeriesRequest {
   const body: CreateLessonSeriesRequest = {
     studentId: draft.studentId,
@@ -129,8 +122,6 @@ export function seriesBody(draft: {
     durationMinutes: draft.durationMinutes,
   }
   if (draft.courseId) body.courseId = draft.courseId
-  const link = optionalText(draft.meetingUrl ?? '')
-  if (link) body.meetingUrl = link
   return body
 }
 
@@ -201,4 +192,19 @@ export function groupByDay<T extends { scheduledAt: string | null }>(
   const list = [...groups.values()]
   const undated = list.filter((g) => g.date === null)
   return [...list.filter((g) => g.date !== null), ...undated]
+}
+
+/**
+ * What the teacher's Join opens (D-058): a WhatsApp call on their own number is the chat with
+ * themself, so it opens the WhatsApp app ("Open WhatsApp"); another WhatsApp link says "Join on
+ * WhatsApp". `null` without a link ("No meeting link yet"), as the student's app shows it.
+ */
+export function teacherJoin(
+  meetingUrl: string | null | undefined,
+  myWhatsappNumber: string | null | undefined,
+): { url: string; kind: 'openWhatsApp' | 'whatsApp' | 'link' } | null {
+  if (!meetingUrl) return null
+  if (isWhatsAppChatWith(meetingUrl, myWhatsappNumber))
+    return { url: WHATSAPP_APP_URL, kind: 'openWhatsApp' }
+  return { url: meetingUrl, kind: isWhatsAppLink(meetingUrl) ? 'whatsApp' : 'link' }
 }

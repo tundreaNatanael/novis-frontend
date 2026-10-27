@@ -3,6 +3,59 @@
 All notable changes to the Novis admin console. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); dates are the day the change landed on `main`.
 
+## WhatsApp option and a meeting link per teacher and student — Unreleased
+
+Backend: `users.whatsapp_number` (V15), `teacher_student_meeting_links` (V16) and its `whatsapp`
+flag (V17), API.md §3, §5, §7.
+
+### Breaking
+
+- **No more lesson, weekly-lesson or course links** (D-057): the link fields are gone from New lesson,
+  Reschedule, Set up / Change weekly lesson and the course forms, in the console and the teacher
+  workspace, and the course pages no longer show a default link. `Course.defaultMeetingUrl` and
+  `RecurringLesson.meetingUrl` left the types; the request types lost `meetingUrl` /
+  `defaultMeetingUrl` (the API now answers `400` to them).
+- `Lesson.meetingUrl` and `CalendarLesson.meetingUrl` are read-only: the link of the lesson's teacher
+  and student.
+
+### Added
+
+- **A teacher's WhatsApp number** (D-056): Profile → WhatsApp number in the teacher workspace (a
+  sheet, en / ro); Edit account on an org teacher's page (teachers only, `canEditWhatsAppNumber`) and
+  Edit on a freelance teacher's profile; shown on both pages as a `wa.me` link
+  (`WhatsAppNumberValue`). `+` and the country code, separators allowed; emptied → `null`.
+- **WhatsApp on a lesson** (D-056): the console's lesson detail has a **WhatsApp** button (a chat with
+  the lesson's teacher) next to **Join lesson**; every Join (console, the workspace's lesson page and
+  calendar dialog) reads **Join on WhatsApp** for a WhatsApp call or chat link.
+- **The meeting link of a teacher and a student** (D-057): a **Meeting links** panel on the console's
+  student page (one row per teacher: Set / Edit / Remove); the workspace's **Edit student** (was
+  Rename) sets the teacher's own link with the student; the workspace's student page links it.
+  `studentsApi.meetingLinks` / `setMeetingLink` / `removeMeetingLink`, `http.put`.
+- **A WhatsApp call as the meeting link** (D-058): the workspace's Edit student has a **WhatsApp call**
+  switch (the link field hides; the hint names your number); without a number it is off, with **Add
+  WhatsApp number**, which opens that sheet and comes back to Edit student once saved
+  (`afterSave`). The console's Meeting links sheet has the same option as a **WhatsApp call** box for
+  that teacher's number, or a link to the teacher's page to add one; its rows say "WhatsApp call".
+  `MeetingLink.whatsapp` / `teacherWhatsappNumber`, `SetMeetingLinkRequest` = `{ meetingUrl }` or
+  `{ whatsapp: true }`, `useMeetingLinks`, `meetingLinkChange` (`teach/students/utils.ts`).
+- **The teacher's Join opens WhatsApp** (D-058) for a WhatsApp call on their own number (lesson page
+  and its meeting-link line, calendar dialog, the student page's link): **Open WhatsApp** opens the
+  WhatsApp app (`whatsapp://` from the same tab, `openApp`; `teacherJoin`, `isWhatsAppChatWith`). The
+  console's lesson page drops its separate WhatsApp button when Join already opens that chat. Without
+  a link the teacher sees "No meeting link yet", as the student does: a number alone is no way in. The workspace's WhatsApp buttons (Join on WhatsApp, Open
+  WhatsApp, Add WhatsApp number, Profile's row) show a phone, not a message bubble.
+- `src/lib/whatsapp.ts` (`whatsAppChatUrl`, `isWhatsAppNumber`, `isWhatsAppLink`,
+  `whatsAppNumberChange`), `optionalWhatsAppNumber` in both schema sets.
+- Tests: `src/lib/whatsapp.test.ts`, schemas, `canEditWhatsAppNumber`, `teacherJoin`,
+  `meetingLinkChange`, and flow tests in `features/org-workspace/whatsapp.test.tsx` and
+  `features/teach/whatsapp.test.tsx` (the switch with and without a number, the way back from Add
+  WhatsApp number, Open WhatsApp, the console's box and the hidden chat button); the lesson, course
+  and weekly-lesson tests no longer send links.
+
+### Changed
+
+- `src/api/schema.d.ts` regenerated (2026-10-27).
+
 ## Cards stand apart from the page — Unreleased
 
 ### Changed

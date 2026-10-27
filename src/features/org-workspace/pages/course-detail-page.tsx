@@ -215,21 +215,6 @@ export function Component() {
               <span className="text-muted-foreground">None (freelance course)</span>
             )}
           </DetailField>
-          <DetailField label="Default meeting link" hint="Copied into new lessons of this course.">
-            {course.defaultMeetingUrl ? (
-              <a
-                href={course.defaultMeetingUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1 break-all text-primary underline-offset-4 hover:underline"
-              >
-                {course.defaultMeetingUrl}
-                <ExternalLink className="size-3.5 shrink-0" aria-hidden />
-              </a>
-            ) : (
-              <span className="text-muted-foreground">—</span>
-            )}
-          </DetailField>
           <DetailField
             label="Default lesson length"
             hint="Given to new lessons of this course booked without their own length."

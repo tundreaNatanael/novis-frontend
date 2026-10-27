@@ -4,6 +4,7 @@ import {
   CalendarClock,
   CheckCircle2,
   NotebookPen,
+  Phone,
   Repeat,
   Video,
   XCircle,
@@ -11,6 +12,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import type { CalendarLesson } from '@/api/types'
+import { useMe } from '@/auth/session'
 import {
   Dialog,
   DialogContent,
@@ -25,6 +27,7 @@ import { TeachBadge } from '../components/teach-badge'
 import { TONE_TEXT, type Tone } from '../components/tone'
 import { useT } from '../i18n/use-i18n'
 import { useFormatters } from '../lib/use-formatters'
+import { teacherJoin } from '../lessons/utils'
 import { lessonActions, type LessonAction } from './actions'
 
 const ACTION_META: Record<LessonAction, { icon: LucideIcon; tone: Tone }> = {
@@ -55,12 +58,20 @@ export function LessonActionsDialog({
   onAction: (action: LessonAction, lesson: CalendarLesson) => void
 }) {
   const t = useT()
+  const me = useMe()
   const fmt = useFormatters()
   const [confirming, setConfirming] = useState<'canceledOnTime' | 'canceledLate' | null>(null)
   if (!lesson) return null
   const when = fmt.whenShortRange(new Date(lesson.scheduledAt), lesson.durationMinutes)
   const charged = lesson.status === 'PRESENT' || lesson.status === 'CANCELED_LATE'
   const copy = confirming === 'canceledOnTime' ? 'cancelOnTime' : 'cancelLate'
+  const joinKind = teacherJoin(lesson.meetingUrl, me.whatsappNumber)?.kind ?? 'link'
+  const joinLabel =
+    joinKind === 'openWhatsApp'
+      ? t('lesson.openWhatsApp')
+      : joinKind === 'whatsApp'
+        ? t('lesson.joinWhatsApp')
+        : t('teacher.calendar.actions.join')
 
   return (
     <>
@@ -102,8 +113,15 @@ export function LessonActionsDialog({
                   }}
                   className="flex min-h-12 items-center gap-3 border-t border-border px-4 py-2 text-left text-sm font-medium transition-colors first:border-t-0 hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 >
-                  <meta.icon className={cn('size-5 shrink-0', TONE_TEXT[meta.tone])} aria-hidden />
-                  {t(`teacher.calendar.actions.${action}`)}
+                  {action === 'join' && joinKind !== 'link' ? (
+                    <Phone className={cn('size-5 shrink-0', TONE_TEXT[meta.tone])} aria-hidden />
+                  ) : (
+                    <meta.icon
+                      className={cn('size-5 shrink-0', TONE_TEXT[meta.tone])}
+                      aria-hidden
+                    />
+                  )}
+                  {action === 'join' ? joinLabel : t(`teacher.calendar.actions.${action}`)}
                 </button>
               )
             })}

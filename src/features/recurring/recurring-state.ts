@@ -147,13 +147,12 @@ export interface RecurringDraft {
   timeZone: string
   intervalWeeks: 1 | 2
   durationMinutes: number
-  meetingUrl: string
 }
 
 /**
  * The `POST /recurring-lessons` body: the first lesson as a UTC instant (the API reads its weekday
- * and local time in `timeZone`, the browser's), the interval, the length, and the course and link
- * only when given. `null` while the draft has no first lesson yet.
+ * and local time in `timeZone`, the browser's), the interval, the length, and the course only when
+ * given (the meeting link is the teacher and student's, D-057). `null` while the draft has no first lesson yet.
  */
 export function recurringBody(draft: RecurringDraft): CreateRecurringLessonRequest | null {
   const firstAt = fromDateTimeLocal(draft.firstAt)
@@ -166,7 +165,6 @@ export function recurringBody(draft: RecurringDraft): CreateRecurringLessonReque
     timeZone: draft.timeZone,
     intervalWeeks: draft.intervalWeeks,
     durationMinutes: draft.durationMinutes,
-    ...(draft.meetingUrl ? { meetingUrl: draft.meetingUrl } : {}),
   }
 }
 
@@ -179,19 +177,15 @@ export interface RecurringChangeDraft {
   localTime: string
   intervalWeeks: 1 | 2
   durationMinutes: number
-  meetingUrl: string
 }
 
 /**
  * The `PATCH /recurring-lessons/{id}` body: `effectiveFrom` and only what differs from the rule —
- * an emptied link goes out as `null` (the API removes it), the zone is never sent (the rule keeps
+ * the zone is never sent (the rule keeps
  * its own). `null` when nothing changed, so no request goes out (the API would answer `400`).
  */
 export function recurringChangeBody(
-  rule: Pick<
-    RecurringLesson,
-    'weekday' | 'localTime' | 'intervalWeeks' | 'durationMinutes' | 'meetingUrl'
-  >,
+  rule: Pick<RecurringLesson, 'weekday' | 'localTime' | 'intervalWeeks' | 'durationMinutes'>,
   draft: RecurringChangeDraft,
 ): UpdateRecurringLessonRequest | null {
   const body: UpdateRecurringLessonRequest = { effectiveFrom: draft.effectiveFrom }
@@ -199,7 +193,5 @@ export function recurringChangeBody(
   if (draft.localTime !== rule.localTime) body.localTime = draft.localTime
   if (draft.intervalWeeks !== rule.intervalWeeks) body.intervalWeeks = draft.intervalWeeks
   if (draft.durationMinutes !== rule.durationMinutes) body.durationMinutes = draft.durationMinutes
-  const link = draft.meetingUrl.trim()
-  if ((link || null) !== rule.meetingUrl) body.meetingUrl = link || null
   return Object.keys(body).length > 1 ? body : null
 }

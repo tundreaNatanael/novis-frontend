@@ -7,7 +7,6 @@ import {
   Pencil,
   UserPlus,
   Users,
-  Video,
   X,
 } from 'lucide-react'
 import { useState } from 'react'
@@ -33,7 +32,6 @@ import {
 import { useArchiveCourse, useRemoveMaterial, useUnenrollStudent } from '../data/mutations'
 import { useT } from '../i18n/use-i18n'
 import { teachCapabilities } from '../lib/capabilities'
-import { openInNewTab } from '../lib/open-url'
 import { useFormatters } from '../lib/use-formatters'
 import { useTeachTitle } from '../lib/use-teach-title'
 import { useOpenMaterial } from '../materials/use-open-material'
@@ -108,27 +106,13 @@ export function Component() {
           ) : undefined
         }
       />
-      {data.defaultDurationMinutes || data.defaultMeetingUrl ? (
+      {data.defaultDurationMinutes ? (
         <TeachCard className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
-          {data.defaultDurationMinutes ? (
-            <span className="text-muted-foreground">
-              {t('teacher.courseDetail.defaultLength', {
-                length: fmt.duration(data.defaultDurationMinutes),
-              })}
-            </span>
-          ) : null}
-          {data.defaultMeetingUrl ? (
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              className="rounded-full"
-              onClick={() => openInNewTab(data.defaultMeetingUrl ?? '')}
-            >
-              <Video aria-hidden />
-              {t('teacher.courseDetail.meetingLink')}
-            </Button>
-          ) : null}
+          <span className="text-muted-foreground">
+            {t('teacher.courseDetail.defaultLength', {
+              length: fmt.duration(data.defaultDurationMinutes),
+            })}
+          </span>
         </TeachCard>
       ) : null}
 

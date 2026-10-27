@@ -1,3 +1,11 @@
+/**
+ * Hands an app link (`whatsapp://`) to the operating system from this tab: no empty new tab is left
+ * behind, and the page stays where it is.
+ */
+export function openApp(url: string): boolean {
+  return window.open(url, '_self') !== null
+}
+
 /** Opens a link in a new tab without handing it this window (`noopener`). */
 export function openInNewTab(url: string): boolean {
   const tab = window.open(url, '_blank', 'noopener,noreferrer')

@@ -76,11 +76,12 @@ export type UserOrganization = Strict<S['OrganizationSummary']>
 /**
  * One role in one place: `role` is `null` for an account without a role (e.g. after its
  * membership was removed); `organization` is `null` unless the user holds a membership (it stays
- * present when that organization is archived).
+ * present when that organization is archived). `whatsappNumber` (E.164) is set on teacher accounts
+ * that share one, `null` otherwise.
  */
 export type User = Nullable<
   Omit<Strict<S['UserResponse']>, 'organization'> & { organization: UserOrganization },
-  'role' | 'organization'
+  'role' | 'organization' | 'whatsappNumber'
 >
 export type Organization = Strict<S['OrganizationResponse']>
 export type Invite = Nullable<Strict<S['InviteResponse']>, 'organizationId' | 'usedAt'>
@@ -89,10 +90,23 @@ export type Member = Strict<S['MemberResponse']>
 export type Student = Strict<S['StudentResponse']>
 /** `POST /students`: the student plus whether a new profile was created or the email's profile of that name linked. */
 export type StudentCreated = Strict<S['StudentCreatedResponse']>
+/**
+ * One of a student's teachers and the meeting link of the two (API.md §7, V16): how the student
+ * connects with that teacher; every lesson of the pair answers with it. `null` = none yet.
+ */
+/**
+ * A teacher of the student and how the two meet (D-057): `meetingUrl` is the link to open, for a
+ * WhatsApp call (`whatsapp`, D-058) the chat with the teacher's current number, `null` while they have
+ * none. `teacherWhatsappNumber` says whether a WhatsApp call can be chosen.
+ */
+export type MeetingLink = Nullable<
+  Strict<S['MeetingLinkResponse']>,
+  'meetingUrl' | 'teacherWhatsappNumber'
+>
 /** `defaultDurationMinutes`: the length new lessons of the course get when booked without one; `null` = 60. */
 export type Course = Nullable<
   Strict<S['CourseResponse']>,
-  'description' | 'organizationId' | 'defaultMeetingUrl' | 'defaultDurationMinutes'
+  'description' | 'organizationId' | 'defaultDurationMinutes'
 >
 export type Enrollment = Strict<S['EnrollmentResponse']>
 export type StudentEnrollment = Nullable<Strict<S['StudentEnrollmentResponse']>, 'organizationId'>
@@ -231,7 +245,7 @@ export interface FinanceSummary {
  */
 export type RosterStudent = Nullable<
   Omit<Strict<S['RosterStudentResponse']>, 'nextLesson'> & { nextLesson: Lesson },
-  'prepaidRemaining' | 'unpaidDue' | 'upcomingUnpaid' | 'nextLesson'
+  'prepaidRemaining' | 'unpaidDue' | 'upcomingUnpaid' | 'nextLesson' | 'meetingUrl'
 >
 /**
  * One row of `GET /teacher/calendar` (API.md §12): a dated lesson of the caller with the names a
@@ -270,8 +284,8 @@ export interface LessonSeries {
 }
 /**
  * A **weekly setting** of one teacher and one student (API.md §9.8), not a lesson: every one or
- * two weeks on `weekday` at `localTime` (`HH:mm`) in `timeZone`, for `durationMinutes`, with
- * `meetingUrl`, from `startsOn` until `endsOn` (`null` while permanent). `generatedUntil` is the
+ * two weeks on `weekday` at `localTime` (`HH:mm`) in `timeZone`, for `durationMinutes`, from
+ * `startsOn` until `endsOn` (`null` while permanent); its lessons open the pair's meeting link. `generatedUntil` is the
  * last date lessons exist for (8 weeks ahead); `conflicts` are the dates the daily run could not
  * book because the slot was taken, for a person to settle; `replacesId` names the rule an edit
  * from a date split this one off. Never any payment data.
@@ -281,7 +295,6 @@ export type RecurringLesson = Nullable<
   | 'courseId'
   | 'organizationId'
   | 'endsOn'
-  | 'meetingUrl'
   | 'endReason'
   | 'endedAt'
   | 'endedById'
@@ -365,6 +378,8 @@ export interface UpdateFreelanceTeacherRequest {
   name?: string
   email?: string
   status?: UserStatus
+  /** E.164 or with separators; `null` removes it. */
+  whatsappNumber?: string | null
 }
 export interface AddMembershipRequest {
   userId: string
@@ -375,6 +390,8 @@ export interface UpdateUserRequest {
   email?: string
   status?: UserStatus
   password?: string
+  /** Teacher accounts only (`409` otherwise); `null` removes it. */
+  whatsappNumber?: string | null
 }
 export interface CreateStudentRequest {
   name: string
@@ -387,13 +404,15 @@ export interface UpdateStudentRequest {
   email?: string
   status?: UserStatus
 }
+/** `PUT /students/{id}/meeting-links/{teacherId}`: the pair's link, absolute https (remove it with `DELETE`). */
+/** A link, or a WhatsApp call on the teacher's number (`409` while they have none): exactly one. */
+export type SetMeetingLinkRequest = { meetingUrl: string } | { whatsapp: true }
 export interface CreateCourseRequest {
   title: string
   /** A blank one is stored as none. */
   description?: string
   organizationId?: string
   teacherId?: string
-  defaultMeetingUrl?: string
   /** 15–240 minutes. */
   defaultDurationMinutes?: number
 }
@@ -404,8 +423,6 @@ export interface UpdateCourseRequest {
   description?: string | null
   status?: CourseStatus
   teacherId?: string
-  /** `null` removes it; lessons that already copied it keep it. */
-  defaultMeetingUrl?: string | null
   /** `null` removes it (new lessons then last 60 minutes); lessons already booked keep theirs. */
   defaultDurationMinutes?: number | null
 }
@@ -419,7 +436,6 @@ export interface CreateLessonRequest {
   scheduledAt?: string
   /** 15–240; left out, the course's default length, else 60. */
   durationMinutes?: number
-  meetingUrl?: string
   usePrepaid?: boolean
   /** Book even if the time overlaps another lesson of the teacher or the student (else `409 SCHEDULE_CONFLICT`). */
   allowOverlap?: boolean
@@ -437,7 +453,6 @@ export interface CreateLessonSeriesRequest {
   /** 1–52 dates. */
   count: number
   durationMinutes?: number
-  meetingUrl?: string
   allowOverlap?: boolean
   /** Plan only: answers the dates with their conflicts and writes nothing. */
   dryRun?: boolean
@@ -445,7 +460,7 @@ export interface CreateLessonSeriesRequest {
 /**
  * `POST /recurring-lessons` (API.md §9.8): a permanent weekly lesson from `firstAt` (today or
  * later in `timeZone`), every one or two weeks at the same local time, until it is ended. The
- * length and link fall back to the course's defaults, copied once.
+ * length falls back to the course's default, copied once.
  */
 export interface CreateRecurringLessonRequest {
   studentId: string
@@ -458,7 +473,6 @@ export interface CreateRecurringLessonRequest {
   timeZone: string
   intervalWeeks: 1 | 2
   durationMinutes?: number
-  meetingUrl?: string
   /** Book the dates that overlap other lessons too (else `409 SCHEDULE_CONFLICT`, nothing written). */
   allowOverlap?: boolean
   /** Plan only: answers the dates up to the horizon with their conflicts and writes nothing. */
@@ -466,8 +480,7 @@ export interface CreateRecurringLessonRequest {
 }
 /**
  * `PATCH /recurring-lessons/{id}`: a change from `effectiveFrom` (a local date in the rule's
- * zone, today or later). An omitted field keeps its value; `meetingUrl: null` removes the link;
- * nothing changed → `400`. When `effectiveFrom` is after the rule's start the rule splits and the
+ * zone, today or later). An omitted field keeps its value; nothing changed → `400`. When `effectiveFrom` is after the rule's start the rule splits and the
  * answer is a **new** rule holding the new settings.
  */
 export interface UpdateRecurringLessonRequest {
@@ -480,7 +493,6 @@ export interface UpdateRecurringLessonRequest {
   intervalWeeks?: 1 | 2
   /** Never `null` (the API answers `400`). */
   durationMinutes?: number
-  meetingUrl?: string | null
   allowOverlap?: boolean
   dryRun?: boolean
 }
@@ -507,12 +519,10 @@ export interface CreateUploadRequest {
   lessonId?: string
 }
 export interface ScheduleLessonRequest {
-  /** `null` unschedules, and so does leaving it out: send the date even to change only the link. */
+  /** `null` unschedules, and so does leaving it out: send the date even to change only the length. */
   scheduledAt: string | null
   /** Left out, the lesson keeps its length; never `null` (the API answers `400`). */
   durationMinutes?: number
-  /** `null` removes the lesson's link; left out, the lesson keeps it. */
-  meetingUrl?: string | null
   /** Move even if the new slot overlaps another lesson (else `409 SCHEDULE_CONFLICT`). */
   allowOverlap?: boolean
 }

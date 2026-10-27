@@ -18,7 +18,7 @@ import { Input } from '@/components/ui/input'
 import { OverlapConfirmDialog } from '@/features/lessons/components/overlap-confirm-dialog'
 import { useOrgTeachers, useTeacherCourses } from '@/features/org-workspace/hooks/use-org-lookups'
 import { toDateTimeLocal } from '@/lib/format'
-import { lessonDurationSchema, optionalHttpsUrl } from '@/lib/schemas'
+import { lessonDurationSchema } from '@/lib/schemas'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
 import { REPEAT_OPTIONS, browserTimeZone, recurringBody } from '../recurring-state'
 import { OccurrencePreview } from './occurrence-preview'
@@ -31,7 +31,6 @@ const schema = z.object({
   firstAt: z.string().min(1, 'Choose the first lesson'),
   intervalWeeks: z.enum(['1', '2']).transform((value) => (value === '2' ? 2 : 1) as 1 | 2),
   durationMinutes: lessonDurationSchema,
-  meetingUrl: optionalHttpsUrl,
 })
 type FormInput = z.input<typeof schema>
 type FormValues = z.output<typeof schema>
@@ -72,7 +71,6 @@ export function SetupWeeklyLessonSheet({
     firstAt: '',
     intervalWeeks: '1',
     durationMinutes: DEFAULT_LENGTH,
-    meetingUrl: '',
   })
   const form = useForm<FormInput, unknown, FormValues>({
     resolver: zodResolver(schema),
@@ -116,7 +114,6 @@ export function SetupWeeklyLessonSheet({
             timeZone,
             intervalWeeks: parsed.data.intervalWeeks,
             durationMinutes: parsed.data.durationMinutes,
-            meetingUrl: parsed.data.meetingUrl,
           })
         : null,
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed by the typed values
@@ -165,7 +162,6 @@ export function SetupWeeklyLessonSheet({
           'firstAt',
           'intervalWeeks',
           'durationMinutes',
-          'meetingUrl',
         ]),
       )
     },
@@ -190,7 +186,6 @@ export function SetupWeeklyLessonSheet({
             timeZone,
             intervalWeeks: parsedValues.intervalWeeks,
             durationMinutes: parsedValues.durationMinutes,
-            meetingUrl: parsedValues.meetingUrl,
           })
           if (!body) {
             form.setError('firstAt', { type: 'manual', message: 'Choose the first lesson' })
@@ -236,7 +231,7 @@ export function SetupWeeklyLessonSheet({
         ) : null}
         <Field
           label="Course"
-          hint="Optional grouping. Its default length and meeting link are used when none is given."
+          hint="Optional grouping. Its default length is used when none is given."
           error={form.formState.errors.courseId?.message}
         >
           {(a11y) => (
@@ -317,21 +312,6 @@ export function SetupWeeklyLessonSheet({
               max={240}
               step={5}
               {...form.register('durationMinutes')}
-            />
-          )}
-        </Field>
-        <Field
-          label="Meeting link"
-          hint="Optional absolute https:// link every lesson gets as “Join lesson”."
-          error={form.formState.errors.meetingUrl?.message}
-        >
-          {(a11y) => (
-            <Input
-              {...a11y}
-              type="url"
-              inputMode="url"
-              placeholder="https://meet.example.com/room"
-              {...form.register('meetingUrl')}
             />
           )}
         </Field>

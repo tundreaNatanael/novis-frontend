@@ -64,6 +64,11 @@ export interface Capabilities {
   canEditStatus: boolean
   canEditUser: (user: UserLike) => boolean
   canEditEmail: (user: UserLike) => boolean
+  /**
+   * Set or remove a teacher's WhatsApp number (D-056): whoever edits the account, on a `TEACHER`
+   * or `FREELANCE_TEACHER` account only (the API answers `409` for any other).
+   */
+  canEditWhatsAppNumber: (user: UserLike) => boolean
   canDeleteAccount: (user: UserLike) => boolean
   deleteAccountDisabledReason: (user: UserLike) => string | null
   canRemoveMembership: (membership: MembershipLike) => boolean
@@ -204,6 +209,9 @@ export function deriveCapabilities(
     canEditStatus: superAdmin,
     canEditUser: (user) => self(user) || superAdmin || covers(user),
     canEditEmail: (user) => self(user) || superAdmin,
+    canEditWhatsAppNumber: (user) =>
+      (user.role === 'TEACHER' || user.role === 'FREELANCE_TEACHER') &&
+      (self(user) || superAdmin || covers(user)),
     canDeleteAccount: (user) => deleteAccountDisabledReason(user) === null,
     deleteAccountDisabledReason,
     canRemoveMembership: (membership) => removeMembershipDisabledReason(membership) === null,

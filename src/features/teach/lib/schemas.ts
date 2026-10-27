@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { isWhatsAppNumber } from '@/lib/whatsapp'
 import type { Translator } from '../i18n/types'
 
 /**
@@ -50,6 +51,16 @@ export function makeSchemas(t: Translator) {
     .min(1, t('validation.itemEmpty'))
     .max(2000, t('validation.tooLong', { max: 2000 }))
 
+  /** A teacher's WhatsApp number: empty means none, else + and the country code (separators allowed). */
+  const optionalWhatsAppNumber = z
+    .string()
+    .trim()
+    .max(32, t('validation.tooLong', { max: 32 }))
+    .refine(
+      (value) => value.length === 0 || isWhatsAppNumber(value),
+      t('validation.whatsappNumber'),
+    )
+
   /** An optional title (homework): empty means none. */
   const optionalTitle = z
     .string()
@@ -73,6 +84,7 @@ export function makeSchemas(t: Translator) {
     longText,
     httpsUrl,
     optionalHttpsUrl,
+    optionalWhatsAppNumber,
     homeworkItem,
     optionalTitle,
     optionalLessonMinutes,

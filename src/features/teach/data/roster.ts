@@ -73,3 +73,15 @@ export function useStudent(id: string) {
     refetch: () => void fallback.refetch(),
   }
 }
+
+/**
+ * The student's teachers and how each meets them (D-057, `GET /students/{id}/meeting-links`): a
+ * teacher gets their own row only. Edit student reads whether theirs is a WhatsApp call (D-058).
+ */
+export function useMeetingLinks(studentId: string, enabled = true) {
+  return useQuery({
+    queryKey: studentKeys.meetingLinks(studentId),
+    queryFn: ({ signal }) => studentsApi.meetingLinks(studentId, signal),
+    enabled: enabled && studentId.length > 0,
+  })
+}

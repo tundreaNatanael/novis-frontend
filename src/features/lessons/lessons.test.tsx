@@ -348,7 +348,7 @@ describe('lesson detail', () => {
     expect(posted).toEqual([{ status: 'PRESENT', journal: 'Scales' }])
   })
 
-  it('reschedules with the meeting link left out, removed with null or replaced, and unschedules', async () => {
+  it("reschedules and unschedules without a link of its own (the pair's, D-057)", async () => {
     let current = lesson({ meetingUrl: 'https://meet.example.com/room' })
     const patched: ScheduleLessonRequest[] = []
     server.use(
@@ -356,9 +356,7 @@ describe('lesson detail', () => {
       http.patch(api('/lessons/l-1/schedule'), async ({ request }) => {
         const body = (await request.json()) as ScheduleLessonRequest
         patched.push(body)
-        // Like the API: an omitted link stays, null removes it.
-        const { meetingUrl = current.meetingUrl } = body
-        current = lesson({ scheduledAt: body.scheduledAt, meetingUrl })
+        current = lesson({ scheduledAt: body.scheduledAt, meetingUrl: current.meetingUrl })
         return HttpResponse.json(current)
       }),
     )
@@ -371,35 +369,22 @@ describe('lesson detail', () => {
     }
     const date = '2026-10-20T15:00:00.000Z'
 
-    // Untouched, the link stays out of the body.
+    // The join link is shown, never edited here.
+    expect(await screen.findByRole('link', { name: 'Join lesson' })).toHaveAttribute(
+      'href',
+      'https://meet.example.com/room',
+    )
     let dialog = await openSheet()
-    expect(
-      within(dialog).getByText('An absolute https:// link. Empty it to remove the link.'),
-    ).toBeInTheDocument()
+    expect(within(dialog).queryByLabelText(/Meeting link/)).not.toBeInTheDocument()
     await actor.click(within(dialog).getByRole('button', { name: 'Move lesson' }))
     expect(await screen.findByText('Lesson rescheduled')).toBeInTheDocument()
     await waitFor(() => expect(patched).toEqual([{ scheduledAt: date }]))
 
-    // Emptied, it goes out as null and the API removes it.
-    dialog = await openSheet()
-    await actor.clear(within(dialog).getByLabelText(/Meeting link/))
-    await actor.click(within(dialog).getByRole('button', { name: 'Move lesson' }))
-    await waitFor(() => expect(patched).toHaveLength(2))
-    expect(patched[1]).toEqual({ scheduledAt: date, meetingUrl: null })
-
-    // Without a link, a typed one goes out as typed.
-    dialog = await openSheet()
-    expect(within(dialog).getByText('Optional absolute https:// link.')).toBeInTheDocument()
-    await actor.type(within(dialog).getByLabelText(/Meeting link/), 'https://meet.example.com/new')
-    await actor.click(within(dialog).getByRole('button', { name: 'Move lesson' }))
-    await waitFor(() => expect(patched).toHaveLength(3))
-    expect(patched[2]).toEqual({ scheduledAt: date, meetingUrl: 'https://meet.example.com/new' })
-
-    // Unscheduling sends the date alone: the link stays.
+    // Unscheduling sends the date alone.
     dialog = await openSheet()
     await actor.click(within(dialog).getByRole('button', { name: 'Unschedule' }))
     expect(await screen.findByText('Lesson unscheduled')).toBeInTheDocument()
-    expect(patched[3]).toEqual({ scheduledAt: null })
+    expect(patched[1]).toEqual({ scheduledAt: null })
   })
 
   it('shows the length and moves the lesson onto another one only after a confirmation', async () => {

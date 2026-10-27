@@ -6,6 +6,7 @@ import {
   LogOut,
   Monitor,
   Moon,
+  Phone,
   Sun,
   UserRound,
   type LucideIcon,
@@ -73,6 +74,12 @@ export function Component() {
                 leading={<IconBadge icon={Banknote} tone="paid" />}
               />
             ) : null}
+            <ListRow
+              onClick={() => sheets.open({ kind: 'whatsapp' })}
+              title={t('teacher.whatsapp.number')}
+              subtitle={me.whatsappNumber ?? t('teacher.whatsapp.none')}
+              leading={<IconBadge icon={Phone} />}
+            />
             <ListRow
               onClick={() => sheets.open({ kind: 'password' })}
               title={t('teacher.profile.changePassword')}
