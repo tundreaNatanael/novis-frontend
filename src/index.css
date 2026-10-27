@@ -86,8 +86,8 @@
 }
 
 :root {
-  /* Paper, ink, brass, slate */
-  --background: #f6f3ec;
+  /* Paper, ink, brass, slate. White cards sit on a deeper paper so panels read apart from the page. */
+  --background: #eeeadf;
   --foreground: #1b2432;
   --card: #ffffff;
   --card-foreground: #1b2432;
@@ -95,17 +95,17 @@
   --popover-foreground: #1b2432;
   --primary: #8a6218;
   --primary-foreground: #ffffff;
-  --secondary: #ece7dc;
+  --secondary: #e4dfd1;
   --secondary-foreground: #1b2432;
-  --muted: #efebe2;
+  --muted: #e7e2d5;
   --muted-foreground: #5b6573;
-  --accent: #efebe2;
+  --accent: #e7e2d5;
   --accent-foreground: #1b2432;
   --destructive: #b3261e;
   --destructive-foreground: #ffffff;
   --destructive-soft: color-mix(in oklab, var(--destructive) 12%, transparent);
-  --border: #d9d4c7;
-  --input: #d9d4c7;
+  --border: #cfc8b8;
+  --input: #cfc8b8;
   --ring: #8a6218;
   --radius: 8px;
 
@@ -153,23 +153,23 @@
 .dark {
   --background: #0f151e;
   --foreground: #f6f3ec;
-  --card: #161e2a;
+  --card: #1b2534;
   --card-foreground: #f6f3ec;
-  --popover: #161e2a;
+  --popover: #1b2534;
   --popover-foreground: #f6f3ec;
   --primary: #d9a441;
   --primary-foreground: #1b2432;
-  --secondary: #222c3a;
+  --secondary: #283346;
   --secondary-foreground: #f6f3ec;
-  --muted: #1c2532;
+  --muted: #232d3c;
   --muted-foreground: #9aa4b2;
-  --accent: #222c3a;
+  --accent: #283346;
   --accent-foreground: #f6f3ec;
   --destructive: #f28b82;
   --destructive-foreground: #1b2432;
   --destructive-soft: color-mix(in oklab, var(--destructive) 16%, transparent);
-  --border: #2a3444;
-  --input: #2a3444;
+  --border: #354152;
+  --input: #354152;
   --ring: #d9a441;
 
   --success: #5bbf8f;
@@ -215,7 +215,7 @@
  * while /teach is mounted, so portals (sheets, dialogs, menus, toasts) take the same tokens.
  */
 .teach {
-  --background: #fbfbfe;
+  --background: #edecf6;
   --foreground: #050315;
   --card: #ffffff;
   --card-foreground: #050315;
@@ -223,14 +223,14 @@
   --popover-foreground: #050315;
   --primary: #2f27ce;
   --primary-foreground: #ffffff;
-  --secondary: #f2f1fa;
+  --secondary: #e2e1f0;
   --secondary-foreground: #050315;
-  --muted: #f2f1fa;
+  --muted: #e2e1f0;
   --muted-foreground: #5f5d75;
   --accent: #dedcff;
   --accent-foreground: #2f27ce;
-  --border: #e6e5f1;
-  --input: #d8d6ea;
+  --border: #d9d7eb;
+  --input: #cbc9e1;
   --ring: #433bff;
   --success: #1a8f42;
   --warning: #a35d00;
@@ -241,20 +241,20 @@
 .dark.teach {
   --background: #050412;
   --foreground: #ebe9fc;
-  --card: #0f0e22;
+  --card: #15142f;
   --card-foreground: #ebe9fc;
-  --popover: #1a1935;
+  --popover: #1c1b3b;
   --popover-foreground: #ebe9fc;
   --primary: #3a31d8;
   --primary-foreground: #ffffff;
-  --secondary: #1a1935;
+  --secondary: #1f1e40;
   --secondary-foreground: #ebe9fc;
-  --muted: #1a1935;
+  --muted: #1f1e40;
   --muted-foreground: #a3a1bd;
   --accent: color-mix(in oklab, #433bff 24%, transparent);
   --accent-foreground: #8c86ff;
-  --border: #26254a;
-  --input: #302f5a;
+  --border: #302f5c;
+  --input: #3a3970;
   --ring: #8c86ff;
   --success: #30d158;
   --warning: #ff9f0a;

@@ -182,9 +182,9 @@ removed under `prefers-reduced-motion`).
 | Token       | Light     | Dark                | Role                                               |
 | ----------- | --------- | ------------------- | -------------------------------------------------- |
 | `--ink`     | `#1B2432` | `#F6F3EC` (as text) | primary text, sidebar in light                     |
-| `--paper`   | `#F6F3EC` | `#0F151E`           | page background                                    |
-| `--surface` | `#FFFFFF` | `#161E2A`           | cards, tables, sheets                              |
-| `--line`    | `#D9D4C7` | `#2A3444`           | borders, dividers, stave lines                     |
+| `--paper`   | `#EEEADF` | `#0F151E`           | page background                                    |
+| `--surface` | `#FFFFFF` | `#1B2534`           | cards, tables, sheets                              |
+| `--line`    | `#CFC8B8` | `#354152`           | borders, dividers, stave lines                     |
 | `--slate`   | `#5B6573` | `#9AA4B2`           | secondary text, icons                              |
 | `--brass`   | `#8A6218` | `#D9A441`           | primary actions, active nav, focus ring, note head |
 | `--success` | `#2F7D5B` | `#5BBF8F`           | held, paid                                         |
@@ -192,7 +192,8 @@ removed under `prefers-reduced-motion`).
 | `--danger`  | `#B3261E` | `#F28B82`           | destructive actions, unpaid due                    |
 | `--info`    | `#2B6CB0` | `#7FB2F0`           | upcoming                                           |
 
-All text pairs meet WCAG AA (brass on white 5.5:1, slate on paper 5.3:1, brass-dark on ink 7:1).
+All text pairs meet WCAG AA (brass on white 5.5:1, slate on paper 4.9:1, brass-dark on ink 7:1).
+Paper is deep enough that white surfaces read apart from it without shadows (1.2:1, plus the line).
 Status is never color alone: badge = icon + text; paid dot has a check glyph.
 
 **Type.** Inter Variable (UI), JetBrains Mono Variable (ids, tokens, code). Tabular numerals in

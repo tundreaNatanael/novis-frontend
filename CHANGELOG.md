@@ -3,6 +3,25 @@
 All notable changes to the Novis admin console. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); dates are the day the change landed on `main`.
 
+## Cards stand apart from the page — Unreleased
+
+### Changed
+
+- **More contrast between the page and its cards**, in both themes of the console and the teacher
+  workspace (tokens in `src/index.css` only, no component changed). Cards stay flat; the page
+  behind them is deeper and the borders firmer:
+  - Console, light: paper `#f6f3ec` → `#eeeadf`, line `#d9d4c7` → `#cfc8b8`, muted / accent /
+    secondary one step darker so tab strips and hovers still show on the deeper paper.
+  - Console, dark: surface `#161e2a` → `#1b2534` (popovers too), line `#2a3444` → `#354152`,
+    muted / accent / secondary one step lighter.
+  - Teacher workspace, light: background `#fbfbfe` (almost the white of the cards) → `#edecf6`,
+    border `#e6e5f1` → `#d9d7eb`, input `#d8d6ea` → `#cbc9e1`, muted / secondary `#f2f1fa` →
+    `#e2e1f0`.
+  - Teacher workspace, dark: card `#0f0e22` → `#15142f`, popover `#1a1935` → `#1c1b3b`, border
+    `#26254a` → `#302f5c`, input `#302f5a` → `#3a3970`, muted / secondary `#1a1935` → `#1f1e40`.
+- Secondary text stays at AA on every new background (slate on paper 4.9:1, the teacher
+  workspace's 5.4:1); `docs/PLAN.md` §7 has the new paper, surface and line values.
+
 ## Lesson totals on Today — Unreleased
 
 ### Changed
