@@ -1,13 +1,25 @@
-import { AlertTriangle, CheckCircle2, Circle, Clock, Pencil, Trash2 } from 'lucide-react'
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Circle,
+  Clock,
+  ExternalLink,
+  Loader2,
+  Pencil,
+  Play,
+  Trash2,
+} from 'lucide-react'
 import { Fragment } from 'react'
 import { Link } from 'react-router'
-import type { Homework } from '@/api/types'
+import type { Homework, Material } from '@/api/types'
 import { Button } from '@/components/ui/button'
 import { homeworkProgress, homeworkState } from '@/features/homework/homework-state'
 import { cn } from '@/lib/utils'
 import { useT } from '../i18n/use-i18n'
 import { dayLabelKind } from '../lib/dates'
 import { useFormatters } from '../lib/use-formatters'
+import { useOpenMaterial } from '../materials/use-open-material'
+import { materialIcon, playsInApp } from '../materials/utils'
 import { TeachBadge } from './teach-badge'
 
 /** Done (green), overdue (orange) or the due day; nothing for open homework without a date. */
@@ -135,27 +147,84 @@ export function HomeworkBlock({
             <li
               key={item.id}
               className={cn(
-                'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm',
+                'flex flex-col gap-1.5 rounded-lg px-3 py-2 text-sm',
                 item.done ? 'bg-held-soft' : 'bg-muted/60',
               )}
             >
-              {item.done ? (
-                <CheckCircle2 className="size-4 shrink-0 text-held" aria-hidden />
-              ) : (
-                <Circle className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-              )}
-              <span
-                className={cn('min-w-0 flex-1', item.done && 'text-muted-foreground line-through')}
-              >
-                {item.text}
-              </span>
-              <span className="sr-only">
-                {item.done ? t('homework.itemDone') : t('homework.itemOpen')}
-              </span>
+              <div className="flex items-center gap-2.5">
+                {item.done ? (
+                  <CheckCircle2 className="size-4 shrink-0 text-held" aria-hidden />
+                ) : (
+                  <Circle className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                )}
+                <span
+                  className={cn(
+                    'min-w-0 flex-1',
+                    item.done && 'text-muted-foreground line-through',
+                  )}
+                >
+                  {item.text}
+                </span>
+                <span className="sr-only">
+                  {item.done ? t('homework.itemDone') : t('homework.itemOpen')}
+                </span>
+              </div>
+              {item.material ? <ItemMaterial material={item.material} /> : null}
             </li>
           ))}
         </ul>
       ) : null}
     </div>
+  )
+}
+
+/**
+ * The material on a checklist line: a link opens in a new tab, an uploaded video the workspace's
+ * player, any other file a new tab with a fresh signed URL (`useOpenMaterial`). The tick stays
+ * the line's own control; this is a second one.
+ */
+function ItemMaterial({ material }: { material: Material }) {
+  const t = useT()
+  const { open, openingId } = useOpenMaterial()
+  const TypeIcon = materialIcon[material.type]
+  const label = `${t('common.open')}: ${material.title}`
+  const className =
+    'ml-6.5 inline-flex max-w-full items-center gap-1.5 rounded-md border border-border bg-card px-2 py-1 text-xs font-medium text-accent-foreground hover:bg-accent-soft'
+  if (material.externalUrl) {
+    return (
+      <a
+        href={material.externalUrl}
+        target="_blank"
+        rel="noreferrer"
+        className={className}
+        aria-label={label}
+      >
+        <TypeIcon className="size-3.5 shrink-0" aria-hidden />
+        <span className="truncate">{material.title}</span>
+        <ExternalLink className="size-3 shrink-0 text-muted-foreground" aria-hidden />
+      </a>
+    )
+  }
+  const opening = openingId === material.id
+  const OpenIcon = playsInApp(material) ? Play : ExternalLink
+  return (
+    <button
+      type="button"
+      className={cn(className, 'disabled:opacity-60')}
+      onClick={() => void open(material)}
+      disabled={opening}
+      aria-label={label}
+    >
+      <TypeIcon className="size-3.5 shrink-0" aria-hidden />
+      <span className="truncate">{material.title}</span>
+      {opening ? (
+        <Loader2
+          className="size-3 shrink-0 animate-spin text-muted-foreground motion-reduce:animate-none"
+          aria-hidden
+        />
+      ) : (
+        <OpenIcon className="size-3 shrink-0 text-muted-foreground" aria-hidden />
+      )}
+    </button>
   )
 }

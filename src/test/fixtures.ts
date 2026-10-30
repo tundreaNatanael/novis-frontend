@@ -369,6 +369,8 @@ export function material(overrides: Partial<Material> = {}): Material {
     fileName: 'scales.mp4',
     contentType: 'video/mp4',
     sizeBytes: 48_211_234,
+    homeworkId: null,
+    homeworkTitle: null,
     createdAt: '2026-10-20T15:00:00Z',
     ...overrides,
   }
@@ -391,8 +393,8 @@ export function homework(overrides: Partial<Homework> = {}): Homework {
     dueAt: '2026-10-30T21:59:59Z',
     completedAt: null,
     items: [
-      { id: 'hi-1', text: 'C major scale', done: true, position: 0 },
-      { id: 'hi-2', text: 'Etude no. 3', done: false, position: 1 },
+      { id: 'hi-1', text: 'C major scale', done: true, position: 0, material: null },
+      { id: 'hi-2', text: 'Etude no. 3', done: false, position: 1, material: null },
     ],
     createdAt: '2026-10-21T10:00:00Z',
     updatedAt: '2026-10-21T10:00:00Z',

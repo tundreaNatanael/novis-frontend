@@ -836,3 +836,27 @@ WhatsApp-call students with no Join until it is set again (no warning yet, liste
 A switch that is on while the number is gone can still be switched off. Without a link both sides
 show "No meeting link yet": a shared number alone is no way in (a fallback to it was tried and
 dropped, since switching the WhatsApp call off then changed nothing for either side).
+
+## D-059 · 2026-10-28 · Materials on homework lines are shown and kept, not added, on the web
+
+**Decision.** A homework checklist line can carry one material (backend V18: `HomeworkItem.material`,
+a homework-only `Material` with `homeworkId` / `homeworkTitle`). The console's Homework panel and the
+teacher workspace's homework blocks show it under the line's text — a link opens in a new tab, an
+uploaded file as the lesson page's materials do (the workspace's player for a video, otherwise a new
+tab with a fresh signed URL; the console's **Open** button) — and both homework sheets keep it: a
+line loaded with a material carries its `materialId` (`lineOf`, `materialOfLine` in
+`homework-state.ts`), the sheet marks it "Attached: <title>", `homeworkChanges` counts a changed
+material as a changed checklist, and every line of `POST` / `PATCH /homework` goes out with
+`materialId` — the id it was loaded with, or `null` — so the server never has to guess by text.
+Adding, replacing or removing a material is the mobile app's (its pickers, uploads and viewers).
+**Context.** The product owner's brief: "the console and the teacher workspace preserve and show
+item materials. Adding them on the web is a later feature." The API's `PATCH` keeps a material by
+text for a client that omits the field, but the web knows the field, so it sends it.
+**Alternatives.** Omitting `materialId` and relying on the text rule — rejected: renaming a line
+would silently drop its file. Hiding materials on the web until it can add them — rejected: a
+teacher editing from the desktop must see what a line carries before rewording it.
+**Consequences.** `checklistSchema` (and the workspace's copy) declare `materialId` so zod keeps it;
+`checklistWithTicks` returns `materialId` on every line. A material removed in the app while the
+sheet is open goes out as `null` on the next save (the API then has nothing to remove). No gap
+recorded: the backend covers the feature (`GET /materials/{id}`, `items[].material`, the omitted /
+`null` / id rule).

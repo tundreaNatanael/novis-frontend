@@ -9,6 +9,7 @@ import { ConfirmDialog } from '@/components/confirm-dialog'
 import { DetailField, DetailPanel } from '@/components/detail/detail-panel'
 import { RowActions, type RowAction } from '@/components/row-actions'
 import { Button } from '@/components/ui/button'
+import { OpenMaterialButton } from '@/features/lessons/components/open-material-button'
 import { formatDate } from '@/lib/format'
 import { HOMEWORK_FORBIDDEN, homeworkProgress, homeworkWriteError } from '../homework-state'
 import { AssignHomeworkSheet, type AssignHomeworkContext } from './assign-homework-sheet'
@@ -201,9 +202,32 @@ function HomeworkRow({
                 <span aria-hidden className={item.done ? 'text-success' : 'text-muted-foreground'}>
                   {item.done ? '☑' : '☐'}
                 </span>
-                <span className={item.done ? 'text-muted-foreground line-through' : ''}>
-                  {item.text}
-                  <span className="sr-only">{item.done ? ' (done)' : ' (open)'}</span>
+                <span className="flex min-w-0 flex-col gap-1">
+                  <span className={item.done ? 'text-muted-foreground line-through' : ''}>
+                    {item.text}
+                    <span className="sr-only">{item.done ? ' (done)' : ' (open)'}</span>
+                  </span>
+                  {item.material ? (
+                    <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+                      {item.material.externalUrl ? (
+                        <a
+                          href={item.material.externalUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-primary underline-offset-4 hover:underline"
+                        >
+                          {item.material.title}
+                        </a>
+                      ) : (
+                        <>
+                          <span className="text-muted-foreground">
+                            {item.material.title} ({item.material.fileName ?? 'file'})
+                          </span>
+                          <OpenMaterialButton material={item.material} />
+                        </>
+                      )}
+                    </span>
+                  ) : null}
                 </span>
               </li>
             ))}

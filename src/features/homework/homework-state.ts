@@ -1,5 +1,5 @@
 import { errorMessage, isApiError } from '@/api/errors'
-import type { Homework, UpdateHomeworkRequest } from '@/api/types'
+import type { Homework, Material, UpdateHomeworkRequest } from '@/api/types'
 import { endOfLocalDay, toDateInput } from '@/lib/format'
 
 /** What a homework shows: done (every item ticked), overdue (open past its due date) or open. */
@@ -24,11 +24,34 @@ export function homeworkProgress(homework: Pick<Homework, 'items'>): {
   }
 }
 
-/** A checklist line in the sheet; an existing item keeps its id and the tick it was loaded with. */
+/**
+ * A checklist line in the sheet; an existing item keeps its id, the tick and the material it was
+ * loaded with (`materialId`; the web shows a line's material and never adds one, D-059).
+ */
 export interface ChecklistLine {
   text: string
   itemId?: string
   done?: boolean
+  materialId?: string | null
+}
+
+/** The line a loaded item becomes. */
+export function lineOf(item: Homework['items'][number]): ChecklistLine {
+  return {
+    text: item.text,
+    itemId: item.id,
+    done: item.done,
+    materialId: item.material?.id ?? null,
+  }
+}
+
+/** The material a line of the sheet carries, found in the homework it was loaded from. */
+export function materialOfLine(
+  line: Pick<ChecklistLine, 'materialId'>,
+  homework: Pick<Homework, 'items'>,
+): Material | null {
+  if (!line.materialId) return null
+  return homework.items.find((item) => item.material?.id === line.materialId)?.material ?? null
 }
 
 /** What the edit sheet can change: the teacher, course and lesson stay as assigned. */
@@ -51,16 +74,18 @@ export function checklistLines(items: ChecklistLine[]): ChecklistLine[] {
  * The checklist for `PATCH /homework/{id}`, which replaces every item. The lines are the
  * teacher's, the ticks the student's: a kept line takes its tick from `latest` (the student may
  * have ticked it since the sheet opened), a line whose item is gone keeps the tick it was loaded
- * with, and a new line starts open.
+ * with, and a new line starts open. Every line sends its `materialId` (the one it was loaded
+ * with, or `null`), so the server never has to guess by text.
  */
 export function checklistWithTicks(
   lines: ChecklistLine[],
   latest: Pick<Homework, 'items'>,
-): { text: string; done: boolean }[] {
+): { text: string; done: boolean; materialId: string | null }[] {
   const ticks = new Map(latest.items.map((item) => [item.id, item.done]))
   return lines.map((line) => ({
     text: line.text,
     done: line.itemId ? (ticks.get(line.itemId) ?? line.done ?? false) : false,
+    materialId: line.materialId ?? null,
   }))
 }
 
@@ -85,7 +110,8 @@ export function homeworkChanges(homework: Homework, edit: HomeworkEdit): UpdateH
     lines.every(
       (line, index) =>
         line.itemId === homework.items[index]?.id &&
-        line.text === homework.items[index]?.text.trim(),
+        line.text === homework.items[index]?.text.trim() &&
+        (line.materialId ?? null) === (homework.items[index]?.material?.id ?? null),
     )
   if (!sameLines) body.items = checklistWithTicks(lines, homework)
   return body

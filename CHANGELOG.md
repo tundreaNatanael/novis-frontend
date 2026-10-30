@@ -3,6 +3,29 @@
 All notable changes to the Novis admin console. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); dates are the day the change landed on `main`.
 
+## Materials on homework lines — Unreleased
+
+Backend: `materials.homework_only`, `homework_items.material_id` (V18), API.md §10, §11.
+
+### Added
+- **A homework line's material is shown** (D-059): under the line's text in the console's Homework
+  panel (lesson and student pages) and in the teacher workspace's homework blocks (lesson, student
+  and course pages). A link opens in a new tab; an uploaded file opens as the materials section does
+  — the console's **Open** button, the workspace's video player or a new tab with a fresh signed URL.
+- The homework sheets mark a line that carries a material ("Attached: <title>"); the web does not add
+  or change materials (the mobile app does).
+
+### Changed
+- **Both homework sheets send every line's `materialId`** (the one it was loaded with, or `null`) on
+  `POST` and `PATCH /homework`, and `homeworkChanges` treats a changed material as a changed checklist,
+  so a renamed line keeps its file and a removed one is dropped on purpose (`homework-state.ts`:
+  `ChecklistLine.materialId`, `lineOf`, `materialOfLine`, `checklistWithTicks`).
+- `src/api/types.ts`: `HomeworkItem.material`, `Material.homeworkId` / `homeworkTitle`, the request
+  items' `materialId`; `src/api/schema.d.ts` regenerated (2026-10-28).
+- Tests: `homework-state.test.ts` (lines keep and diff their material), `homework.test.tsx` (the
+  console's `PATCH` carries `materialId` on every line), new `teach/homework-sheet.test.tsx` (the
+  workspace shows a link and opens a file, edits keep each line's material, a new line sends `null`).
+
 ## WhatsApp option and a meeting link per teacher and student — Unreleased
 
 Backend: `users.whatsapp_number` (V15), `teacher_student_meeting_links` (V16) and its `whatsapp`

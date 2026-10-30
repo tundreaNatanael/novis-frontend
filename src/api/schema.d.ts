@@ -1140,6 +1140,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/materials/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_8"];
+        put?: never;
+        post?: never;
+        delete: operations["delete_6"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/materials/{id}/download-url": {
         parameters: {
             query?: never;
@@ -1163,10 +1179,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_8"];
+        get: operations["get_9"];
         put?: never;
         post?: never;
-        delete: operations["delete_6"];
+        delete: operations["delete_7"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1215,22 +1231,6 @@ export interface paths {
         put?: never;
         post?: never;
         delete: operations["remove_1"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/materials/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete: operations["delete_7"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1622,6 +1622,9 @@ export interface components {
             courseId?: string;
             /** Format: uuid */
             lessonId?: string;
+            homeworkOnly?: boolean;
+            /** Format: uuid */
+            teacherId?: string;
         };
         MaterialResponse: {
             /** Format: uuid */
@@ -1642,6 +1645,9 @@ export interface components {
             contentType?: string;
             /** Format: int64 */
             sizeBytes?: number;
+            /** Format: uuid */
+            homeworkId?: string;
+            homeworkTitle?: string;
             /** Format: date-time */
             createdAt?: string;
         };
@@ -1661,6 +1667,9 @@ export interface components {
             courseId?: string;
             /** Format: uuid */
             lessonId?: string;
+            homeworkOnly?: boolean;
+            /** Format: uuid */
+            teacherId?: string;
         };
         MaterialUploadResponse: {
             material?: components["schemas"]["MaterialResponse"];
@@ -1733,6 +1742,8 @@ export interface components {
         };
         CreateHomeworkItemRequest: {
             text: string;
+            /** Format: uuid */
+            materialId?: string;
         };
         CreateHomeworkRequest: {
             /** Format: uuid */
@@ -1756,6 +1767,7 @@ export interface components {
             done?: boolean;
             /** Format: int32 */
             position?: number;
+            material?: components["schemas"]["MaterialResponse"];
         };
         HomeworkResponse: {
             /** Format: uuid */
@@ -1996,6 +2008,8 @@ export interface components {
         HomeworkItemRequest: {
             text: string;
             done?: boolean;
+            /** Format: uuid */
+            materialId?: string;
         };
         UpdateHomeworkRequest: {
             /** Format: uuid */
@@ -4740,6 +4754,48 @@ export interface operations {
             };
         };
     };
+    get_8: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MaterialResponse"];
+                };
+            };
+        };
+    };
+    delete_6: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     downloadUrl: {
         parameters: {
             query?: never;
@@ -4762,7 +4818,7 @@ export interface operations {
             };
         };
     };
-    get_8: {
+    get_9: {
         parameters: {
             query?: never;
             header?: never;
@@ -4784,7 +4840,7 @@ export interface operations {
             };
         };
     };
-    delete_6: {
+    delete_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -4854,26 +4910,6 @@ export interface operations {
         };
     };
     remove_1: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    delete_7: {
         parameters: {
             query?: never;
             header?: never;

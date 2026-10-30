@@ -1,15 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import { ApiError } from '@/api/errors'
 import { endOfLocalDay, toDateInput } from '@/lib/format'
-import { homework } from '@/test/fixtures'
+import { homework, material } from '@/test/fixtures'
 import {
-  checklistWithTicks,
   HOMEWORK_FORBIDDEN,
+  checklistWithTicks,
   homeworkChanges,
-  type HomeworkEdit,
   homeworkProgress,
   homeworkState,
   homeworkWriteError,
+  lineOf,
+  materialOfLine,
+  type HomeworkEdit,
 } from './homework-state'
 
 describe('homework state', () => {
@@ -43,7 +45,7 @@ describe('homework edits', () => {
     title: from.title ?? '',
     notes: from.notes ?? '',
     dueDate: toDateInput(from.dueAt),
-    items: from.items.map((item) => ({ text: item.text, itemId: item.id, done: item.done })),
+    items: from.items.map(lineOf),
   })
 
   it('sends nothing when nothing changed', () => {
@@ -81,16 +83,16 @@ describe('homework edits', () => {
       }),
     ).toEqual({
       items: [
-        { text: 'C major scale, hands together', done: true },
-        { text: 'Etude no. 3', done: false },
+        { text: 'C major scale, hands together', done: true, materialId: null },
+        { text: 'Etude no. 3', done: false, materialId: null },
       ],
     })
     expect(
       homeworkChanges(loaded, { ...asOpened(), items: [etude!, { text: 'Sight-read' }] }),
     ).toEqual({
       items: [
-        { text: 'Etude no. 3', done: false },
-        { text: 'Sight-read', done: false },
+        { text: 'Etude no. 3', done: false, materialId: null },
+        { text: 'Sight-read', done: false, materialId: null },
       ],
     })
   })
@@ -98,8 +100,8 @@ describe('homework edits', () => {
   it('takes each kept line’s tick from the latest copy, since the student may have ticked meanwhile', () => {
     const latest = homework({
       items: [
-        { id: 'hi-1', text: 'C major scale', done: false, position: 0 },
-        { id: 'hi-2', text: 'Etude no. 3', done: true, position: 1 },
+        { id: 'hi-1', text: 'C major scale', done: false, position: 0, material: null },
+        { id: 'hi-2', text: 'Etude no. 3', done: true, position: 1, material: null },
       ],
     })
     expect(
@@ -113,10 +115,58 @@ describe('homework edits', () => {
         latest,
       ),
     ).toEqual([
-      { text: 'C major scale', done: false },
-      { text: 'Etude no. 3, slowly', done: true },
-      { text: 'Rewritten elsewhere', done: true },
-      { text: 'Sight-read', done: false },
+      { text: 'C major scale', done: false, materialId: null },
+      { text: 'Etude no. 3, slowly', done: true, materialId: null },
+      { text: 'Rewritten elsewhere', done: true, materialId: null },
+      { text: 'Sight-read', done: false, materialId: null },
+    ])
+  })
+
+  it('keeps each line’s material and sends it with every line, so a kept file never drops (D-059)', () => {
+    const sheet = material({
+      id: 'm-pdf',
+      type: 'PDF',
+      externalUrl: null,
+      fileName: 'sheet.pdf',
+      homeworkId: 'hw-1',
+      homeworkTitle: 'Weekly practice',
+    })
+    const withMaterial = homework({
+      items: [
+        { id: 'hi-1', text: 'Read the sheet', done: false, position: 0, material: sheet },
+        { id: 'hi-2', text: 'Etude no. 3', done: false, position: 1, material: null },
+      ],
+    })
+    const lines = withMaterial.items.map(lineOf)
+    expect(lines[0]).toEqual({
+      text: 'Read the sheet',
+      itemId: 'hi-1',
+      done: false,
+      materialId: 'm-pdf',
+    })
+    expect(materialOfLine(lines[0]!, withMaterial)).toBe(sheet)
+    expect(materialOfLine({ materialId: null }, withMaterial)).toBeNull()
+    // Unchanged lines: nothing goes out. A line renamed: every line, each with its material.
+    expect(homeworkChanges(withMaterial, { ...asOpened(withMaterial), items: lines })).toEqual({})
+    expect(
+      homeworkChanges(withMaterial, {
+        ...asOpened(withMaterial),
+        items: [{ ...lines[0]!, text: 'Read the whole sheet' }, lines[1]!, { text: 'New line' }],
+      }).items,
+    ).toEqual([
+      { text: 'Read the whole sheet', done: false, materialId: 'm-pdf' },
+      { text: 'Etude no. 3', done: false, materialId: null },
+      { text: 'New line', done: false, materialId: null },
+    ])
+    // A material that went away since the sheet opened counts as a change, and goes out as none.
+    expect(
+      homeworkChanges(withMaterial, {
+        ...asOpened(withMaterial),
+        items: [{ ...lines[0]!, materialId: null }, lines[1]!],
+      }).items,
+    ).toEqual([
+      { text: 'Read the sheet', done: false, materialId: null },
+      { text: 'Etude no. 3', done: false, materialId: null },
     ])
   })
 

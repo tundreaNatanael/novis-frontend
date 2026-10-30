@@ -379,6 +379,7 @@ export const en = {
       saving: 'Saving…',
       saved: 'Homework saved',
       ticksHint: 'Ticks stay as the student left them; new lines start open.',
+      attached: 'Attached: %{title} (from the app; it stays with this line)',
       itemDone: 'Ticked by the student',
       itemOpen: 'Not ticked yet',
     },

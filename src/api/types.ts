@@ -151,7 +151,10 @@ export type Lesson = Nullable<
   | 'closedAt'
   | 'rolledOverFromLessonId'
 >
-export type HomeworkItem = Strict<S['HomeworkItemResponse']>
+/** One checklist line; `material` is the homework-only material on it (API.md §11), `null` for a plain line. */
+export type HomeworkItem = Omit<Strict<S['HomeworkItemResponse']>, 'material'> & {
+  material: Material | null
+}
 /**
  * One teacher's homework for one student (API.md §11); course and lesson are optional references
  * with their labels. `completedAt` is set once every item is done; open and past `dueAt` = overdue.
@@ -170,7 +173,8 @@ export type Homework = Nullable<
 >
 /**
  * A link (`externalUrl`) or an uploaded file (`fileName`, `contentType`, `sizeBytes`); lists only
- * ever hold ready uploads (API.md §10).
+ * ever hold ready uploads (API.md §10). A homework-only material has no course or lesson and, once
+ * on a checklist line, names its homework (`homeworkId`, `homeworkTitle`).
  */
 export type Material = Nullable<
   Strict<S['MaterialResponse']>,
@@ -181,6 +185,8 @@ export type Material = Nullable<
   | 'fileName'
   | 'contentType'
   | 'sizeBytes'
+  | 'homeworkId'
+  | 'homeworkTitle'
 >
 /** `GET /materials/{id}/download-url`: `expiresAt` is `null` for links, which never expire. */
 export type SignedUrl = Nullable<Strict<S['SignedUrlResponse']>, 'expiresAt'>
@@ -567,8 +573,8 @@ export interface CreateHomeworkRequest {
   notes?: string
   /** ISO instant; the console sends the end of the chosen day. */
   dueAt?: string
-  /** 1–100 lines; they start open. */
-  items: { text: string }[]
+  /** 1–100 lines; they start open. `materialId` names a homework-only material (the mobile app's; the console sends `null`). */
+  items: { text: string; materialId?: string | null }[]
 }
 /** Omitted fields stay; an explicit `null` removes one (API.md §11). */
 export interface UpdateHomeworkRequest {
@@ -580,8 +586,12 @@ export interface UpdateHomeworkRequest {
   notes?: string | null
   /** Moves the due date; `null` removes it. */
   dueAt?: string | null
-  /** Replaces the whole checklist (every item gets a new id); `done` is taken as sent. Never `null`. */
-  items?: { text: string; done: boolean }[]
+  /**
+   * Replaces the whole checklist (every item gets a new id); `done` is taken as sent. Never `null`.
+   * A line's `materialId` keeps or attaches that material, `null` removes it, and an omitted field
+   * keeps the current line's by text: the console always sends it (D-059).
+   */
+  items?: { text: string; done: boolean; materialId: string | null }[]
 }
 
 // --- list filters -----------------------------------------------------------------------------

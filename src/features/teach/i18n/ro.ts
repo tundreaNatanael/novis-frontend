@@ -379,6 +379,7 @@ export const ro = {
       saving: 'Se salvează…',
       saved: 'Temă salvată',
       ticksHint: 'Bifele rămân cum le-a lăsat elevul; punctele noi pornesc nebifate.',
+      attached: 'Atașat: %{title} (din aplicație; rămâne pe acest punct)',
       itemDone: 'Bifat de elev',
       itemOpen: 'Încă nebifat',
     },

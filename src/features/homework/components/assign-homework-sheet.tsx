@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CheckCircle2, Circle, Plus, X } from 'lucide-react'
+import { CheckCircle2, Circle, Paperclip, Plus, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -8,7 +8,7 @@ import { z } from 'zod'
 import { isApiError } from '@/api/errors'
 import { homeworkApi, homeworkKeys } from '@/api/homework'
 import { studentKeys, studentsApi } from '@/api/students'
-import type { Homework } from '@/api/types'
+import type { Homework, Material } from '@/api/types'
 import { Field } from '@/components/form/field'
 import { FormError } from '@/components/form/form-error'
 import { FormSheet } from '@/components/form/form-sheet'
@@ -26,6 +26,8 @@ import {
   checklistWithTicks,
   homeworkChanges,
   homeworkWriteError,
+  lineOf,
+  materialOfLine,
 } from '../homework-state'
 
 /** The course select cannot go back to empty, so "no course" is an option of its own. */
@@ -93,14 +95,7 @@ export function AssignHomeworkSheet({
           notes: homework.notes ?? '',
           dueDate: toDateInput(homework.dueAt),
           courseId: homework.courseId ?? NO_COURSE,
-          items:
-            homework.items.length > 0
-              ? homework.items.map((item) => ({
-                  text: item.text,
-                  itemId: item.id,
-                  done: item.done,
-                }))
-              : [{ text: '' }],
+          items: homework.items.length > 0 ? homework.items.map(lineOf) : [{ text: '' }],
         }
       : {
           teacherId: teacher?.id ?? '',
@@ -160,10 +155,8 @@ export function AssignHomeworkSheet({
         ...(values.title ? { title: values.title } : {}),
         ...(values.notes ? { notes: values.notes } : {}),
         ...(values.dueDate ? { dueAt: endOfLocalDay(values.dueDate) ?? undefined } : {}),
-        items: values.items
-          .map((item) => item.text)
-          .filter(Boolean)
-          .map((text) => ({ text })),
+        // The console adds no materials (D-059): every line goes out without one.
+        items: checklistLines(values.items).map((line) => ({ text: line.text, materialId: null })),
       }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: homeworkKeys.lists() })
@@ -366,6 +359,7 @@ export function AssignHomeworkSheet({
                 {editing ? <TickMarker done={!!item.done} /> : null}
                 <Input
                   aria-label={`Checklist item ${index + 1}`}
+                  aria-describedby={item.materialId ? `${item.id}-material` : undefined}
                   placeholder="Practise the C major scale"
                   aria-invalid={itemError ? true : undefined}
                   {...form.register(`items.${index}.text`)}
@@ -381,6 +375,12 @@ export function AssignHomeworkSheet({
                   <X aria-hidden />
                 </Button>
               </div>
+              {homework && item.materialId ? (
+                <AttachedNote
+                  id={`${item.id}-material`}
+                  material={materialOfLine(item, homework)}
+                />
+              ) : null}
               {itemError ? (
                 <p role="alert" className="text-xs font-medium text-destructive">
                   {itemError}
@@ -408,6 +408,16 @@ export function AssignHomeworkSheet({
         ) : null}
       </fieldset>
     </FormSheet>
+  )
+}
+
+/** The material a line carries (attached in the mobile app); it stays with the line, the web cannot change it (D-059). */
+function AttachedNote({ id, material }: { id: string; material: Material | null }) {
+  return (
+    <p id={id} className="ml-11 flex items-center gap-1.5 text-xs text-muted-foreground">
+      <Paperclip className="size-3.5 shrink-0" aria-hidden />
+      <span>Attached: {material?.title ?? 'a material'}</span>
+    </p>
   )
 }
 

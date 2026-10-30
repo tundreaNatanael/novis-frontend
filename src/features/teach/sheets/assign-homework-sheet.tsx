@@ -1,10 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { CheckCircle2, Circle, ClipboardList, Loader2, Plus, X } from 'lucide-react'
+import { CheckCircle2, Circle, ClipboardList, Loader2, Paperclip, Plus, X } from 'lucide-react'
 import { useEffect, useId, useMemo, useState } from 'react'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
-import type { Homework } from '@/api/types'
+import type { Homework, Material } from '@/api/types'
 import { useMe } from '@/auth/session'
 import { Field } from '@/components/form/field'
 import { SelectField } from '@/components/form/select-field'
@@ -15,6 +15,8 @@ import { Textarea } from '@/components/ui/textarea'
 import {
   checklistLines,
   homeworkChanges,
+  lineOf,
+  materialOfLine,
   type ChecklistLine,
 } from '@/features/homework/homework-state'
 import { endOfLocalDay, toDateInput } from '@/lib/format'
@@ -61,6 +63,7 @@ function useHomeworkSchema() {
               .max(2000, t('validation.tooLong', { max: 2000 })),
             itemId: z.string().optional(),
             done: z.boolean().optional(),
+            materialId: z.string().nullable().optional(),
           }),
         )
         .max(100)
@@ -139,7 +142,8 @@ export function AssignHomeworkSheet({
         ...(draft.title.trim().length > 0 ? { title: draft.title.trim() } : {}),
         ...(draft.notes.trim().length > 0 ? { notes: draft.notes.trim() } : {}),
         ...(draft.dueDate ? { dueAt: endOfLocalDay(draft.dueDate) ?? undefined } : {}),
-        items: checklistLines(draft.items).map((line) => ({ text: line.text })),
+        // The web adds no materials (D-059): every line goes out without one.
+        items: checklistLines(draft.items).map((line) => ({ text: line.text, materialId: null })),
       })
       toast.success(t('teacher.assign.assigned'))
       onOpenChange(false)
@@ -224,10 +228,7 @@ function EditHomeworkForm({
       notes: opened.notes ?? '',
       dueDate: toDateInput(opened.dueAt),
       courseId: opened.courseId ?? NO_COURSE,
-      items:
-        opened.items.length > 0
-          ? opened.items.map((item) => ({ text: item.text, itemId: item.id, done: item.done }))
-          : [{ text: '' }],
+      items: opened.items.length > 0 ? opened.items.map(lineOf) : [{ text: '' }],
     },
   })
   const subtitle = opened.lessonScheduledAt
@@ -266,6 +267,7 @@ function EditHomeworkForm({
       onSubmit={() => void submit()}
       open={open}
       onOpenChange={onOpenChange}
+      materialOf={(line) => materialOfLine(line, opened)}
     />
   )
 }
@@ -283,6 +285,7 @@ function HomeworkForm({
   open,
   onOpenChange,
   courses,
+  materialOf,
 }: {
   title: string
   subtitle?: string
@@ -296,6 +299,8 @@ function HomeworkForm({
   onOpenChange: (open: boolean) => void
   /** The course picker's options (assigning only; the course stays as assigned when editing). */
   courses?: { value: string; label: string }[]
+  /** The material a line was loaded with (editing only): shown, never changed here (D-059). */
+  materialOf?: (line: Pick<ChecklistLine, 'materialId'>) => Material | null
 }) {
   const t = useT()
   const items = useFieldArray({ control: form.control, name: 'items' })
@@ -364,6 +369,7 @@ function HomeworkForm({
                   aria-label={t('teacher.assign.itemLabel', { index: index + 1 })}
                   placeholder={t('teacher.assign.itemPlaceholder')}
                   aria-invalid={itemError ? true : undefined}
+                  aria-describedby={item.materialId ? `${item.id}-material` : undefined}
                   {...form.register(`items.${index}.text`)}
                 />
                 <Button
@@ -377,6 +383,19 @@ function HomeworkForm({
                   <X aria-hidden />
                 </Button>
               </div>
+              {item.materialId && materialOf ? (
+                <p
+                  id={`${item.id}-material`}
+                  className="ml-11 flex items-center gap-1.5 text-xs text-muted-foreground"
+                >
+                  <Paperclip className="size-3.5 shrink-0" aria-hidden />
+                  <span>
+                    {t('teacher.assign.attached', {
+                      title: materialOf(item)?.title ?? t('materials.player.labelUntitled'),
+                    })}
+                  </span>
+                </p>
+              ) : null}
               {itemError ? (
                 <p role="alert" className="text-xs font-medium text-destructive">
                   {itemError}

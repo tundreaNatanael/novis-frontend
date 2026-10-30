@@ -169,8 +169,10 @@ current password). The super-admin's Freelance section (D-037) runs on `/freelan
 list is searched on the server (`q` debounced with `useDebouncedValue`, the only list that does
 not filter the loaded page), Disable / Re-enable are explicit confirmed actions, Delete asks for
 the email and explains the cascade, and the teacher workspace shows a 404 page for any other id.
-`src/api/schema.d.ts` is generated from the backend (`npm run api:types`, last run on 2026-10-27
-after `MeetingLink.whatsapp` / `teacherWhatsappNumber` and `SetMeetingLinkRequest.whatsapp`; before that after `User.whatsappNumber`, `Student` / `StudentCreated` / `RosterStudent.meetingUrl` and
+`src/api/schema.d.ts` is generated from the backend (`npm run api:types`, last run on 2026-10-28
+after `HomeworkItemResponse.material`, `MaterialResponse.homeworkId` / `homeworkTitle`, the `homeworkOnly` /
+`teacherId` material requests, `materialId` on homework item requests and `GET /materials/{id}`; before that on
+2026-10-27 after `MeetingLink.whatsapp` / `teacherWhatsappNumber` and `SetMeetingLinkRequest.whatsapp`; before that after `User.whatsappNumber`, `Student` / `StudentCreated` / `RosterStudent.meetingUrl` and
 `StudentDashboard.teachers` arrived, then the pair's `MeetingLink` and the removal of the lesson / course links; before that after recurring lessons arrived: `RecurringLessonResponse` and its routes, `recurringLessonId` /
 `occurrenceOn` / `followsRule` on lessons and calendar rows, `projected` on calendar rows; before
 that on 2026-10-25 after `MaterialResponse` gained `contentType` / `sizeBytes` and `POST /materials/{id}/complete`
@@ -199,7 +201,11 @@ outcome + journal only (D-030). Each row's ⋯ menu edits the homework (the same
 mode, D-042: only changed fields go out, an emptied due date goes out as `null`, the lines are the
 teacher's and the ticks the student's, re-read with `GET /homework/{id}` before the checklist is
 replaced; the pure helpers are in `homework-state.ts`) and deletes it after a confirmation; a
-`404` refreshes the list, a `403` disables that row's actions. Shared detail pages read
+`404` refreshes the list, a `403` disables that row's actions. **A line's material** (D-059, backend V18:
+`HomeworkItem.material`, attached in the mobile app) shows under the line in the panel and in the
+workspace's homework blocks (a link in a new tab, an uploaded file as the materials section opens it)
+and is kept by both sheets: every line goes out with `materialId` (loaded id or `null`;
+`lineOf` / `materialOfLine`), a changed material counts as a changed checklist, and the web never adds one. Shared detail pages read
 their scope with `useWorkspaceScope()` (`kind: 'org' | 'freelance'`). Lessons live in
 `src/features/lessons`: `LessonLedger` takes a `FixedScope` and is mounted for the platform, each
 organization (both workspace mounts) and each freelance teacher; every

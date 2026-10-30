@@ -65,7 +65,7 @@ describe('homework on a lesson', () => {
           courseId: 'c-1',
           courseTitle: 'Piano — beginners',
           dueAt: '2026-10-30T21:59:59Z',
-          items: [{ id: 'hi-9', text: 'G major', done: false, position: 0 }],
+          items: [{ id: 'hi-9', text: 'G major', done: false, position: 0, material: null }],
         })
         assigned = [...assigned, created]
         return HttpResponse.json(created, { status: 201 })
@@ -102,7 +102,7 @@ describe('homework on a lesson', () => {
         courseId: 'c-1',
         title: 'Scales again',
         dueAt: endOfLocalDay('2026-10-30'),
-        items: [{ text: 'G major' }],
+        items: [{ text: 'G major', materialId: null }],
       },
     ])
     expect(await within(panel).findByText('Scales again')).toBeInTheDocument()
@@ -141,7 +141,12 @@ describe('homework on a lesson', () => {
     await actor.click(within(dialog).getByRole('button', { name: 'Assign homework' }))
     expect(await screen.findByText('Homework assigned')).toBeInTheDocument()
     expect(posted).toEqual([
-      { studentId: 's-1', teacherId: 'u-1', lessonId: 'l-1', items: [{ text: 'Scales' }] },
+      {
+        studentId: 's-1',
+        teacherId: 'u-1',
+        lessonId: 'l-1',
+        items: [{ text: 'Scales', materialId: null }],
+      },
     ])
   })
 
@@ -171,7 +176,9 @@ describe('homework on a lesson', () => {
           items: body.items.map((item, position) => ({
             id: `hi-${position + 10}`,
             position,
-            ...item,
+            text: item.text,
+            done: item.done,
+            material: null,
           })),
         })
         return HttpResponse.json(current)
@@ -203,9 +210,9 @@ describe('homework on a lesson', () => {
       {
         title: 'Scales week',
         items: [
-          { text: 'C major scale, hands together', done: true },
-          { text: 'Etude no. 3', done: true },
-          { text: 'Sight-read page 4', done: false },
+          { text: 'C major scale, hands together', done: true, materialId: null },
+          { text: 'Etude no. 3', done: true, materialId: null },
+          { text: 'Sight-read page 4', done: false, materialId: null },
         ],
       },
     ])
@@ -405,7 +412,9 @@ describe('homework on a student’s page', () => {
           page([
             homework({
               completedAt: '2026-10-22T10:00:00Z',
-              items: [{ id: 'hi-1', text: 'C major scale', done: true, position: 0 }],
+              items: [
+                { id: 'hi-1', text: 'C major scale', done: true, position: 0, material: null },
+              ],
             }),
           ]),
         )
@@ -437,7 +446,7 @@ describe('homework on a student’s page', () => {
         studentId: 's-1',
         teacherId: 'u-1',
         title: 'Weekly practice',
-        items: [{ text: '20 minutes a day' }],
+        items: [{ text: '20 minutes a day', materialId: null }],
       },
     ])
   })

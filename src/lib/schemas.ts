@@ -33,8 +33,8 @@ export const optionalTitleSchema = z.string().trim().max(200, 'Titles are at mos
 
 /**
  * A homework checklist being typed: 1–100 lines of up to 2000 characters; blank lines are dropped.
- * A line being edited carries the `itemId` and `done` it was loaded with (not `id`: that name is
- * `useFieldArray`'s own key).
+ * A line being edited carries the `itemId`, `done` and `materialId` it was loaded with (not `id`:
+ * that name is `useFieldArray`'s own key); the material itself stays with the line for display.
  */
 export const checklistSchema = z
   .array(
@@ -42,6 +42,7 @@ export const checklistSchema = z
       text: z.string().trim().max(2000, 'At most 2000 characters'),
       itemId: z.string().optional(),
       done: z.boolean().optional(),
+      materialId: z.string().nullable().optional(),
     }),
   )
   .max(100, 'At most 100 items')
