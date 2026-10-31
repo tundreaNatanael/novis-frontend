@@ -24,7 +24,8 @@ export interface Session {
   /** Why the user is anonymous, when the console signed them out. */
   reason: 'expired' | 'signed-out' | null
   signIn: (tokens: AuthTokens) => Promise<User>
-  signOut: () => Promise<void>
+  /** `revoked`: the server already ended the session (a deleted account), so no `/auth/logout`. */
+  signOut: (options?: { revoked?: boolean }) => Promise<void>
   refresh: () => Promise<void>
 }
 
@@ -73,8 +74,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     [queryClient],
   )
 
-  const signOut = useCallback(async () => {
-    const refreshToken = tokenStore.getRefreshToken()
+  const signOut = useCallback(async ({ revoked = false }: { revoked?: boolean } = {}) => {
+    const refreshToken = revoked ? null : tokenStore.getRefreshToken()
     tokenStore.clear()
     setReason('signed-out')
     queryClient.clear()

@@ -860,3 +860,24 @@ teacher editing from the desktop must see what a line carries before rewording i
 sheet is open goes out as `null` on the next save (the API then has nothing to remove). No gap
 recorded: the backend covers the feature (`GET /materials/{id}`, `items[].material`, the omitted /
 `null` / id rule).
+
+## D-060 · 2026-10-31 · A teacher deletes their own account from the workspace's Profile
+
+**Decision.** The teacher workspace's Profile has **Delete account** under Change password (the mobile app's
+place). Its sheet says what goes and what stays for this teacher, asks for the current password
+(`DELETE /users/me { password }`), confirms once more ("Delete your account?"), then clears the session without
+`POST /auth/logout` (`signOut({ revoked: true })`: the server already revoked every token) and goes to `/login`
+with a toast. A wrong password lands on the field in the workspace's copy, not the API's English message. A
+freelance teacher with students on the roster gets the count, a "Go to Students" button and neither the field nor
+an enabled button: the API answers `409` until the roster is empty, and the console offers no button that will
+`409`. The count is the first `GET /teacher/students` page's `totalElements` (roster + enrolled, which for a
+freelance teacher is the roster), under the roster key so removing a student refreshes it.
+**Context.** Self-delete shipped in the API and the mobile app on 2026-10-30; teachers who work on the web had no
+way to it. The console's admins delete accounts with `DELETE /users/{id}`; nothing there changes.
+**Alternatives.** The console's `ConfirmDialog` with a typed confirmation — rejected: English copy (the workspace
+uses no console component with English text), and a typed word adds nothing the password does not. An entry in
+the avatar menu — not added: Profile is one click away and the row sits with the other account actions.
+**Consequences.** `usersApi.deleteMe` is the only `DELETE` with a body (`http.delete` takes none, so it goes
+through `request`). Admins and the super-admin never see the row (they never reach `/teach`); the API refuses
+them anyway (`403`).
+

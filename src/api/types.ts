@@ -399,6 +399,15 @@ export interface UpdateUserRequest {
   /** Teacher accounts only (`409` otherwise); `null` removes it. */
   whatsappNumber?: string | null
 }
+/**
+ * `DELETE /users/me`: a teacher sends the current `password` (`400` on the field when wrong). Students
+ * (the mobile app) send nothing, or `allProfiles` with the account's `email` typed back.
+ */
+export interface DeleteOwnAccountRequest {
+  password?: string
+  allProfiles?: boolean
+  email?: string
+}
 export interface CreateStudentRequest {
   name: string
   email: string

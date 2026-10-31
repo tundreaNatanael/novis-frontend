@@ -169,7 +169,8 @@ current password). The super-admin's Freelance section (D-037) runs on `/freelan
 list is searched on the server (`q` debounced with `useDebouncedValue`, the only list that does
 not filter the loaded page), Disable / Re-enable are explicit confirmed actions, Delete asks for
 the email and explains the cascade, and the teacher workspace shows a 404 page for any other id.
-`src/api/schema.d.ts` is generated from the backend (`npm run api:types`, last run on 2026-10-28
+`src/api/schema.d.ts` is generated from the backend (`npm run api:types`, last run on 2026-10-31 after `DELETE /users/me` and
+`DeleteOwnAccountRequest`; before that on 2026-10-28
 after `HomeworkItemResponse.material`, `MaterialResponse.homeworkId` / `homeworkTitle`, the `homeworkOnly` /
 `teacherId` material requests, `materialId` on homework item requests and `GET /materials/{id}`; before that on
 2026-10-27 after `MeetingLink.whatsapp` / `teacherWhatsappNumber` and `SetMeetingLinkRequest.whatsapp`; before that after `User.whatsappNumber`, `Student` / `StudentCreated` / `RosterStudent.meetingUrl` and
@@ -237,7 +238,8 @@ freelance teacher's only: a school's admin assigns an org teacher's courses, D-0
 lesson, Payments (org teachers) and Profile mirror the app's screens, with the app's sheets (book
 one lesson or a weekly series with a dry run, schedule, finish, journal, attach a link or upload a
 file behind `VITE_ENABLE_UPLOADS` (D-052), homework, students, credits, courses, enroll, password)
-and its English / Romanian copy. Today opens with the lesson totals table (D-055,
+and its English / Romanian copy; Profile's **Delete account** (D-060: the password, a confirmation, `signOut({ revoked: true })`,
+a freelance teacher blocked while students remain on the roster). Today opens with the lesson totals table (D-055,
 `GET /teacher/lesson-totals`: all-time lessons held, paid and the difference), which replaced the
 tiles of this month's lessons held and what the school owes. Walked through in the browser against the dev backend as the demo
 teacher (Today, calendar, a lesson, students, courses, profile, both themes and languages, desktop

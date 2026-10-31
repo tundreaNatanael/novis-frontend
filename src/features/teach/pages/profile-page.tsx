@@ -8,6 +8,7 @@ import {
   Moon,
   Phone,
   Sun,
+  Trash2,
   UserRound,
   type LucideIcon,
 } from 'lucide-react'
@@ -35,7 +36,7 @@ const THEMES: { value: ThemeSetting; icon: LucideIcon }[] = [
   { value: 'system', icon: Monitor },
 ]
 
-/** Profile: who, where (the school or freelance, the school's payments), the language and look, the password, sign out. */
+/** Profile: who, where (the school or freelance, the school's payments), the language and look, the password, deleting the account, sign out. */
 export function Component() {
   const me = useMe()
   const { t, locale, setLocale } = useI18n()
@@ -84,6 +85,11 @@ export function Component() {
               onClick={() => sheets.open({ kind: 'password' })}
               title={t('teacher.profile.changePassword')}
               leading={<IconBadge icon={Lock} />}
+            />
+            <ListRow
+              onClick={() => sheets.open({ kind: 'deleteAccount' })}
+              title={t('teacher.deleteAccount.title')}
+              leading={<IconBadge icon={Trash2} tone="danger" />}
             />
           </RowList>
         </TeachCard>

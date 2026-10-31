@@ -3,6 +3,24 @@
 All notable changes to the Novis admin console. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); dates are the day the change landed on `main`.
 
+## Delete account in the teacher workspace — Unreleased
+
+Backend: `DELETE /users/me` (no migration), API.md §5.
+
+### Added
+- **Profile → Delete account** in the teacher workspace (D-060): a red row under Change password opens a sheet
+  that says what goes and what stays (a school teacher: the school keeps the lessons, homework and materials; a
+  freelance teacher: the courses are archived), asks for the password, then "Delete your account?". On success a
+  toast, the session cleared without `/auth/logout` and `/login`. A wrong password shows on the field in the
+  workspace's own words. A freelance teacher with students on the roster sees how many and "Go to Students"; the
+  password field and the button stay off (the API answers `409` until the roster is empty; a `409` re-reads it).
+- `usersApi.deleteMe` (a `DELETE` with a body through `request`), `DeleteOwnAccountRequest`,
+  `signOut({ revoked: true })`, `useDeleteAccount`, `useRosterCount`; `src/api/schema.d.ts` regenerated
+  (2026-10-31: `deleteMe`, `DeleteOwnAccountRequest` with `password`, `allProfiles`, `email`).
+- en / ro: `teacher.deleteAccount.*`.
+- Tests: `features/teach/delete-account.test.tsx` (a school teacher deletes, no logout call, `/login`; a wrong
+  password on the field; a freelance teacher with students; one without).
+
 ## Materials on homework lines — Unreleased
 
 Backend: `materials.homework_only`, `homework_items.material_id` (V18), API.md §10, §11.

@@ -5,6 +5,7 @@ import { AssignHomeworkSheet, EditHomeworkSheet } from './assign-homework-sheet'
 import { BookLessonSheet } from './book-lesson-sheet'
 import { ChangePasswordSheet } from './change-password-sheet'
 import { CourseFormSheet } from './course-form-sheet'
+import { DeleteAccountSheet } from './delete-account-sheet'
 import { EnrollSheet } from './enroll-sheet'
 import { FinishLessonSheet } from './finish-lesson-sheet'
 import { JournalSheet } from './journal-sheet'
@@ -124,6 +125,8 @@ function SheetFor({
       return <EnrollSheet courseId={request.courseId} open={open} onOpenChange={onOpenChange} />
     case 'password':
       return <ChangePasswordSheet open={open} onOpenChange={onOpenChange} />
+    case 'deleteAccount':
+      return <DeleteAccountSheet open={open} onOpenChange={onOpenChange} />
     case 'whatsapp':
       return (
         <WhatsAppNumberSheet

@@ -586,6 +586,26 @@ export const en = {
       saved: 'WhatsApp number saved',
       removed: 'WhatsApp number removed',
     },
+    deleteAccount: {
+      title: 'Delete account',
+      schoolBody:
+        'Your account is deleted and you are signed out on every device. %{school} keeps the lessons, homework and materials you taught as its history.',
+      freelanceBody:
+        'Your account is deleted and you are signed out on every device. Your courses are archived and your lessons stay as history.',
+      studentsLeft: {
+        one: 'You still have %{count} student. Remove them first: Students → the student → Remove student.',
+        other:
+          'You still have %{count} students. Remove them first: Students → the student → Remove student.',
+      },
+      goToStudents: 'Go to Students',
+      password: 'Password',
+      passwordHint: 'Enter your password to confirm.',
+      wrongPassword: 'That is not your password.',
+      submit: 'Delete account',
+      confirmTitle: 'Delete your account?',
+      confirmBody: 'This cannot be undone.',
+      deleted: 'Your account was deleted.',
+    },
     changePassword: {
       title: 'Change password',
       newPassword: 'New password',

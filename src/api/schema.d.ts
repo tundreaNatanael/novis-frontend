@@ -782,7 +782,7 @@ export interface paths {
         get: operations["me"];
         put?: never;
         post?: never;
-        delete?: never;
+        delete: operations["deleteMe"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2435,6 +2435,12 @@ export interface components {
             /** Format: int32 */
             totalPages?: number;
             last?: boolean;
+        };
+        DeleteOwnAccountRequest: {
+            password?: string;
+            allProfiles?: boolean;
+            /** Format: email */
+            email?: string;
         };
     };
     responses: never;
@@ -4247,6 +4253,28 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["UserResponse"];
                 };
+            };
+        };
+    };
+    deleteMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["DeleteOwnAccountRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

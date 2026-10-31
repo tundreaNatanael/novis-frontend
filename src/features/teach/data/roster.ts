@@ -20,6 +20,20 @@ export function useRoster() {
 }
 
 /**
+ * How many students the teacher has (`GET /teacher/students`, one row asked for): a freelance teacher
+ * deletes their account only once it is 0. Under the roster key, so adding or removing a student
+ * refreshes it.
+ */
+export function useRosterCount(enabled: boolean) {
+  return useQuery({
+    queryKey: [...teacherKeys.roster(), 'count'],
+    queryFn: ({ signal }) => teacherApi.students({ page: 0, size: 1 }, signal),
+    select: (page) => page.totalElements,
+    enabled,
+  })
+}
+
+/**
  * The whole roster, pulling every page. Pickers and name lookups need it; the Students page
  * pages normally and only drains the rest while a search is typed.
  */

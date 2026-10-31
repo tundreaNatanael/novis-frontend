@@ -588,6 +588,25 @@ export const ro = {
       saved: 'Numărul de WhatsApp a fost salvat',
       removed: 'Numărul de WhatsApp a fost șters',
     },
+    deleteAccount: {
+      title: 'Șterge contul',
+      schoolBody:
+        'Contul tău este șters și ești deconectat de pe toate dispozitivele. %{school} păstrează lecțiile, temele și materialele tale ca istoric.',
+      freelanceBody:
+        'Contul tău este șters și ești deconectat de pe toate dispozitivele. Cursurile tale sunt arhivate, iar lecțiile rămân ca istoric.',
+      studentsLeft: {
+        one: 'Mai ai %{count} elev. Elimină-l mai întâi: Elevi → elevul → Elimină elevul.',
+        other: 'Mai ai %{count} elevi. Elimină-i mai întâi: Elevi → elevul → Elimină elevul.',
+      },
+      goToStudents: 'Mergi la Elevi',
+      password: 'Parolă',
+      passwordHint: 'Introdu parola pentru a confirma.',
+      wrongPassword: 'Aceasta nu este parola ta.',
+      submit: 'Șterge contul',
+      confirmTitle: 'Ștergi contul?',
+      confirmBody: 'Acțiunea nu poate fi anulată.',
+      deleted: 'Contul tău a fost șters.',
+    },
     changePassword: {
       title: 'Schimbă parola',
       newPassword: 'Parolă nouă',

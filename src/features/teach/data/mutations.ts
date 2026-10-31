@@ -368,6 +368,16 @@ export function useChangePassword() {
   })
 }
 
+/**
+ * `DELETE /users/me { password }`: the teacher's own account. The server ends every session, so the
+ * caller clears the local one afterwards with `signOut({ revoked: true })`.
+ */
+export function useDeleteAccount() {
+  return useMutation({
+    mutationFn: (password: string) => usersApi.deleteMe({ password }),
+  })
+}
+
 /** `PATCH /users/{me} { whatsappNumber }` (`null` removes it); `useMe` reads the new number. */
 export function useChangeWhatsAppNumber() {
   const me = useMe()
