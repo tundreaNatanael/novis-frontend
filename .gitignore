@@ -34,3 +34,6 @@ e2e/screenshots
 # Local env
 .env
 .env.*.local
+
+# Cloudflare Wrangler
+.wrangler/
